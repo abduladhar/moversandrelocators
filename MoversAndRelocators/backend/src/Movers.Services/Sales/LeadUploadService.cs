@@ -25,7 +25,7 @@ public sealed class LeadUploadService(ILeadUploadRepository repository, ITenantC
     }
 
     public async Task<IReadOnlyList<UploadLinkModel>> ListLinksAsync(Guid leadId, CancellationToken token) =>
-        (await repository.ListLinksAsync(leadId, token)).Select(Map).ToList();
+        (await repository.ListLinksAsync(leadId, token)).Where(x => !IsStaffLink(x)).Select(Map).ToList();
 
     public async Task<UploadLinkModel?> RevokeLinkAsync(Guid leadId, Guid id, CancellationToken token)
     { var link = await repository.GetLinkAsync(id, true, token); if (link is null || link.SalesLeadId != leadId) return null; link.Revoke(); await repository.SaveChangesAsync(token); return Map(link); }
@@ -65,6 +65,42 @@ public sealed class LeadUploadService(ILeadUploadRepository repository, ITenantC
         if (attachment is null || attachment.SalesLeadId != leadId || !attachment.IsUploaded) return null;
         var aws = await repository.GetAwsAsync(cancellationToken);
         return await storage.CreateDownloadUrlAsync(Credentials(aws), attachment.S3ObjectKey, attachment.OriginalFileName, timeProvider.GetUtcNow().AddMinutes(10), cancellationToken);
+    }
+
+    /* Staff capture: files recorded by staff hang off one hidden, never-shareable link per lead (its token hash is
+       not a real hash, so no customer token can ever resolve to it). */
+    private const string StaffLinkPrefix = "STAFF:";
+    private static bool IsStaffLink(SalesLeadUploadLink link) => link.TokenHash.StartsWith(StaffLinkPrefix, StringComparison.Ordinal);
+
+    public async Task<PresignedUploadModel> CreateStaffUploadAsync(Guid leadId, UploadRequestModel request, CancellationToken cancellationToken)
+    {
+        if (await repository.GetLeadAsync(leadId, cancellationToken) is null) throw new KeyNotFoundException();
+        var aws = await repository.GetAwsAsync(cancellationToken);
+        var (fileName, contentType) = UploadPolicy.Validate(request);
+        var link = (await repository.ListLinksAsync(leadId, cancellationToken)).FirstOrDefault(IsStaffLink);
+        if (link is null)
+        {
+            link = new SalesLeadUploadLink(tenantContext.TenantId, leadId, StaffLinkPrefix + leadId.ToString("N"), timeProvider.GetUtcNow());
+            link.SetInstructions(null, "Captured by staff");
+            link.Revoke();
+            repository.AddLink(link);
+        }
+        var attachment = new SalesLeadAttachment(tenantContext.TenantId, leadId, link.Id, fileName, contentType, request.SizeBytes);
+        repository.AddAttachment(attachment); await repository.SaveChangesAsync(cancellationToken);
+        var expires = timeProvider.GetUtcNow().AddMinutes(15);
+        var url = await storage.CreateUploadUrlAsync(Credentials(aws), attachment.S3ObjectKey, contentType, expires, cancellationToken);
+        return new PresignedUploadModel(attachment.Id, url, expires);
+    }
+
+    public async Task<AttachmentModel?> CompleteStaffUploadAsync(Guid leadId, Guid attachmentId, CancellationToken cancellationToken)
+    {
+        var attachment = await repository.GetAttachmentAsync(attachmentId, true, cancellationToken);
+        if (attachment is null || attachment.SalesLeadId != leadId) return null;
+        if (attachment.IsUploaded) return Map(attachment);
+        var info = await storage.GetObjectInfoAsync(Credentials(await repository.GetAwsAsync(cancellationToken)), attachment.S3ObjectKey, cancellationToken)
+            ?? throw new InvalidOperationException("The file has not reached storage yet.");
+        UploadPolicy.EnsureStoredSize(info, attachment.DeclaredSizeBytes);
+        attachment.MarkUploaded(info.SizeBytes); await repository.SaveChangesAsync(cancellationToken); return Map(attachment);
     }
 
     private static string? OptionalText(string? value) {

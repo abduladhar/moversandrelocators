@@ -32,14 +32,30 @@ public sealed class SalesLeadUploadsController(ILeadUploadService service, Publi
     [HttpGet("attachments"), Authorize(Policy = SecurityPermissions.SalesView)]
     public async Task<ActionResult> Attachments(Guid leadId, CancellationToken token) => Ok(await service.ListAttachmentsAsync(leadId, token));
 
-    [HttpPost("attachments/{id:guid}/extract"), Authorize(Policy = SecurityPermissions.SalesExtract), RequestSizeLimit(18_000_000)]
+    [HttpPost("attachments/{id:guid}/extract"), Authorize(Policy = SecurityPermissions.SalesExtract), RequestSizeLimit(28_000_000)]
     public async Task<ActionResult> Extract(Guid leadId, Guid id, ExtractAttachmentRequest request, CancellationToken ct) {
-        try { return Ok(await extraction.Extract(leadId, id, request.Frames, ct)); }
+        try { var (r, inventory) = await extraction.Extract(leadId, id, request.Frames, request.Audio, ct); return Ok(new { r.Items, r.Boxes, r.Transcript, r.FramesAnalysed, r.Warning, r.Usage, inventory }); }
         catch (UnauthorizedAccessException) { return Forbid(); }
         catch (KeyNotFoundException) { return NotFound(); }
         catch (InvalidOperationException e) { return BadRequest(new { message = e.Message }); }
         catch (HttpRequestException) { return StatusCode(502, new { message = "OpenAI is unavailable. Try again later." }); }
         catch (TaskCanceledException) when (!ct.IsCancellationRequested) { return StatusCode(504, new { message = "OpenAI timed out. Try again later." }); }
+    }
+
+    /// <summary>Staff capture: request an upload URL for a video, photo or file recorded on the lead.</summary>
+    [HttpPost("attachments/upload-requests"), Authorize(Policy = SecurityPermissions.SalesManage)]
+    public async Task<ActionResult> StaffUpload(Guid leadId, UploadRequestModel request, CancellationToken token)
+    {
+        try { return Ok(await service.CreateStaffUploadAsync(leadId, request, token)); }
+        catch (KeyNotFoundException) { return NotFound(); }
+        catch (InvalidOperationException e) { return BadRequest(new { message = e.Message }); }
+    }
+
+    [HttpPost("attachments/{id:guid}/complete"), Authorize(Policy = SecurityPermissions.SalesManage)]
+    public async Task<ActionResult> StaffComplete(Guid leadId, Guid id, CancellationToken token)
+    {
+        try { var file = await service.CompleteStaffUploadAsync(leadId, id, token); return file is null ? NotFound() : Ok(file); }
+        catch (InvalidOperationException e) { return BadRequest(new { message = e.Message }); }
     }
 
     [HttpGet("attachments/{id:guid}/download"), Authorize(Policy = SecurityPermissions.SalesView)]

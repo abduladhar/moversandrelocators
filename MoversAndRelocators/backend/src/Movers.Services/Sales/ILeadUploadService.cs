@@ -11,4 +11,7 @@ public interface ILeadUploadService
     Task<PresignedUploadModel> CreateUploadAsync(string token, UploadRequestModel request, CancellationToken cancellationToken);
     Task<AttachmentModel?> CompleteUploadAsync(string token, Guid attachmentId, CancellationToken cancellationToken);
     Task<string?> CreateDownloadUrlAsync(Guid leadId, Guid attachmentId, CancellationToken cancellationToken);
+    /// <summary>Staff capture on the lead (video, photo or file) without a customer link.</summary>
+    Task<PresignedUploadModel> CreateStaffUploadAsync(Guid leadId, UploadRequestModel request, CancellationToken cancellationToken);
+    Task<AttachmentModel?> CompleteStaffUploadAsync(Guid leadId, Guid attachmentId, CancellationToken cancellationToken);
 }

@@ -1566,3 +1566,39 @@ body { margin: 0; min-width: 320px; min-height: 100vh; }
 .accounting-report-heading h2 { margin: 2px 0; color: #173c2e; font: 700 22px/28px Manrope, sans-serif; }
 .accounting-report-heading p { margin: 0; color: #5f7169; font-size: 13px; }
 @media (max-width: 760px) { .accounting-report-tools, .accounting-report-tools .ant-select { width: 100%; } }
+
+/* Sales lead AI extraction */
+.lead-extract-run { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; margin: 16px 0; }
+.lead-extract-run .ant-steps { flex: 1; min-width: 280px; }
+.lead-extract-heading { display: flex; align-items: baseline; gap: 8px; margin: 18px 0 8px; color: #1d3128; font-size: 15px; }
+.lead-extract-heading small { color: #6f7f78; font-weight: 400; font-size: 12px; }
+.lead-extract-transcript { margin: 0; white-space: pre-line; color: #33493f; font-size: 13px; }
+
+/* Sales lead expected inventory */
+.lead-inventory-totals { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-bottom: 14px; }
+.lead-inventory-totals > div { padding: 12px 14px; border: 1px solid #e1ebe6; border-radius: 10px; background: #f8fbf9; }
+.lead-inventory-totals small { display: block; color: #6f7f78; font-size: 12px; }
+.lead-inventory-totals strong { color: #173c2e; font: 700 20px/26px Manrope, sans-serif; }
+.lead-inventory-totals .is-fragile { border-color: #ffccc7; background: #fff5f4; }
+.lead-inventory-totals .is-fragile strong { color: #cf1322; }
+.lead-inventory-table { display: grid; gap: 6px; max-height: 56vh; overflow: auto; }
+.lead-inventory-row { display: grid; grid-template-columns: 140px 90px minmax(200px, 1.6fr) 70px 96px 70px 56px minmax(150px, 1fr) 32px; gap: 8px; align-items: center; padding: 4px 6px; border-radius: 8px; }
+.lead-inventory-row.is-head { position: sticky; top: 0; z-index: 1; color: #6f7f78; font-size: 12px; background: #fff; }
+.lead-inventory-row.is-fragile { background: #fff7f6; }
+.lead-inventory-name { display: flex; align-items: center; gap: 6px; }
+.lead-inventory-name .ant-tag { margin: 0; }
+.lead-inventory-cbm { text-align: right; font-variant-numeric: tabular-nums; color: #1d3128; }
+@media (max-width: 900px) { .lead-inventory-totals { grid-template-columns: 1fr 1fr; } .lead-inventory-table { overflow-x: auto; } .lead-inventory-row { min-width: 960px; } }
+
+/* OpenAI usage & cost */
+.ai-price-hint { margin-top: -6px; font-size: 13px; }
+.ai-price-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0 12px; }
+.ai-usage-totals { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.ai-usage-totals > div { padding: 12px; border: 1px solid #e1ebe6; border-radius: 10px; background: #f8fbf9; }
+.ai-usage-totals small { display: block; color: #6f7f78; font-size: 12px; }
+.ai-usage-totals strong { display: block; color: #173c2e; font: 700 20px/26px Manrope, sans-serif; }
+.ai-usage-totals span { color: #6f7f78; font-size: 12px; }
+.lead-extract-usage { margin: 12px 0 0; color: #5f7169; font-size: 12px; }
+.lead-inventory-ai { margin: -4px 0 12px; color: #5f7169; font-size: 13px; }
+.lead-inventory-ai .anticon { color: #7a3f86; margin-right: 4px; }
+@media (max-width: 900px) { .ai-price-grid { grid-template-columns: 1fr 1fr; } }

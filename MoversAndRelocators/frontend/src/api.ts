@@ -117,6 +117,10 @@ export const salesApi = {
   revokeUploadLink: (leadId: string, id: string) => request<LeadUploadLink>(`/api/sales/leads/${leadId}/upload-links/${id}/revoke`, { method: 'PATCH' }),
   attachments: (leadId: string) => request<LeadAttachment[]>(`/api/sales/leads/${leadId}/attachments`),
   attachmentDownload: (leadId: string, id: string) => request<{ url: string }>(`/api/sales/leads/${leadId}/attachments/${id}/download`),
+  /** Staff capture on the lead: video, photo or file recorded by the sales team (no customer link). */
+  staffUpload: (leadId: string, file: File) => uploadFile<LeadAttachment>(file,
+    () => request<PresignedUpload>(`/api/sales/leads/${leadId}/attachments/upload-requests`, { method: 'POST', body: uploadBody(file) }),
+    id => request<LeadAttachment>(`/api/sales/leads/${leadId}/attachments/${id}/complete`, { method: 'POST' })),
 }
 
 export const publicUploadApi = {
@@ -242,6 +246,7 @@ export const settingsApi = {
   aws: () => request<AwsConfiguration | undefined>('/api/settings/aws'),
   saveAws: (input: AwsConfigurationInput) => request<AwsConfiguration>('/api/settings/aws', { method: 'PUT', body: JSON.stringify(input) }),
   openAi: () => request<OpenAiConfiguration | undefined>('/api/settings/openai'),
+  openAiUsage: () => request<import('./types').AiUsageSummary>('/api/settings/openai/usage'),
   saveOpenAi: (input: OpenAiConfigurationInput) => request<OpenAiConfiguration>('/api/settings/openai', { method: 'PUT', body: JSON.stringify(input) }),
 }
 

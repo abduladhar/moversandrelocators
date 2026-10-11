@@ -38,6 +38,10 @@ public static class DataAccessRegistration
         services.AddScoped<IAuditRepository, AuditRepository>();
         services.AddScoped<IEmployeeRepository, EmployeeRepository>();
         services.AddScoped<ISalesRepository, SalesRepository>();
+        services.AddScoped<Movers.Services.Sales.ILeadInventoryRepository, Movers.DAL.Sales.LeadInventoryRepository>();
+        services.AddScoped<Movers.Services.Sales.LeadInventoryService>();
+        services.AddScoped<Movers.Services.OpenAi.IAiUsageRepository, Movers.DAL.Configuration.AiUsageRepository>();
+        services.AddScoped<Movers.Services.OpenAi.AiUsageService>();
         services.AddScoped<ILeadUploadRepository, LeadUploadRepository>();
         services.AddScoped<ITodayTaskSource, SalesFollowUpTaskSource>();
         services.AddScoped<ITodayTaskSource, SurveyTaskSource>();
@@ -121,6 +125,8 @@ public static class DataAccessRegistration
         await Movers.DAL.Persistence.CrewScheduleSchema.Apply(db);
         await Movers.DAL.Persistence.CurrencyPrecisionSchema.Apply(db);
         await Movers.DAL.Persistence.ExpenseAttachmentSchema.Apply(db);
+        await Movers.DAL.Persistence.LeadInventorySchema.Apply(db);
+        await Movers.DAL.Persistence.AiUsageSchema.Apply(db);
         await Movers.DAL.Numbering.NumberSequenceRepository.Initialize(db);
         var seeder = scope.ServiceProvider.GetRequiredService<SecuritySeeder>();
         await seeder.SeedAsync(systemAdminEmail, systemAdminPassword, resetSystemAdminPassword);

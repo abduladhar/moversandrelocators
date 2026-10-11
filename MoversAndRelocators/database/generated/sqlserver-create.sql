@@ -273,6 +273,31 @@ CREATE TABLE [WarehouseReceipts] (
 GO
 
 
+CREATE TABLE [AiUsageRecords] (
+    [SerialNo] int NOT NULL IDENTITY,
+    [Feature] nvarchar(40) NOT NULL,
+    [SalesLeadId] uniqueidentifier NULL,
+    [AttachmentId] uniqueidentifier NULL,
+    [Model] nvarchar(120) NOT NULL,
+    [InputTokens] int NOT NULL,
+    [CachedInputTokens] int NOT NULL,
+    [OutputTokens] int NOT NULL,
+    [TranscriptionModel] nvarchar(120) NULL,
+    [AudioSeconds] decimal(12,1) NOT NULL,
+    [VisionCost] decimal(18,6) NULL,
+    [TranscriptionCost] decimal(18,6) NULL,
+    [TotalCost] decimal(18,6) NULL,
+    [Currency] nvarchar(3) NOT NULL,
+    [CreatedBy] nvarchar(254) NOT NULL,
+    [CreatedAtUtc] datetimeoffset NOT NULL,
+    [Id] uniqueidentifier NOT NULL,
+    [TenantId] uniqueidentifier NOT NULL,
+    CONSTRAINT [PK_AiUsageRecords] PRIMARY KEY ([SerialNo]),
+    CONSTRAINT [FK_AiUsageRecords_Tenants_TenantId] FOREIGN KEY ([TenantId]) REFERENCES [Tenants] ([Id]) ON DELETE NO ACTION
+);
+GO
+
+
 CREATE TABLE [BoxTypes] (
     [SerialNo] int NOT NULL IDENTITY,
     [Code] nvarchar(40) NOT NULL,
@@ -513,6 +538,10 @@ CREATE TABLE [TenantOpenAiConfigurations] (
     [ApiKeyLastFour] nvarchar(4) NOT NULL,
     [ExtractionModel] nvarchar(120) NOT NULL,
     [TranscriptionModel] nvarchar(120) NOT NULL,
+    [InputPricePerMillion] decimal(18,6) NULL,
+    [CachedInputPricePerMillion] decimal(18,6) NULL,
+    [OutputPricePerMillion] decimal(18,6) NULL,
+    [TranscriptionPricePerMinute] decimal(18,6) NULL,
     [CreatedAtUtc] datetimeoffset NOT NULL,
     [UpdatedAtUtc] datetimeoffset NOT NULL,
     [Id] uniqueidentifier NOT NULL,
@@ -777,6 +806,28 @@ CREATE TABLE [LeadFollowUps] (
     CONSTRAINT [FK_LeadFollowUps_FollowUpStatuses_StatusId] FOREIGN KEY ([StatusId]) REFERENCES [FollowUpStatuses] ([Id]) ON DELETE NO ACTION,
     CONSTRAINT [FK_LeadFollowUps_SalesLeads_SalesLeadId] FOREIGN KEY ([SalesLeadId]) REFERENCES [SalesLeads] ([Id]) ON DELETE NO ACTION,
     CONSTRAINT [FK_LeadFollowUps_Tenants_TenantId] FOREIGN KEY ([TenantId]) REFERENCES [Tenants] ([Id]) ON DELETE NO ACTION
+);
+GO
+
+
+CREATE TABLE [SalesLeadInventoryItems] (
+    [SerialNo] int NOT NULL IDENTITY,
+    [SalesLeadId] uniqueidentifier NOT NULL,
+    [Kind] nvarchar(10) NOT NULL,
+    [Room] nvarchar(80) NULL,
+    [Name] nvarchar(160) NOT NULL,
+    [Quantity] int NOT NULL,
+    [UnitCbm] decimal(12,3) NOT NULL,
+    [Fragile] bit NOT NULL,
+    [Handling] nvarchar(300) NULL,
+    [Notes] nvarchar(1000) NULL,
+    [SourceAttachmentId] uniqueidentifier NULL,
+    [CreatedAtUtc] datetimeoffset NOT NULL,
+    [Id] uniqueidentifier NOT NULL,
+    [TenantId] uniqueidentifier NOT NULL,
+    CONSTRAINT [PK_SalesLeadInventoryItems] PRIMARY KEY ([SerialNo]),
+    CONSTRAINT [FK_SalesLeadInventoryItems_SalesLeads_SalesLeadId] FOREIGN KEY ([SalesLeadId]) REFERENCES [SalesLeads] ([Id]) ON DELETE CASCADE,
+    CONSTRAINT [FK_SalesLeadInventoryItems_Tenants_TenantId] FOREIGN KEY ([TenantId]) REFERENCES [Tenants] ([Id]) ON DELETE NO ACTION
 );
 GO
 
@@ -1757,6 +1808,18 @@ CREATE TABLE [PackingJobBoxMaterials] (
 GO
 
 
+CREATE UNIQUE INDEX [IX_AiUsageRecords_Id] ON [AiUsageRecords] ([Id]);
+GO
+
+
+CREATE INDEX [IX_AiUsageRecords_SalesLeadId] ON [AiUsageRecords] ([SalesLeadId]);
+GO
+
+
+CREATE INDEX [IX_AiUsageRecords_TenantId] ON [AiUsageRecords] ([TenantId]);
+GO
+
+
 CREATE INDEX [IX_AuditLogs_ActorUserId] ON [AuditLogs] ([ActorUserId]);
 GO
 
@@ -2714,6 +2777,18 @@ GO
 
 
 CREATE INDEX [IX_SalesLeadAttachments_UploadLinkId] ON [SalesLeadAttachments] ([UploadLinkId]);
+GO
+
+
+CREATE UNIQUE INDEX [IX_SalesLeadInventoryItems_Id] ON [SalesLeadInventoryItems] ([Id]);
+GO
+
+
+CREATE INDEX [IX_SalesLeadInventoryItems_SalesLeadId] ON [SalesLeadInventoryItems] ([SalesLeadId]);
+GO
+
+
+CREATE INDEX [IX_SalesLeadInventoryItems_TenantId] ON [SalesLeadInventoryItems] ([TenantId]);
 GO
 
 

@@ -37,11 +37,14 @@ public sealed class OpenAiConfigurationService(
             existing.Update(encryptedKey, lastFour, command.ExtractionModel, command.TranscriptionModel);
         }
 
+        foreach (var price in new[] { command.InputPricePerMillion, command.CachedInputPricePerMillion, command.OutputPricePerMillion, command.TranscriptionPricePerMinute })
+            if (price is < 0 or > 1000) throw new InvalidOperationException("Prices must be between 0 and 1,000 USD.");
+        existing.SetPrices(command.InputPricePerMillion, command.CachedInputPricePerMillion, command.OutputPricePerMillion, command.TranscriptionPricePerMinute);
         await repository.SaveChangesAsync(token);
         return Map(existing);
     }
 
     private static OpenAiConfigurationModel Map(TenantOpenAiConfiguration x) => new(x.SerialNo, x.Id,
         $"••••{x.ApiKeyLastFour}", x.EncryptedApiKey.Length > 0, x.ExtractionModel, x.TranscriptionModel,
-        x.CreatedAtUtc, x.UpdatedAtUtc);
+        x.CreatedAtUtc, x.UpdatedAtUtc, x.InputPricePerMillion, x.CachedInputPricePerMillion, x.OutputPricePerMillion, x.TranscriptionPricePerMinute);
 }

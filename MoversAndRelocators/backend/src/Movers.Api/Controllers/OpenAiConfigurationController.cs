@@ -7,7 +7,7 @@ using Movers.Services.Security;
 namespace Movers.Api.Controllers;
 
 [ApiController, Authorize(Policy = SecurityPermissions.OpenAiConfigurationManage), Route("api/settings/openai")]
-public sealed class OpenAiConfigurationController(IOpenAiConfigurationService service) : ControllerBase
+public sealed class OpenAiConfigurationController(IOpenAiConfigurationService service, AiUsageService usage, IOpenAiConfigurationRepository configurations) : ControllerBase
 {
     [HttpGet]
     public async Task<ActionResult> Get(CancellationToken token)
@@ -15,6 +15,10 @@ public sealed class OpenAiConfigurationController(IOpenAiConfigurationService se
         var configuration = await service.GetAsync(token);
         return configuration is null ? NoContent() : Ok(configuration);
     }
+
+    /// <summary>OpenAI usage and approximate cost: this month, all time and the latest runs.</summary>
+    [HttpGet("usage")]
+    public async Task<ActionResult> Usage(CancellationToken token) => Ok(await usage.Summary(await configurations.GetAsync(false, token), token));
 
     [HttpPut]
     public async Task<ActionResult> Save(SaveOpenAiConfigurationRequest request, CancellationToken token)

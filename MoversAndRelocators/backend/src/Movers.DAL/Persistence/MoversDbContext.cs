@@ -70,6 +70,8 @@ public sealed class MoversDbContext(
         Movers.DAL.Packing.PackingMapping.Configure(modelBuilder);
         Movers.DAL.Delivery.DeliveryMapping.Configure(modelBuilder);
         Movers.DAL.Operations.ExpenseAttachmentMapping.Configure(modelBuilder);
+        Movers.DAL.Sales.LeadInventoryMapping.Configure(modelBuilder);
+        Movers.DAL.Configuration.AiUsageMapping.Configure(modelBuilder);
         var tenant = modelBuilder.Entity<Tenant>();
         tenant.ToTable("Tenants");
         tenant.Property(x => x.Name).HasMaxLength(160).IsRequired();
