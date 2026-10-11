@@ -1,0 +1,11 @@
+using System.ComponentModel.DataAnnotations;
+using Movers.Services.Sales;
+
+namespace Movers.Api.Contracts.Sales;
+
+public sealed record SaveLeadStatusRequest([Required, StringLength(40, MinimumLength = 2), RegularExpression("^[a-zA-Z0-9_-]+$")] string Code, [Required, StringLength(120, MinimumLength = 2)] string Name, [Range(0, 1000)] int DisplayOrder, [StringLength(20)] string? Color, bool IsClosed) { public SaveLeadStatusCommand ToCommand() => new(Code, Name, DisplayOrder, Color, IsClosed); }
+public sealed record SaveFollowUpStatusRequest([Required, StringLength(40, MinimumLength = 2), RegularExpression("^[a-zA-Z0-9_-]+$")] string Code, [Required, StringLength(120, MinimumLength = 2)] string Name, [Range(0, 1000)] int DisplayOrder, [StringLength(20)] string? Color, bool IsCompleted) { public SaveFollowUpStatusCommand ToCommand() => new(Code, Name, DisplayOrder, Color, IsCompleted); }
+public sealed record SaveMoveTypeRequest([Required, StringLength(40, MinimumLength = 2), RegularExpression("^[a-zA-Z0-9_-]+$")] string Code, [Required, StringLength(120, MinimumLength = 2)] string Name, [Range(0, 1000)] int DisplayOrder, [StringLength(500)] string? Description) { public SaveMoveTypeCommand ToCommand() => new(Code, Name, DisplayOrder, Description); }
+public sealed record SetStatusRequest(bool IsActive);
+public sealed record SaveSalesLeadRequest(string? LeadNumber, [Required, StringLength(160)] string CustomerName, [Required, StringLength(40)] string Phone, [EmailAddress, StringLength(254)] string? Email, [StringLength(100)] string? Source, Guid MoveTypeId, [Required, StringLength(300)] string Origin, [Required, StringLength(300)] string Destination, DateOnly? ExpectedMoveDate, Guid StatusId, Guid? AssignedEmployeeId, [StringLength(2000)] string? Notes) { public SaveSalesLeadCommand ToCommand() => new(LeadNumber ?? "", CustomerName, Phone, Email, Source, MoveTypeId, Origin, Destination, ExpectedMoveDate, StatusId, AssignedEmployeeId, Notes); }
+public sealed record SaveFollowUpRequest(DateTimeOffset ScheduledAtUtc, Guid StatusId, [Required, StringLength(2000, MinimumLength = 2)] string Notes, DateTimeOffset? NextFollowUpAtUtc) { public SaveFollowUpCommand ToCommand() => new(ScheduledAtUtc, StatusId, Notes, NextFollowUpAtUtc); }

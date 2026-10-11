@@ -1,0 +1,1087 @@
+/* Report Engine V2 designer styles. Every selector is scoped under .report-engine-v2 (native CSS nesting).
+   Print rules are injected at runtime by ReportExportService. */
+
+.report-engine-v2 {
+   /* design tokens (were :root) */
+   --bg: #eef1f5;
+   --panel: #ffffff;
+   --ink: #1f2733;
+   --muted: #6b7686;
+   --line: #dde3ec;
+   --line-soft: #eef1f6;
+   --accent: #176b52;
+   --accent-soft: #e8f3ee;
+   --bar: #10271f;
+   --bar-ink: #c9d2e0;
+   --bar-hi: #ffffff;
+   --bar-line: #245441;
+   --danger: #d0463b;
+   --ok: #1f9d6b;
+   --band: #f6f8fc;
+   --band-line: #dbe2ee;
+   --shadow: 0 1px 2px rgba(20, 30, 50, .06), 0 8px 24px rgba(20, 30, 50, .08);
+   --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+   --rpanel-w: 420px;
+
+   /* the overlay shell (was <body>) */
+   position: fixed;
+   inset: 0;
+   z-index: 999; /* below antd popups (1050) and modals (1000) so selects and dialogs open above the designer */
+   margin: 0;
+   font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+   color: var(--ink);
+   background: var(--bg);
+   font-size: 13px;
+   overflow: hidden;
+   display: flex;
+   flex-direction: column;
+
+   * {
+      box-sizing: border-box;
+   }
+
+   /* defensive resets — the host Metronic/Bootstrap theme styles bare elements
+     globally; these keep the designer's own elements predictable. */
+   button {
+      margin: 0;
+      font-family: inherit;
+      line-height: normal;
+      text-transform: none;
+   }
+
+   input,
+   select,
+   textarea {
+      font-family: inherit;
+   }
+
+   h4,
+   h5 {
+      margin: 0;
+   }
+
+   table {
+      border-collapse: collapse;
+   }
+
+   svg {
+      vertical-align: middle;
+   }
+
+   ul,
+   ol,
+   p {
+      margin: 0;
+   }
+
+   /* floating Back button (Settings ⇽) */
+   .rev2-back {
+      position: absolute;
+      top: 8px;
+      left: 10px;
+      z-index: 60;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      height: 30px;
+      padding: 0 11px;
+      background: #11161f;
+      color: var(--bar-hi);
+      border: 1px solid var(--bar-line);
+      border-radius: 7px;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 600;
+
+      svg {
+         width: 16px;
+         height: 16px;
+      }
+
+      &:hover {
+         background: #2a3346;
+      }
+   }
+
+   .rev2-topbar {
+      height: 46px;
+      background: var(--bar);
+      color: var(--bar-ink);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 0 10px 0 102px;
+      border-bottom: 1px solid #0e1320;
+      position: relative;
+      z-index: 30;
+   }
+
+   .rev2-brand {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 600;
+      color: var(--bar-hi);
+      margin-right: 4px;
+   }
+
+   .rev2-brand .rev2-dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: var(--accent);
+      box-shadow: 0 0 0 3px rgba(47, 95, 224, .25);
+   }
+
+   .rev2-tsep {
+      width: 1px;
+      height: 22px;
+      background: var(--bar-line);
+      margin: 0 3px;
+   }
+
+   .rev2-tbtn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      height: 30px;
+      padding: 0 9px;
+      background: transparent;
+      color: var(--bar-ink);
+      border: 1px solid transparent;
+      border-radius: 7px;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 500;
+      white-space: nowrap;
+   }
+
+   .rev2-tbtn svg {
+      width: 16px;
+      height: 16px;
+   }
+
+   .rev2-tbtn:hover {
+      background: #2a3346;
+      color: var(--bar-hi);
+   }
+
+   .rev2-tbtn.rev2-on {
+      background: var(--accent);
+      color: #fff;
+   }
+
+   .rev2-tbtn.rev2-ghost {
+      border-color: var(--bar-line);
+   }
+
+   .rev2-tbtn.rev2-primary {
+      background: var(--accent);
+      color: #fff;
+   }
+
+   .rev2-tbtn.rev2-primary:hover {
+      background: #2450cf;
+   }
+
+   .rev2-spacer {
+      flex: 1;
+   }
+
+   .rev2-tmenu-anchor {
+      position: relative;
+      display: inline-flex;
+   }
+
+   .rev2-seg {
+      display: flex;
+      background: #11161f;
+      border: 1px solid var(--bar-line);
+      border-radius: 8px;
+      padding: 2px;
+   }
+
+   .rev2-seg .rev2-tbtn {
+      height: 26px;
+   }
+
+   select.rev2-mini {
+      height: 30px;
+      background: #11161f;
+      color: var(--bar-ink);
+      border: 1px solid var(--bar-line);
+      border-radius: 7px;
+      padding: 0 6px;
+      font-size: 12px;
+      cursor: pointer;
+   }
+
+   .rev2-reptype {
+      height: 30px;
+      background: #11161f;
+      color: var(--bar-hi);
+      border: 1px solid var(--accent);
+      border-radius: 7px;
+      padding: 0 8px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+   }
+
+   /* Editor context bar (Report Type + Template Name + Save): no bar background, centred, values highlighted. */
+   .rev2-topbar.rev2-ctxbar {
+      /* Float the Report-Type / Template-Name strip over the top of the WORKSPACE column only, so the
+         left palette and right panel reach the top of the stage (they no longer get pushed down). */
+      position: absolute;
+      top: 46px;
+      left: 52px;
+      right: var(--rpanel-w);
+      height: auto;
+      z-index: 20;
+      background: var(--bg);
+      border-bottom: 1px solid var(--line);
+      padding: 8px 16px;
+      justify-content: center;
+      gap: 30px;
+      flex-wrap: wrap;
+   }
+
+   .rev2-ctxbar .rev2-ctx {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+   }
+
+   .rev2-ctxbar .rev2-ctx-label {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--muted);
+   }
+
+   .rev2-ctxbar .rev2-ctx-val {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--accent);
+      background: var(--accent-soft);
+      padding: 3px 12px;
+      border-radius: 999px;
+   }
+
+   .rev2-ctxbar .rev2-ctx-input {
+      width: 200px;
+      height: 30px;
+      background: var(--panel);
+      color: var(--ink);
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      padding: 0 10px;
+      font-size: 13px;
+   }
+
+   .rev2-ctxbar .rev2-ctx-edit {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 26px;
+      height: 26px;
+      padding: 0;
+      background: transparent;
+      border: 1px solid var(--bar-line);
+      border-radius: 7px;
+      color: var(--muted);
+      cursor: pointer;
+   }
+
+   .rev2-ctxbar .rev2-ctx-edit:hover {
+      color: var(--accent);
+      border-color: var(--accent);
+   }
+
+   .rev2-ctxbar .rev2-ctx-edit svg {
+      width: 15px;
+      height: 15px;
+   }
+
+   .rev2-stage {
+      display: flex;
+      height: calc(100% - 46px);
+   }
+
+   /* the sections are Angular component host elements (<rev2-palette> etc.); make
+     THEM the flex items so the panel pins to the right and the canvas fills the
+     middle. (The original HTML had no component wrappers.) */
+   rev2-toolbar {
+      display: block;
+      flex: 0 0 auto;
+   }
+
+   .rev2-stage>rev2-palette {
+      flex: 0 0 52px;
+      display: flex;
+      min-height: 0;
+   }
+
+   .rev2-stage>rev2-workspace {
+      flex: 1 1 auto;
+      min-width: 0;
+      display: flex;
+      min-height: 0;
+   }
+
+   .rev2-stage>rev2-panel {
+      flex: 0 0 var(--rpanel-w);
+      display: flex;
+      min-height: 0;
+   }
+
+   .rev2-stage>rev2-palette>.rev2-palette,
+   .rev2-stage>rev2-panel>.rev2-rpanel {
+      flex: 1 1 auto;
+   }
+
+   .rev2-palette {
+      width: 52px;
+      background: var(--panel);
+      border-right: 1px solid var(--line);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      padding: 8px 0;
+   }
+
+   .rev2-ptool {
+      width: 38px;
+      height: 38px;
+      border-radius: 9px;
+      border: 1px solid transparent;
+      background: transparent;
+      color: var(--muted);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      position: relative;
+   }
+
+   .rev2-ptool svg {
+      width: 19px;
+      height: 19px;
+   }
+
+   .rev2-ptool:hover {
+      background: var(--line-soft);
+      color: var(--ink);
+   }
+
+   .rev2-ptool.rev2-on {
+      background: var(--accent-soft);
+      color: var(--accent);
+      border-color: #cdd9ff;
+   }
+
+   .rev2-ptool.rev2-hide {
+      display: none;
+   }
+
+   .rev2-ptool .rev2-tip {
+      position: absolute;
+      left: 46px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: var(--ink);
+      color: #fff;
+      padding: 3px 7px;
+      border-radius: 5px;
+      font-size: 11px;
+      white-space: nowrap;
+      opacity: 0;
+      pointer-events: none;
+      transition: .12s;
+      z-index: 40;
+   }
+
+   .rev2-ptool:hover .rev2-tip {
+      opacity: 1;
+   }
+
+   .rev2-pdiv {
+      width: 26px;
+      height: 1px;
+      background: var(--line);
+      margin: 5px 0;
+   }
+
+   .rev2-workspace {
+      flex: 1;
+      overflow: auto;
+      position: relative;
+      background: radial-gradient(circle at 1px 1px, #d7dde7 1px, transparent 0) 0 0/22px 22px, var(--bg);
+   }
+
+   .rev2-canvas-wrap {
+      min-height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 26px;
+      padding: 70px 30px 90px;
+   }
+
+   .rev2-sheet-wrap {
+      position: relative;
+   }
+
+   .rev2-sheet {
+      background: #fff;
+      box-shadow: var(--shadow);
+      position: relative;
+      flex: none;
+      outline: 1px solid var(--line);
+      transform-origin: top center;
+   }
+
+   .rev2-sheet.rev2-grid::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      opacity: .5;
+      background: linear-gradient(to right, #e5eaf2 1px, transparent 1px) 0 0/20px 20px, linear-gradient(to bottom, #e5eaf2 1px, transparent 1px) 0 0/20px 20px;
+   }
+
+   .rev2-pagebadge {
+      position: absolute;
+      top: -22px;
+      left: 0;
+      font-size: 10.5px;
+      color: var(--muted);
+      font-weight: 600;
+      letter-spacing: .03em;
+   }
+
+   .rev2-marg {
+      position: absolute;
+      border: 1px dashed #c9d3e2;
+      pointer-events: none;
+   }
+
+   .rev2-de {
+      position: absolute;
+      cursor: move;
+      overflow: hidden;
+      user-select: none;
+      display: flex;
+   }
+
+   .rev2-de.rev2-sel {
+      outline: 1.5px solid var(--accent);
+      outline-offset: 0;
+      z-index: 5;
+   }
+
+   .rev2-de .rev2-rh {
+      position: absolute;
+      width: 10px;
+      height: 10px;
+      right: -5px;
+      bottom: -5px;
+      background: #fff;
+      border: 1.5px solid var(--accent);
+      border-radius: 2px;
+      cursor: nwse-resize;
+   }
+
+   .rev2-de-content {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      overflow: hidden;
+      line-height: 1.25;
+   }
+
+   table.rev2-rpt {
+      border-collapse: collapse;
+      width: 100%;
+      table-layout: fixed;
+   }
+
+   table.rev2-rpt td,
+   table.rev2-rpt th {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+   }
+
+   /* flow bands */
+   .rev2-band {
+      position: absolute;
+      left: 0;
+      right: 0;
+      border-bottom: 1px dashed var(--band-line);
+   }
+
+   .rev2-band.rev2-free {
+      background: repeating-linear-gradient(135deg, transparent, transparent 9px, rgba(47, 95, 224, .03) 9px, rgba(47, 95, 224, .03) 18px);
+   }
+
+   .rev2-band.rev2-selband {
+      outline: 1.5px solid var(--accent);
+      outline-offset: -1px;
+      z-index: 2;
+   }
+
+   .rev2-bandtag {
+      position: absolute;
+      left: 4px;
+      top: 2px;
+      font-size: 9.5px;
+      font-weight: 700;
+      letter-spacing: .04em;
+      color: #9aa6ba;
+      text-transform: uppercase;
+      pointer-events: none;
+      z-index: 3;
+   }
+
+   .rev2-bandtag.rev2-opt {
+      color: #b48a3a;
+   }
+
+   .rev2-rpanel {
+      width: var(--rpanel-w);
+      background: var(--panel);
+      border-left: 1px solid var(--line);
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+      height: 100%;
+   }
+
+   .rev2-rtabs {
+      display: flex;
+      border-bottom: 1px solid var(--line);
+      flex: none;
+   }
+
+   .rev2-rtab {
+      flex: 1;
+      padding: 11px 8px;
+      text-align: center;
+      font-weight: 600;
+      font-size: 12px;
+      color: var(--muted);
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+   }
+
+   .rev2-rtab.rev2-on {
+      color: var(--accent);
+      border-bottom-color: var(--accent);
+   }
+
+   .rev2-rbody {
+      flex: 1;
+      min-height: 0;
+      overflow-y: auto;
+   }
+
+   .rev2-rsec {
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--line-soft);
+   }
+
+   .rev2-rsec h4 {
+      margin: 0 0 9px;
+      font-size: 11px;
+      letter-spacing: .05em;
+      text-transform: uppercase;
+      color: var(--muted);
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+   }
+
+   .rev2-row {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 8px;
+      align-items: center;
+   }
+
+   .rev2-row:last-child {
+      margin-bottom: 0;
+   }
+
+   .rev2-fld {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      min-width: 0;
+   }
+
+   .rev2-fld label {
+      font-size: 10.5px;
+      color: var(--muted);
+      font-weight: 600;
+   }
+
+   input[type=text],
+   input[type=number],
+   textarea,
+   select.rev2-pp {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      padding: 6px 8px;
+      font-size: 12px;
+      background: #fff;
+      color: var(--ink);
+      font-family: inherit;
+   }
+
+   textarea {
+      resize: vertical;
+      min-height: 54px;
+      font-family: var(--mono);
+      font-size: 11.5px;
+      line-height: 1.5;
+   }
+
+   input:focus,
+   textarea:focus,
+   select:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-soft);
+   }
+
+   input[type=color] {
+      width: 34px;
+      height: 32px;
+      padding: 2px;
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      background: #fff;
+      cursor: pointer;
+   }
+
+   .rev2-btgrow {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 6px;
+   }
+
+   .rev2-tg {
+      height: 32px;
+      border: 1px solid var(--line);
+      background: #fff;
+      border-radius: 7px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--muted);
+      font-weight: 700;
+   }
+
+   .rev2-tg svg {
+      width: 15px;
+      height: 15px;
+   }
+
+   .rev2-tg.rev2-on {
+      background: var(--accent-soft);
+      border-color: #cdd9ff;
+      color: var(--accent);
+   }
+
+   .rev2-hint {
+      font-size: 11px;
+      color: var(--muted);
+      line-height: 1.5;
+   }
+
+   .rev2-empty {
+      padding: 34px 20px;
+      text-align: center;
+      color: var(--muted);
+   }
+
+   .rev2-empty svg {
+      width: 38px;
+      height: 38px;
+      opacity: .4;
+      margin-bottom: 10px;
+   }
+
+   .rev2-tree {
+      font-size: 12.5px;
+      padding: 8px 6px;
+   }
+
+   .rev2-tlabel {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 6px;
+      border-radius: 6px;
+      cursor: pointer;
+      white-space: nowrap;
+   }
+
+   .rev2-tlabel:hover {
+      background: var(--line-soft);
+   }
+
+   .rev2-tlabel .rev2-tw {
+      width: 14px;
+      color: var(--muted);
+      font-size: 10px;
+      display: inline-flex;
+      justify-content: center;
+   }
+
+   .rev2-tlabel .rev2-ti {
+      width: 15px;
+      height: 15px;
+      color: var(--muted);
+      flex: none;
+   }
+
+   .rev2-tlabel .rev2-tn {
+      font-weight: 600;
+      color: var(--ink);
+   }
+
+   .rev2-tlabel .rev2-tt {
+      margin-left: auto;
+      font-size: 10px;
+      color: var(--muted);
+      font-family: var(--mono);
+      background: var(--line-soft);
+      padding: 1px 6px;
+      border-radius: 5px;
+   }
+
+   .rev2-tleaf {
+      cursor: grab;
+   }
+
+   .rev2-tleaf .rev2-tn {
+      font-weight: 500;
+   }
+
+   .rev2-tchildren {
+      margin-left: 14px;
+      border-left: 1px solid var(--line-soft);
+      padding-left: 2px;
+   }
+
+   .rev2-arr {
+      color: var(--accent);
+      font-weight: 600;
+   }
+
+   .rev2-colcard {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 8px;
+      margin-bottom: 8px;
+      background: #fafbfd;
+   }
+
+   .rev2-colcard .rev2-row {
+      margin-bottom: 6px;
+   }
+
+   .rev2-smallbtn {
+      border: 1px solid var(--line);
+      background: #fff;
+      border-radius: 6px;
+      padding: 5px 8px;
+      font-size: 11px;
+      cursor: pointer;
+      color: var(--ink);
+      font-weight: 600;
+      display: inline-flex;
+      gap: 5px;
+      align-items: center;
+   }
+
+   .rev2-smallbtn:hover {
+      background: var(--line-soft);
+   }
+
+   .rev2-smallbtn.rev2-del {
+      color: var(--danger);
+   }
+
+   .rev2-smallbtn.rev2-add {
+      color: var(--accent);
+      border-color: #cdd9ff;
+      background: var(--accent-soft);
+   }
+
+   .rev2-codechip {
+      font-family: var(--mono);
+      font-size: 11px;
+      background: #f4f6fa;
+      border: 1px solid var(--line);
+      border-radius: 5px;
+      padding: 1px 5px;
+   }
+
+   .rev2-bandbtn {
+      display: flex;
+      width: 100%;
+      justify-content: space-between;
+      align-items: center;
+      border: 1px solid var(--line);
+      background: #fff;
+      border-radius: 7px;
+      padding: 7px 9px;
+      margin-bottom: 6px;
+      cursor: pointer;
+      font-size: 12px;
+   }
+
+   .rev2-bandbtn.rev2-on {
+      border-color: var(--accent);
+      background: var(--accent-soft);
+      color: var(--accent);
+      font-weight: 600;
+   }
+
+   .rev2-bandbtn .rev2-pill {
+      font-size: 10px;
+      color: var(--muted);
+      font-weight: 600;
+   }
+
+   .rev2-toggle {
+      width: 34px;
+      height: 18px;
+      border-radius: 10px;
+      background: #cdd5e1;
+      position: relative;
+      transition: .15s;
+      flex: none;
+   }
+
+   .rev2-toggle.rev2-on {
+      background: var(--accent);
+   }
+
+   .rev2-toggle::after {
+      content: "";
+      position: absolute;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: #fff;
+      top: 2px;
+      left: 2px;
+      transition: .15s;
+   }
+
+   .rev2-toggle.rev2-on::after {
+      left: 18px;
+   }
+
+   .rev2-toast {
+      position: fixed;
+      bottom: 18px;
+      left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      background: var(--ink);
+      color: #fff;
+      padding: 9px 16px;
+      border-radius: 9px;
+      font-size: 12.5px;
+      opacity: 0;
+      transition: .22s;
+      z-index: 1300;
+      box-shadow: var(--shadow);
+      pointer-events: none;
+   }
+
+   .rev2-toast.rev2-show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+   }
+
+   .rev2-pagenav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 4px;
+      padding: 8px 10px;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      box-shadow: var(--shadow);
+   }
+
+   .rev2-pchip {
+      display: flex;
+      align-items: center;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      overflow: hidden;
+      background: #fff;
+   }
+
+   .rev2-pchip.rev2-on {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px var(--accent-soft);
+   }
+
+   .rev2-pchip-lab {
+      border: none;
+      background: transparent;
+      padding: 6px 10px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--ink);
+      cursor: pointer;
+      display: flex;
+      gap: 6px;
+      align-items: center;
+   }
+
+   .rev2-pchip.rev2-on .rev2-pchip-lab {
+      color: var(--accent);
+   }
+
+   .rev2-pchip-lab .rev2-psz {
+      font-size: 10px;
+      color: var(--muted);
+      font-weight: 600;
+      background: var(--line-soft);
+      padding: 1px 5px;
+      border-radius: 4px;
+   }
+
+   .rev2-pchip-mini {
+      border: none;
+      border-left: 1px solid var(--line);
+      background: transparent;
+      width: 24px;
+      height: 30px;
+      cursor: pointer;
+      color: var(--muted);
+      font-size: 12px;
+   }
+
+   .rev2-pchip-mini:hover {
+      background: var(--line-soft);
+      color: var(--ink);
+   }
+
+   .rev2-pchip-mini.rev2-del:hover {
+      background: #fdeceb;
+      color: var(--danger);
+   }
+
+   .rev2-paddbtn {
+      border: 1px dashed #b9c4d6;
+      background: var(--accent-soft);
+      color: var(--accent);
+      border-radius: 8px;
+      padding: 7px 12px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+   }
+
+   .rev2-paddbtn:hover {
+      background: #dde7ff;
+   }
+
+   .rev2-tmenu {
+      position: absolute;
+      top: 38px;
+      left: 0;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      box-shadow: 0 12px 40px rgba(20, 30, 50, .22);
+      padding: 8px;
+      z-index: 120;
+      width: 300px;
+      max-height: 70vh;
+      overflow: auto;
+      color: var(--ink);
+   }
+
+   .rev2-tmenu h5 {
+      margin: 8px 8px 4px;
+      font-size: 10.5px;
+      letter-spacing: .05em;
+      text-transform: uppercase;
+      color: var(--muted);
+   }
+
+   .rev2-titem {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      padding: 8px 10px;
+      border-radius: 8px;
+      cursor: pointer;
+   }
+
+   .rev2-titem:hover {
+      background: var(--line-soft);
+   }
+
+   .rev2-titem .rev2-tic {
+      width: 30px;
+      height: 30px;
+      border-radius: 7px;
+      background: var(--accent-soft);
+      color: var(--accent);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex: none;
+   }
+
+   .rev2-titem .rev2-tic svg {
+      width: 17px;
+      height: 17px;
+   }
+
+   .rev2-titem .rev2-tt2 {
+      font-weight: 600;
+      font-size: 12.5px;
+   }
+
+   .rev2-titem .rev2-ts2 {
+      font-size: 11px;
+      color: var(--muted);
+   }
+}
+/* React host: the stage fills whatever the two top bars leave. */
+.report-engine-v2 .rev2-stage { flex: 1 1 auto; height: auto; min-height: 0; }
+.report-engine-v2 .rev2-stage > .rev2-palette { flex: 0 0 52px; }
+.report-engine-v2 .rev2-rpanel .ant-tabs { min-height: 0; }
+.report-engine-v2 .rev2-rpanel .ant-tabs-content-holder { overflow: auto; min-height: 0; }
+.report-engine-v2 .rev2-rpanel .rev2-sec { padding: 12px 14px; border-bottom: 1px solid var(--line-soft); }
+.report-engine-v2 .rev2-rpanel .rev2-sec > h4 { font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin-bottom: 8px; }
+.report-engine-v2 .rev2-rpanel .rev2-grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.report-engine-v2 .rev2-rpanel .rev2-grid4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+.report-engine-v2 .rev2-rpanel label.rev2-f { display: flex; flex-direction: column; gap: 3px; font-size: 11px; color: var(--muted); }
+.report-engine-v2 .rev2-rpanel .rev2-card { border: 1px solid var(--line); border-radius: 8px; padding: 8px; margin-bottom: 8px; background: #fbfcfd; }
+.report-engine-v2 .rev2-rpanel .rev2-bandrow { display: flex; align-items: center; gap: 6px; padding: 5px 8px; border-radius: 6px; cursor: pointer; }
+.report-engine-v2 .rev2-rpanel .rev2-bandrow:hover, .report-engine-v2 .rev2-rpanel .rev2-bandrow.rev2-on { background: var(--accent-soft); }
+.report-engine-v2 .rev2-rpanel .rev2-pill { margin-left: auto; font-size: 10px; color: var(--muted); }
+.report-engine-v2 .rev2-psheet-preview { position: relative; background: #fff; overflow: hidden; box-shadow: var(--shadow); transform-origin: top center; }
+.report-engine-v2 .rev2-psheet-preview table.rev2-rpt { border-collapse: collapse; width: 100%; table-layout: fixed; }
+.report-engine-v2 .rev2-psheet-preview table.rev2-rpt td, .report-engine-v2 .rev2-psheet-preview table.rev2-rpt th { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.report-engine-v2 .rev2-psheet-preview table.rev2-rpt.rev2-rpt-wrap td, .report-engine-v2 .rev2-psheet-preview table.rev2-rpt.rev2-rpt-wrap th { white-space: normal; overflow: visible; text-overflow: clip; word-break: break-word; overflow-wrap: anywhere; }

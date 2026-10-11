@@ -1,0 +1,30 @@
+@host = http://localhost:5111
+@token = paste-access-token-here
+
+GET {{host}}/health
+
+### Create a tenant
+POST {{host}}/api/platform/tenants
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "Acme Relocations",
+  "slug": "acme-relocations",
+  "contactEmail": "ops@acme.test",
+  "phone": "+91 90000 00000",
+  "address": "Bengaluru"
+}
+
+### Login as system administrator (development bootstrap account)
+POST {{host}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "admin@movers.local",
+  "password": "ChangeMe123!"
+}
+
+### Resolve current tenant from the signed token
+GET {{host}}/api/tenant/current
+Authorization: Bearer {{token}}

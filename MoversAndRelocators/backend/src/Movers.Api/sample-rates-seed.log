@@ -1,0 +1,697 @@
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (28ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT 1
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (97ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      
+      IF EXISTS
+          (SELECT *
+           FROM [sys].[objects] o
+           WHERE [o].[type] = 'U'
+           AND [o].[is_ms_shipped] = 0
+           AND NOT EXISTS (SELECT *
+               FROM [sys].[extended_properties] AS [ep]
+               WHERE [ep].[major_id] = [o].[object_id]
+                   AND [ep].[minor_id] = 0
+                   AND [ep].[class] = 1
+                   AND [ep].[name] = N'microsoft_database_tools_support'
+          )
+      )
+      SELECT 1 ELSE SELECT 0
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (3ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      IF OBJECT_ID(N'dbo.BusinessMasters', N'U') IS NULL
+BEGIN
+ CREATE TABLE [BusinessMasters] ([SerialNo] int IDENTITY PRIMARY KEY, [Id] uniqueidentifier NOT NULL, [TenantId] uniqueidentifier NOT NULL, [Kind] nvarchar(30) NOT NULL, [Code] nvarchar(40) NOT NULL, [Payload] nvarchar(max) NOT NULL);
+ CREATE UNIQUE INDEX [IX_BusinessMasters_Id] ON [BusinessMasters] ([Id]);
+ CREATE UNIQUE INDEX [IX_BusinessMasters_TenantId_Kind_Code] ON [BusinessMasters] ([TenantId],[Kind],[Code]);
+END
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (2ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      IF OBJECT_ID(N'dbo.WarehouseReceipts', N'U') IS NULL
+BEGIN
+ CREATE TABLE [WarehouseReceipts] ([SerialNo] int IDENTITY PRIMARY KEY, [Id] uniqueidentifier NOT NULL, [TenantId] uniqueidentifier NOT NULL, [RequestId] uniqueidentifier NOT NULL, [RequestHash] nvarchar(64) NOT NULL, [ReceiptNumber] nvarchar(40) NOT NULL, [Source] nvarchar(16) NOT NULL, [WarehouseId] uniqueidentifier NOT NULL, [PickupId] uniqueidentifier NULL, [ReceivedAtUtc] datetimeoffset NOT NULL, [ActorId] uniqueidentifier NOT NULL, [SnapshotJson] nvarchar(max) NOT NULL);
+ CREATE UNIQUE INDEX [IX_WarehouseReceipts_Id] ON [WarehouseReceipts] ([Id]);
+ CREATE UNIQUE INDEX [IX_WarehouseReceipts_TenantId_RequestId] ON [WarehouseReceipts] ([TenantId],[RequestId]);
+ CREATE UNIQUE INDEX [IX_WarehouseReceipts_TenantId_ReceiptNumber] ON [WarehouseReceipts] ([TenantId],[ReceiptNumber]);
+END
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (2ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      IF OBJECT_ID(N'dbo.WarehouseAttachments', N'U') IS NULL
+BEGIN
+ CREATE TABLE [WarehouseAttachments] ([SerialNo] int IDENTITY PRIMARY KEY, [Id] uniqueidentifier NOT NULL, [TenantId] uniqueidentifier NOT NULL, [ReceiptId] uniqueidentifier NOT NULL, [OriginalFileName] nvarchar(180) NOT NULL, [ContentType] nvarchar(150) NOT NULL, [DeclaredSizeBytes] bigint NOT NULL, [StoredSizeBytes] bigint NULL, [ObjectKey] nvarchar(700) NOT NULL, [UploadedBy] nvarchar(320) NOT NULL, [IsUploaded] bit NOT NULL, [IsDeleted] bit NOT NULL, [UploadedAtUtc] datetimeoffset NULL);
+ CREATE UNIQUE INDEX [IX_WarehouseAttachments_Id] ON [WarehouseAttachments] ([Id]);
+ CREATE INDEX [IX_WarehouseAttachments_TenantId_ReceiptId] ON [WarehouseAttachments] ([TenantId],[ReceiptId]);
+END
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (5ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      IF OBJECT_ID(N'dbo.TransportJobs', N'U') IS NULL
+BEGIN
+ CREATE TABLE [TransportJobs] ([SerialNo] int IDENTITY PRIMARY KEY, [Id] uniqueidentifier NOT NULL UNIQUE, [TenantId] uniqueidentifier NOT NULL, [JobNumber] nvarchar(40) NOT NULL, [RequestId] uniqueidentifier NOT NULL, [RequestHash] nvarchar(64) NOT NULL, [DetailsJson] nvarchar(max) NOT NULL, [Status] nvarchar(20) NOT NULL, [Version] uniqueidentifier NOT NULL, [CreatedAtUtc] datetimeoffset NOT NULL, [DepartedAtUtc] datetimeoffset NULL, [ArrivedAtUtc] datetimeoffset NULL);
+ CREATE UNIQUE INDEX [IX_TransportJobs_TenantId_JobNumber] ON [TransportJobs] ([TenantId],[JobNumber]);
+ CREATE UNIQUE INDEX [IX_TransportJobs_TenantId_RequestId] ON [TransportJobs] ([TenantId],[RequestId]);
+END
+IF OBJECT_ID(N'dbo.JobCargo', N'U') IS NULL
+BEGIN
+ CREATE TABLE [JobCargo] ([SerialNo] int IDENTITY PRIMARY KEY, [Id] uniqueidentifier NOT NULL UNIQUE, [TenantId] uniqueidentifier NOT NULL, [JobId] uniqueidentifier NOT NULL, [BoxId] uniqueidentifier NOT NULL, [PickupId] uniqueidentifier NULL, [IsActive] bit NOT NULL, [SnapshotJson] nvarchar(max) NOT NULL, [LoadedBy] nvarchar(160) NOT NULL, [LoadedAtUtc] datetimeoffset NOT NULL, [UnloadedAtUtc] datetimeoffset NULL, [UnloadedBy] nvarchar(320) NULL);
+ CREATE UNIQUE INDEX [IX_JobCargo_TenantId_BoxId] ON [JobCargo] ([TenantId],[BoxId]) WHERE [IsActive] = 1;
+ CREATE INDEX [IX_JobCargo_TenantId_JobId] ON [JobCargo] ([TenantId],[JobId]);
+END
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (3ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      IF OBJECT_ID(N'dbo.BillingRecords',N'U') IS NULL
+BEGIN
+ CREATE TABLE [BillingRecords] ([SerialNo] int IDENTITY PRIMARY KEY,[Id] uniqueidentifier NOT NULL UNIQUE,[TenantId] uniqueidentifier NOT NULL,[Kind] nvarchar(20) NOT NULL,[Number] nvarchar(40) NOT NULL,[RequestId] uniqueidentifier NOT NULL,[RequestHash] nvarchar(64) NOT NULL,[Payload] nvarchar(max) NOT NULL,[Version] uniqueidentifier NOT NULL,[JournalId] uniqueidentifier NULL);
+ CREATE UNIQUE INDEX [IX_BillingRecords_TenantId_Kind_Number] ON [BillingRecords] ([TenantId],[Kind],[Number]);
+ CREATE UNIQUE INDEX [IX_BillingRecords_TenantId_Kind_RequestId] ON [BillingRecords] ([TenantId],[Kind],[RequestId]);
+END
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (2ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      IF COL_LENGTH(N'dbo.SalesLeadUploadLinks', N'RequestedItems') IS NULL ALTER TABLE [dbo].[SalesLeadUploadLinks] ADD [RequestedItems] nvarchar(max) NULL;
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      IF COL_LENGTH(N'dbo.SalesLeadUploadLinks', N'Description') IS NULL ALTER TABLE [dbo].[SalesLeadUploadLinks] ADD [Description] nvarchar(max) NULL;
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      IF COL_LENGTH(N'dbo.SalesLeadUploadLinks', N'CustomerItems') IS NULL ALTER TABLE [dbo].[SalesLeadUploadLinks] ADD [CustomerItems] nvarchar(max) NULL;
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      IF COL_LENGTH(N'dbo.SalesLeadUploadLinks', N'CustomerDescription') IS NULL ALTER TABLE [dbo].[SalesLeadUploadLinks] ADD [CustomerDescription] nvarchar(max) NULL;
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (2ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      IF COL_LENGTH(N'dbo.SalesLeadAttachments', N'ExtractionJson') IS NULL ALTER TABLE [dbo].[SalesLeadAttachments] ADD [ExtractionJson] nvarchar(max) NULL;
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (2ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      IF COL_LENGTH(N'dbo.Quotations', N'RevisedFromNumber') IS NULL ALTER TABLE [dbo].[Quotations] ADD [RevisedFromNumber] nvarchar(max) NULL;
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      IF COL_LENGTH(N'dbo.Quotations', N'RevisionReason') IS NULL ALTER TABLE [dbo].[Quotations] ADD [RevisionReason] nvarchar(max) NULL;
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (3ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      IF COL_LENGTH(N'dbo.Surveys', N'CustomerChangeRequestJson') IS NULL ALTER TABLE [dbo].[Surveys] ADD [CustomerChangeRequestJson] nvarchar(max) NULL;
+IF COL_LENGTH(N'dbo.Surveys', N'CustomerChangeRequestedAtUtc') IS NULL ALTER TABLE [dbo].[Surveys] ADD [CustomerChangeRequestedAtUtc] datetimeoffset NULL;
+IF OBJECT_ID(N'dbo.SurveyAttachments', N'U') IS NULL
+BEGIN
+    CREATE TABLE [dbo].[SurveyAttachments] ([SerialNo] INT IDENTITY(1,1) NOT NULL CONSTRAINT [PK_SurveyAttachments] PRIMARY KEY, [Id] UNIQUEIDENTIFIER NOT NULL, [TenantId] UNIQUEIDENTIFIER NOT NULL, [SurveyId] UNIQUEIDENTIFIER NOT NULL, [Source] NVARCHAR(20) NOT NULL, [UploadedBy] NVARCHAR(160) NOT NULL, [OriginalFileName] NVARCHAR(255) NOT NULL, [ContentType] NVARCHAR(150) NOT NULL, [DeclaredSizeBytes] BIGINT NOT NULL, [StoredSizeBytes] BIGINT NULL, [S3ObjectKey] NVARCHAR(700) NOT NULL, [IsUploaded] BIT NOT NULL, [CreatedAtUtc] DATETIMEOFFSET NOT NULL, [UploadedAtUtc] DATETIMEOFFSET NULL,
+        CONSTRAINT [FK_SurveyAttachments_Tenants] FOREIGN KEY ([TenantId]) REFERENCES [dbo].[Tenants]([Id]), CONSTRAINT [FK_SurveyAttachments_Surveys] FOREIGN KEY ([SurveyId]) REFERENCES [dbo].[Surveys]([Id]) ON DELETE CASCADE);
+    CREATE UNIQUE INDEX [IX_SurveyAttachments_Id] ON [dbo].[SurveyAttachments]([Id]);
+    CREATE INDEX [IX_SurveyAttachments_SurveyId_SerialNo] ON [dbo].[SurveyAttachments]([SurveyId],[SerialNo]);
+    CREATE INDEX [IX_SurveyAttachments_TenantId] ON [dbo].[SurveyAttachments]([TenantId]);
+END
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (6ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      IF COL_LENGTH(N'dbo.Surveys', N'ConductedByEmployeeId') IS NULL ALTER TABLE [dbo].[Surveys] ADD [ConductedByEmployeeId] UNIQUEIDENTIFIER NULL CONSTRAINT [FK_Surveys_Employees_ConductedBy] FOREIGN KEY REFERENCES [dbo].[Employees]([Id]);
+IF COL_LENGTH(N'dbo.Surveys', N'DistanceKm') IS NULL ALTER TABLE [dbo].[Surveys] ADD [DistanceKm] DECIMAL(10,2) NULL;
+IF COL_LENGTH(N'dbo.Surveys', N'IsPaused') IS NULL ALTER TABLE [dbo].[Surveys] ADD [IsPaused] BIT NOT NULL CONSTRAINT [DF_Surveys_IsPaused] DEFAULT(0);
+IF OBJECT_ID(N'dbo.SurveyTimeEvents', N'U') IS NULL
+BEGIN
+    CREATE TABLE [dbo].[SurveyTimeEvents] ([SerialNo] INT IDENTITY(1,1) NOT NULL CONSTRAINT [PK_SurveyTimeEvents] PRIMARY KEY, [Id] UNIQUEIDENTIFIER NOT NULL, [TenantId] UNIQUEIDENTIFIER NOT NULL, [SurveyId] UNIQUEIDENTIFIER NOT NULL, [Type] NVARCHAR(20) NOT NULL, [OccurredAtUtc] DATETIMEOFFSET NOT NULL, [Reason] NVARCHAR(500) NULL, [RecordedBy] NVARCHAR(254) NOT NULL,
+        CONSTRAINT [FK_SurveyTimeEvents_Tenants] FOREIGN KEY ([TenantId]) REFERENCES [dbo].[Tenants]([Id]), CONSTRAINT [FK_SurveyTimeEvents_Surveys] FOREIGN KEY ([SurveyId]) REFERENCES [dbo].[Surveys]([Id]) ON DELETE CASCADE);
+    CREATE UNIQUE INDEX [IX_SurveyTimeEvents_Id] ON [dbo].[SurveyTimeEvents]([Id]);
+    CREATE INDEX [IX_SurveyTimeEvents_SurveyId_SerialNo] ON [dbo].[SurveyTimeEvents]([SurveyId],[SerialNo]);
+    CREATE INDEX [IX_SurveyTimeEvents_TenantId] ON [dbo].[SurveyTimeEvents]([TenantId]);
+END
+IF OBJECT_ID(N'dbo.SurveyExpenses', N'U') IS NULL
+BEGIN
+    CREATE TABLE [dbo].[SurveyExpenses] ([SerialNo] INT IDENTITY(1,1) NOT NULL CONSTRAINT [PK_SurveyExpenses] PRIMARY KEY, [Id] UNIQUEIDENTIFIER NOT NULL, [TenantId] UNIQUEIDENTIFIER NOT NULL, [SurveyId] UNIQUEIDENTIFIER NOT NULL, [Category] NVARCHAR(30) NOT NULL, [Amount] DECIMAL(18,2) NOT NULL, [Currency] NVARCHAR(3) NOT NULL, [IncurredAtUtc] DATETIMEOFFSET NOT NULL, [PaidByEmployeeId] UNIQUEIDENTIFIER NULL, [Notes] NVARCHAR(500) NULL, [CreatedAtUtc] DATETIMEOFFSET NOT NULL,
+        CONSTRAINT [FK_SurveyExpenses_Tenants] FOREIGN KEY ([TenantId]) REFERENCES [dbo].[Tenants]([Id]), CONSTRAINT [FK_SurveyExpenses_Surveys] FOREIGN KEY ([SurveyId]) REFERENCES [dbo].[Surveys]([Id]) ON DELETE CASCADE, CONSTRAINT [FK_SurveyExpenses_Employees] FOREIGN KEY ([PaidByEmployeeId]) REFERENCES [dbo].[Employees]([Id]));
+    CREATE UNIQUE INDEX [IX_SurveyExpenses_Id] ON [dbo].[SurveyExpenses]([Id]);
+    CREATE INDEX [IX_SurveyExpenses_SurveyId_SerialNo] ON [dbo].[SurveyExpenses]([SurveyId],[SerialNo]);
+    CREATE INDEX [IX_SurveyExpenses_TenantId] ON [dbo].[SurveyExpenses]([TenantId]);
+END
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (5ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      IF OBJECT_ID(N'dbo.Warehouses', N'U') IS NULL
+BEGIN
+    CREATE TABLE [dbo].[Warehouses] ([SerialNo] INT IDENTITY(1,1) NOT NULL CONSTRAINT [PK_Warehouses] PRIMARY KEY, [Id] UNIQUEIDENTIFIER NOT NULL, [TenantId] UNIQUEIDENTIFIER NOT NULL, [Code] NVARCHAR(40) NOT NULL, [Name] NVARCHAR(160) NOT NULL, [Address] NVARCHAR(500) NULL, [IsActive] BIT NOT NULL,
+        CONSTRAINT [FK_Warehouses_Tenants] FOREIGN KEY ([TenantId]) REFERENCES [dbo].[Tenants]([Id]));
+    CREATE UNIQUE INDEX [IX_Warehouses_Id] ON [dbo].[Warehouses]([Id]);
+    CREATE UNIQUE INDEX [IX_Warehouses_TenantId_Code] ON [dbo].[Warehouses]([TenantId],[Code]);
+END
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (14ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      
+IF COL_LENGTH(N'dbo.Pickups', N'SalesLeadId') IS NULL ALTER TABLE [dbo].[Pickups] ADD [SalesLeadId] UNIQUEIDENTIFIER NULL CONSTRAINT [FK_Pickups_SalesLeads] FOREIGN KEY REFERENCES [dbo].[SalesLeads]([Id]);
+IF COL_LENGTH(N'dbo.Pickups', N'StartedAtUtc') IS NULL ALTER TABLE [dbo].[Pickups] ADD [StartedAtUtc] DATETIMEOFFSET NULL;
+IF COL_LENGTH(N'dbo.Pickups', N'EndedAtUtc') IS NULL ALTER TABLE [dbo].[Pickups] ADD [EndedAtUtc] DATETIMEOFFSET NULL;
+IF COL_LENGTH(N'dbo.Pickups', N'IsPaused') IS NULL ALTER TABLE [dbo].[Pickups] ADD [IsPaused] BIT NOT NULL CONSTRAINT [DF_Pickups_IsPaused] DEFAULT(0);
+IF COL_LENGTH(N'dbo.Pickups', N'DistanceKm') IS NULL ALTER TABLE [dbo].[Pickups] ADD [DistanceKm] DECIMAL(10,2) NULL;
+IF COL_LENGTH(N'dbo.PickupPackages', N'RoomName') IS NULL ALTER TABLE [dbo].[PickupPackages] ADD [RoomName] NVARCHAR(120) NULL;
+IF COL_LENGTH(N'dbo.PickupPackages', N'IsFragile') IS NULL ALTER TABLE [dbo].[PickupPackages] ADD [IsFragile] BIT NOT NULL CONSTRAINT [DF_PickupPackages_IsFragile] DEFAULT(0);
+IF COL_LENGTH(N'dbo.PickupPackageItems', N'RoomName') IS NULL ALTER TABLE [dbo].[PickupPackageItems] ADD [RoomName] NVARCHAR(120) NULL;
+IF COL_LENGTH(N'dbo.PickupPackageItems', N'HouseholdItemId') IS NULL ALTER TABLE [dbo].[PickupPackageItems] ADD [HouseholdItemId] UNIQUEIDENTIFIER NULL;
+IF COL_LENGTH(N'dbo.PickupMaterialUsages', N'IsBoxRecipe') IS NULL ALTER TABLE [dbo].[PickupMaterialUsages] ADD [IsBoxRecipe] BIT NOT NULL CONSTRAINT [DF_PickupMaterialUsages_IsBoxRecipe] DEFAULT(0);
+IF COL_LENGTH(N'dbo.PackageHandovers', N'WarehouseId') IS NULL ALTER TABLE [dbo].[PackageHandovers] ADD [WarehouseId] UNIQUEIDENTIFIER NULL CONSTRAINT [FK_PackageHandovers_Warehouses] FOREIGN KEY REFERENCES [dbo].[Warehouses]([Id]);
+IF OBJECT_ID(N'dbo.PickupTimeEvents', N'U') IS NULL
+BEGIN
+    CREATE TABLE [dbo].[PickupTimeEvents] ([SerialNo] INT IDENTITY(1,1) NOT NULL CONSTRAINT [PK_PickupTimeEvents] PRIMARY KEY, [Id] UNIQUEIDENTIFIER NOT NULL, [TenantId] UNIQUEIDENTIFIER NOT NULL, [PickupId] UNIQUEIDENTIFIER NOT NULL, [Type] NVARCHAR(20) NOT NULL, [OccurredAtUtc] DATETIMEOFFSET NOT NULL, [Reason] NVARCHAR(500) NULL, [RecordedBy] NVARCHAR(254) NOT NULL,
+        CONSTRAINT [FK_PickupTimeEvents_Tenants] FOREIGN KEY ([TenantId]) REFERENCES [dbo].[Tenants]([Id]), CONSTRAINT [FK_PickupTimeEvents_Pickups] FOREIGN KEY ([PickupId]) REFERENCES [dbo].[Pickups]([Id]) ON DELETE CASCADE);
+    CREATE UNIQUE INDEX [IX_PickupTimeEvents_Id] ON [dbo].[PickupTimeEvents]([Id]);
+    CREATE INDEX [IX_PickupTimeEvents_PickupId_SerialNo] ON [dbo].[PickupTimeEvents]([PickupId],[SerialNo]);
+    CREATE INDEX [IX_PickupTimeEvents_TenantId] ON [dbo].[PickupTimeEvents]([TenantId]);
+END
+IF OBJECT_ID(N'dbo.PickupExpenses', N'U') IS NULL
+BEGIN
+    CREATE TABLE [dbo].[PickupExpenses] ([SerialNo] INT IDENTITY(1,1) NOT NULL CONSTRAINT [PK_PickupExpenses] PRIMARY KEY, [Id] UNIQUEIDENTIFIER NOT NULL, [TenantId] UNIQUEIDENTIFIER NOT NULL, [PickupId] UNIQUEIDENTIFIER NOT NULL, [Category] NVARCHAR(30) NOT NULL, [Amount] DECIMAL(18,2) NOT NULL, [Currency] NVARCHAR(3) NOT NULL, [IncurredAtUtc] DATETIMEOFFSET NOT NULL, [PaidByEmployeeId] UNIQUEIDENTIFIER NULL, [Notes] NVARCHAR(500) NULL, [CreatedAtUtc] DATETIMEOFFSET NOT NULL,
+        CONSTRAINT [FK_PickupExpenses_Tenants] FOREIGN KEY ([TenantId]) REFERENCES [dbo].[Tenants]([Id]), CONSTRAINT [FK_PickupExpenses_Pickups] FOREIGN KEY ([PickupId]) REFERENCES [dbo].[Pickups]([Id]) ON DELETE CASCADE, CONSTRAINT [FK_PickupExpenses_Employees] FOREIGN KEY ([PaidByEmployeeId]) REFERENCES [dbo].[Employees]([Id]));
+    CREATE UNIQUE INDEX [IX_PickupExpenses_Id] ON [dbo].[PickupExpenses]([Id]);
+    CREATE INDEX [IX_PickupExpenses_PickupId_SerialNo] ON [dbo].[PickupExpenses]([PickupId],[SerialNo]);
+    CREATE INDEX [IX_PickupExpenses_TenantId] ON [dbo].[PickupExpenses]([TenantId]);
+END
+IF OBJECT_ID(N'dbo.PickupAttachments', N'U') IS NULL
+BEGIN
+    CREATE TABLE [dbo].[PickupAttachments] ([SerialNo] INT IDENTITY(1,1) NOT NULL CONSTRAINT [PK_PickupAttachments] PRIMARY KEY, [Id] UNIQUEIDENTIFIER NOT NULL, [TenantId] UNIQUEIDENTIFIER NOT NULL, [PickupId] UNIQUEIDENTIFIER NOT NULL, [Stage] NVARCHAR(20) NOT NULL, [RoomName] NVARCHAR(120) NULL, [UploadedBy] NVARCHAR(254) NOT NULL, [OriginalFileName] NVARCHAR(255) NOT NULL, [ContentType] NVARCHAR(150) NOT NULL, [DeclaredSizeBytes] BIGINT NOT NULL, [StoredSizeBytes] BIGINT NULL, [S3ObjectKey] NVARCHAR(700) NOT NULL, [IsUploaded] BIT NOT NULL, [CreatedAtUtc] DATETIMEOFFSET NOT NULL, [UploadedAtUtc] DATETIMEOFFSET NULL,
+        CONSTRAINT [FK_PickupAttachments_Tenants] FOREIGN KEY ([TenantId]) REFERENCES [dbo].[Tenants]([Id]), CONSTRAINT [FK_PickupAttachments_Pickups] FOREIGN KEY ([PickupId]) REFERENCES [dbo].[Pickups]([Id]) ON DELETE CASCADE);
+    CREATE UNIQUE INDEX [IX_PickupAttachments_Id] ON [dbo].[PickupAttachments]([Id]);
+    CREATE INDEX [IX_PickupAttachments_PickupId_SerialNo] ON [dbo].[PickupAttachments]([PickupId],[SerialNo]);
+    CREATE INDEX [IX_PickupAttachments_TenantId] ON [dbo].[PickupAttachments]([TenantId]);
+END
+IF OBJECT_ID(N'dbo.PickupSignoffs', N'U') IS NULL
+BEGIN
+    CREATE TABLE [dbo].[PickupSignoffs] ([SerialNo] INT IDENTITY(1,1) NOT NULL CONSTRAINT [PK_PickupSignoffs] PRIMARY KEY, [Id] UNIQUEIDENTIFIER NOT NULL, [TenantId] UNIQUEIDENTIFIER NOT NULL, [PickupId] UNIQUEIDENTIFIER NOT NULL, [Party] NVARCHAR(20) NOT NULL, [SignerName] NVARCHAR(160) NOT NULL, [EmployeeId] UNIQUEIDENTIFIER NULL, [Statement] NVARCHAR(1000) NOT NULL, [Remarks] NVARCHAR(1000) NULL, [SignaturePng] NVARCHAR(MAX) NOT NULL, [SignedAtUtc] DATETIMEOFFSET NOT NULL, [RecordedBy] NVARCHAR(254) NOT NULL,
+        CONSTRAINT [FK_PickupSignoffs_Tenants] FOREIGN KEY ([TenantId]) REFERENCES [dbo].[Tenants]([Id]), CONSTRAINT [FK_PickupSignoffs_Pickups] FOREIGN KEY ([PickupId]) REFERENCES [dbo].[Pickups]([Id]) ON DELETE CASCADE, CONSTRAINT [FK_PickupSignoffs_Employees] FOREIGN KEY ([EmployeeId]) REFERENCES [dbo].[Employees]([Id]));
+    CREATE UNIQUE INDEX [IX_PickupSignoffs_Id] ON [dbo].[PickupSignoffs]([Id]);
+    CREATE INDEX [IX_PickupSignoffs_PickupId_SerialNo] ON [dbo].[PickupSignoffs]([PickupId],[SerialNo]);
+    CREATE INDEX [IX_PickupSignoffs_TenantId] ON [dbo].[PickupSignoffs]([TenantId]);
+END
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (78ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      IF EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA=N'dbo' AND TABLE_NAME=N'PickupExpenses' AND COLUMN_NAME=N'Amount' AND NUMERIC_SCALE<4) ALTER TABLE [dbo].[PickupExpenses] ALTER COLUMN [Amount] decimal(20,4) NOT NULL;
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (51ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      IF EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA=N'dbo' AND TABLE_NAME=N'PickupMaterialUsages' AND COLUMN_NAME=N'UnitCost' AND NUMERIC_SCALE<4) ALTER TABLE [dbo].[PickupMaterialUsages] ALTER COLUMN [UnitCost] decimal(20,4) NOT NULL;
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (46ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      IF EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA=N'dbo' AND TABLE_NAME=N'PickupTransactions' AND COLUMN_NAME=N'Amount' AND NUMERIC_SCALE<4) ALTER TABLE [dbo].[PickupTransactions] ALTER COLUMN [Amount] decimal(20,4) NOT NULL;
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (44ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      IF EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA=N'dbo' AND TABLE_NAME=N'ChargeMasters' AND COLUMN_NAME=N'DefaultRate' AND NUMERIC_SCALE<4) ALTER TABLE [dbo].[ChargeMasters] ALTER COLUMN [DefaultRate] decimal(20,4) NOT NULL;
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (51ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      IF EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA=N'dbo' AND TABLE_NAME=N'Quotations' AND COLUMN_NAME=N'DiscountTotal' AND NUMERIC_SCALE<4) ALTER TABLE [dbo].[Quotations] ALTER COLUMN [DiscountTotal] decimal(20,4) NOT NULL;
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (48ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      IF EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA=N'dbo' AND TABLE_NAME=N'Quotations' AND COLUMN_NAME=N'GrandTotal' AND NUMERIC_SCALE<4) ALTER TABLE [dbo].[Quotations] ALTER COLUMN [GrandTotal] decimal(20,4) NOT NULL;
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (48ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      IF EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA=N'dbo' AND TABLE_NAME=N'Quotations' AND COLUMN_NAME=N'Subtotal' AND NUMERIC_SCALE<4) ALTER TABLE [dbo].[Quotations] ALTER COLUMN [Subtotal] decimal(20,4) NOT NULL;
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (48ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      IF EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA=N'dbo' AND TABLE_NAME=N'Quotations' AND COLUMN_NAME=N'TaxTotal' AND NUMERIC_SCALE<4) ALTER TABLE [dbo].[Quotations] ALTER COLUMN [TaxTotal] decimal(20,4) NOT NULL;
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (46ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      IF EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA=N'dbo' AND TABLE_NAME=N'QuotationLines' AND COLUMN_NAME=N'DiscountAmount' AND NUMERIC_SCALE<4) ALTER TABLE [dbo].[QuotationLines] ALTER COLUMN [DiscountAmount] decimal(20,4) NOT NULL;
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (51ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      IF EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA=N'dbo' AND TABLE_NAME=N'QuotationLines' AND COLUMN_NAME=N'LineTotal' AND NUMERIC_SCALE<4) ALTER TABLE [dbo].[QuotationLines] ALTER COLUMN [LineTotal] decimal(20,4) NOT NULL;
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (49ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      IF EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA=N'dbo' AND TABLE_NAME=N'QuotationLines' AND COLUMN_NAME=N'Rate' AND NUMERIC_SCALE<4) ALTER TABLE [dbo].[QuotationLines] ALTER COLUMN [Rate] decimal(20,4) NOT NULL;
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (48ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      IF EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA=N'dbo' AND TABLE_NAME=N'QuotationLines' AND COLUMN_NAME=N'TaxAmount' AND NUMERIC_SCALE<4) ALTER TABLE [dbo].[QuotationLines] ALTER COLUMN [TaxAmount] decimal(20,4) NOT NULL;
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (50ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      IF EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA=N'dbo' AND TABLE_NAME=N'QuotationLineTaxes' AND COLUMN_NAME=N'Amount' AND NUMERIC_SCALE<4) ALTER TABLE [dbo].[QuotationLineTaxes] ALTER COLUMN [Amount] decimal(20,4) NOT NULL;
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (49ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      IF EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA=N'dbo' AND TABLE_NAME=N'QuotationLineTaxes' AND COLUMN_NAME=N'TaxableBase' AND NUMERIC_SCALE<4) ALTER TABLE [dbo].[QuotationLineTaxes] ALTER COLUMN [TaxableBase] decimal(20,4) NOT NULL;
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (46ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      IF EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA=N'dbo' AND TABLE_NAME=N'PackingMaterials' AND COLUMN_NAME=N'CurrentUnitCost' AND NUMERIC_SCALE<4) ALTER TABLE [dbo].[PackingMaterials] ALTER COLUMN [CurrentUnitCost] decimal(20,4) NOT NULL;
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (48ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      IF EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA=N'dbo' AND TABLE_NAME=N'SurveyExpenses' AND COLUMN_NAME=N'Amount' AND NUMERIC_SCALE<4) ALTER TABLE [dbo].[SurveyExpenses] ALTER COLUMN [Amount] decimal(20,4) NOT NULL;
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      IF OBJECT_ID(N'dbo.number_counters', N'U') IS NULL CREATE TABLE dbo.number_counters (tenant_id varchar(36) NOT NULL, series varchar(32) NOT NULL, next_value bigint NOT NULL, CONSTRAINT PK_number_counters PRIMARY KEY (tenant_id, series));
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (19ms) [Parameters=[@__definition_Item1_0='?' (Size = 120)], CommandType='Text', CommandTimeout='30']
+      SELECT CASE
+          WHEN EXISTS (
+              SELECT 1
+              FROM [Permissions] AS [p]
+              WHERE [p].[Code] = @__definition_Item1_0) THEN CAST(1 AS bit)
+          ELSE CAST(0 AS bit)
+      END
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@__definition_Item1_0='?' (Size = 120)], CommandType='Text', CommandTimeout='30']
+      SELECT CASE
+          WHEN EXISTS (
+              SELECT 1
+              FROM [Permissions] AS [p]
+              WHERE [p].[Code] = @__definition_Item1_0) THEN CAST(1 AS bit)
+          ELSE CAST(0 AS bit)
+      END
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@__definition_Item1_0='?' (Size = 120)], CommandType='Text', CommandTimeout='30']
+      SELECT CASE
+          WHEN EXISTS (
+              SELECT 1
+              FROM [Permissions] AS [p]
+              WHERE [p].[Code] = @__definition_Item1_0) THEN CAST(1 AS bit)
+          ELSE CAST(0 AS bit)
+      END
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@__definition_Item1_0='?' (Size = 120)], CommandType='Text', CommandTimeout='30']
+      SELECT CASE
+          WHEN EXISTS (
+              SELECT 1
+              FROM [Permissions] AS [p]
+              WHERE [p].[Code] = @__definition_Item1_0) THEN CAST(1 AS bit)
+          ELSE CAST(0 AS bit)
+      END
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@__definition_Item1_0='?' (Size = 120)], CommandType='Text', CommandTimeout='30']
+      SELECT CASE
+          WHEN EXISTS (
+              SELECT 1
+              FROM [Permissions] AS [p]
+              WHERE [p].[Code] = @__definition_Item1_0) THEN CAST(1 AS bit)
+          ELSE CAST(0 AS bit)
+      END
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@__definition_Item1_0='?' (Size = 120)], CommandType='Text', CommandTimeout='30']
+      SELECT CASE
+          WHEN EXISTS (
+              SELECT 1
+              FROM [Permissions] AS [p]
+              WHERE [p].[Code] = @__definition_Item1_0) THEN CAST(1 AS bit)
+          ELSE CAST(0 AS bit)
+      END
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@__definition_Item1_0='?' (Size = 120)], CommandType='Text', CommandTimeout='30']
+      SELECT CASE
+          WHEN EXISTS (
+              SELECT 1
+              FROM [Permissions] AS [p]
+              WHERE [p].[Code] = @__definition_Item1_0) THEN CAST(1 AS bit)
+          ELSE CAST(0 AS bit)
+      END
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@__definition_Item1_0='?' (Size = 120)], CommandType='Text', CommandTimeout='30']
+      SELECT CASE
+          WHEN EXISTS (
+              SELECT 1
+              FROM [Permissions] AS [p]
+              WHERE [p].[Code] = @__definition_Item1_0) THEN CAST(1 AS bit)
+          ELSE CAST(0 AS bit)
+      END
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@__definition_Item1_0='?' (Size = 120)], CommandType='Text', CommandTimeout='30']
+      SELECT CASE
+          WHEN EXISTS (
+              SELECT 1
+              FROM [Permissions] AS [p]
+              WHERE [p].[Code] = @__definition_Item1_0) THEN CAST(1 AS bit)
+          ELSE CAST(0 AS bit)
+      END
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@__definition_Item1_0='?' (Size = 120)], CommandType='Text', CommandTimeout='30']
+      SELECT CASE
+          WHEN EXISTS (
+              SELECT 1
+              FROM [Permissions] AS [p]
+              WHERE [p].[Code] = @__definition_Item1_0) THEN CAST(1 AS bit)
+          ELSE CAST(0 AS bit)
+      END
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@__definition_Item1_0='?' (Size = 120)], CommandType='Text', CommandTimeout='30']
+      SELECT CASE
+          WHEN EXISTS (
+              SELECT 1
+              FROM [Permissions] AS [p]
+              WHERE [p].[Code] = @__definition_Item1_0) THEN CAST(1 AS bit)
+          ELSE CAST(0 AS bit)
+      END
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@__definition_Item1_0='?' (Size = 120)], CommandType='Text', CommandTimeout='30']
+      SELECT CASE
+          WHEN EXISTS (
+              SELECT 1
+              FROM [Permissions] AS [p]
+              WHERE [p].[Code] = @__definition_Item1_0) THEN CAST(1 AS bit)
+          ELSE CAST(0 AS bit)
+      END
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@__definition_Item1_0='?' (Size = 120)], CommandType='Text', CommandTimeout='30']
+      SELECT CASE
+          WHEN EXISTS (
+              SELECT 1
+              FROM [Permissions] AS [p]
+              WHERE [p].[Code] = @__definition_Item1_0) THEN CAST(1 AS bit)
+          ELSE CAST(0 AS bit)
+      END
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@__definition_Item1_0='?' (Size = 120)], CommandType='Text', CommandTimeout='30']
+      SELECT CASE
+          WHEN EXISTS (
+              SELECT 1
+              FROM [Permissions] AS [p]
+              WHERE [p].[Code] = @__definition_Item1_0) THEN CAST(1 AS bit)
+          ELSE CAST(0 AS bit)
+      END
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@__definition_Item1_0='?' (Size = 120)], CommandType='Text', CommandTimeout='30']
+      SELECT CASE
+          WHEN EXISTS (
+              SELECT 1
+              FROM [Permissions] AS [p]
+              WHERE [p].[Code] = @__definition_Item1_0) THEN CAST(1 AS bit)
+          ELSE CAST(0 AS bit)
+      END
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@__definition_Item1_0='?' (Size = 120)], CommandType='Text', CommandTimeout='30']
+      SELECT CASE
+          WHEN EXISTS (
+              SELECT 1
+              FROM [Permissions] AS [p]
+              WHERE [p].[Code] = @__definition_Item1_0) THEN CAST(1 AS bit)
+          ELSE CAST(0 AS bit)
+      END
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@__definition_Item1_0='?' (Size = 120)], CommandType='Text', CommandTimeout='30']
+      SELECT CASE
+          WHEN EXISTS (
+              SELECT 1
+              FROM [Permissions] AS [p]
+              WHERE [p].[Code] = @__definition_Item1_0) THEN CAST(1 AS bit)
+          ELSE CAST(0 AS bit)
+      END
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@__definition_Item1_0='?' (Size = 120)], CommandType='Text', CommandTimeout='30']
+      SELECT CASE
+          WHEN EXISTS (
+              SELECT 1
+              FROM [Permissions] AS [p]
+              WHERE [p].[Code] = @__definition_Item1_0) THEN CAST(1 AS bit)
+          ELSE CAST(0 AS bit)
+      END
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@__definition_Item1_0='?' (Size = 120)], CommandType='Text', CommandTimeout='30']
+      SELECT CASE
+          WHEN EXISTS (
+              SELECT 1
+              FROM [Permissions] AS [p]
+              WHERE [p].[Code] = @__definition_Item1_0) THEN CAST(1 AS bit)
+          ELSE CAST(0 AS bit)
+      END
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@__definition_Item1_0='?' (Size = 120)], CommandType='Text', CommandTimeout='30']
+      SELECT CASE
+          WHEN EXISTS (
+              SELECT 1
+              FROM [Permissions] AS [p]
+              WHERE [p].[Code] = @__definition_Item1_0) THEN CAST(1 AS bit)
+          ELSE CAST(0 AS bit)
+      END
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@__definition_Item1_0='?' (Size = 120)], CommandType='Text', CommandTimeout='30']
+      SELECT CASE
+          WHEN EXISTS (
+              SELECT 1
+              FROM [Permissions] AS [p]
+              WHERE [p].[Code] = @__definition_Item1_0) THEN CAST(1 AS bit)
+          ELSE CAST(0 AS bit)
+      END
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@__definition_Item1_0='?' (Size = 120)], CommandType='Text', CommandTimeout='30']
+      SELECT CASE
+          WHEN EXISTS (
+              SELECT 1
+              FROM [Permissions] AS [p]
+              WHERE [p].[Code] = @__definition_Item1_0) THEN CAST(1 AS bit)
+          ELSE CAST(0 AS bit)
+      END
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@__definition_Item1_0='?' (Size = 120)], CommandType='Text', CommandTimeout='30']
+      SELECT CASE
+          WHEN EXISTS (
+              SELECT 1
+              FROM [Permissions] AS [p]
+              WHERE [p].[Code] = @__definition_Item1_0) THEN CAST(1 AS bit)
+          ELSE CAST(0 AS bit)
+      END
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@__definition_Item1_0='?' (Size = 120)], CommandType='Text', CommandTimeout='30']
+      SELECT CASE
+          WHEN EXISTS (
+              SELECT 1
+              FROM [Permissions] AS [p]
+              WHERE [p].[Code] = @__definition_Item1_0) THEN CAST(1 AS bit)
+          ELSE CAST(0 AS bit)
+      END
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@__definition_Item1_0='?' (Size = 120)], CommandType='Text', CommandTimeout='30']
+      SELECT CASE
+          WHEN EXISTS (
+              SELECT 1
+              FROM [Permissions] AS [p]
+              WHERE [p].[Code] = @__definition_Item1_0) THEN CAST(1 AS bit)
+          ELSE CAST(0 AS bit)
+      END
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@__definition_Item1_0='?' (Size = 120)], CommandType='Text', CommandTimeout='30']
+      SELECT CASE
+          WHEN EXISTS (
+              SELECT 1
+              FROM [Permissions] AS [p]
+              WHERE [p].[Code] = @__definition_Item1_0) THEN CAST(1 AS bit)
+          ELSE CAST(0 AS bit)
+      END
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@__definition_Item1_0='?' (Size = 120)], CommandType='Text', CommandTimeout='30']
+      SELECT CASE
+          WHEN EXISTS (
+              SELECT 1
+              FROM [Permissions] AS [p]
+              WHERE [p].[Code] = @__definition_Item1_0) THEN CAST(1 AS bit)
+          ELSE CAST(0 AS bit)
+      END
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@__definition_Item1_0='?' (Size = 120)], CommandType='Text', CommandTimeout='30']
+      SELECT CASE
+          WHEN EXISTS (
+              SELECT 1
+              FROM [Permissions] AS [p]
+              WHERE [p].[Code] = @__definition_Item1_0) THEN CAST(1 AS bit)
+          ELSE CAST(0 AS bit)
+      END
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (12ms) [Parameters=[@__code_0='?' (Size = 80)], CommandType='Text', CommandTimeout='30']
+      SELECT TOP(2) [r].[SerialNo], [r].[Code], [r].[CreatedAtUtc], [r].[Id], [r].[IsSystemRole], [r].[Name], [r].[TenantId]
+      FROM [Roles] AS [r]
+      WHERE [r].[TenantId] IS NULL AND [r].[Code] = @__code_0
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@__code_0='?' (Size = 80)], CommandType='Text', CommandTimeout='30']
+      SELECT TOP(2) [r].[SerialNo], [r].[Code], [r].[CreatedAtUtc], [r].[Id], [r].[IsSystemRole], [r].[Name], [r].[TenantId]
+      FROM [Roles] AS [r]
+      WHERE [r].[TenantId] IS NULL AND [r].[Code] = @__code_0
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (5ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT [p].[SerialNo], [p].[Code], [p].[Id], [p].[Module], [p].[Name]
+      FROM [Permissions] AS [p]
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (7ms) [Parameters=[@__roleId_0='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      SELECT [r].[PermissionId]
+      FROM [RolePermissions] AS [r]
+      WHERE [r].[RoleId] = @__roleId_0
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@__roleId_0='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      SELECT [r].[PermissionId]
+      FROM [RolePermissions] AS [r]
+      WHERE [r].[RoleId] = @__roleId_0
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (9ms) [Parameters=[@__normalizedEmail_0='?' (Size = 254)], CommandType='Text', CommandTimeout='30']
+      SELECT TOP(2) [u].[SerialNo], [u].[CreatedAtUtc], [u].[Email], [u].[EmployeeId], [u].[FullName], [u].[Id], [u].[IsActive], [u].[LastLoginAtUtc], [u].[NormalizedEmail], [u].[PasswordHash], [u].[TenantId], [u].[UpdatedAtUtc]
+      FROM [Users] AS [u]
+      WHERE [u].[NormalizedEmail] = @__normalizedEmail_0
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (6ms) [Parameters=[@__administrator_Id_0='?' (DbType = Guid), @__systemRole_Id_1='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      SELECT CASE
+          WHEN EXISTS (
+              SELECT 1
+              FROM [UserRoles] AS [u]
+              WHERE [u].[UserId] = @__administrator_Id_0 AND [u].[RoleId] = @__systemRole_Id_1) THEN CAST(1 AS bit)
+          ELSE CAST(0 AS bit)
+      END
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (5ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT [t].[SerialNo], [t].[Address], [t].[ContactEmail], [t].[CreatedAtUtc], [t].[Id], [t].[IsActive], [t].[Name], [t].[Phone], [t].[Slug], [t].[UpdatedAtUtc]
+      FROM [Tenants] AS [t]
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (9ms) [Parameters=[@__ef_filter__CurrentTenantId_0='?' (DbType = Guid), @__kind_0='?' (Size = 20)], CommandType='Text', CommandTimeout='30']
+      SELECT [b].[SerialNo], [b].[Id], [b].[JournalId], [b].[Kind], [b].[Number], [b].[Payload], [b].[RequestHash], [b].[RequestId], [b].[TenantId], [b].[Version]
+      FROM [BillingRecords] AS [b]
+      WHERE [b].[TenantId] = @__ef_filter__CurrentTenantId_0 AND [b].[Kind] = @__kind_0
+      ORDER BY [b].[SerialNo] DESC
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@__ef_filter__CurrentTenantId_0='?' (DbType = Guid), @__kind_0='?' (Size = 20)], CommandType='Text', CommandTimeout='30']
+      SELECT [b].[SerialNo], [b].[Id], [b].[JournalId], [b].[Kind], [b].[Number], [b].[Payload], [b].[RequestHash], [b].[RequestId], [b].[TenantId], [b].[Version]
+      FROM [BillingRecords] AS [b]
+      WHERE [b].[TenantId] = @__ef_filter__CurrentTenantId_0 AND [b].[Kind] = @__kind_0
+      ORDER BY [b].[SerialNo] DESC
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@__ef_filter__CurrentTenantId_0='?' (DbType = Guid), @__kind_0='?' (Size = 20)], CommandType='Text', CommandTimeout='30']
+      SELECT [b].[SerialNo], [b].[Id], [b].[JournalId], [b].[Kind], [b].[Number], [b].[Payload], [b].[RequestHash], [b].[RequestId], [b].[TenantId], [b].[Version]
+      FROM [BillingRecords] AS [b]
+      WHERE [b].[TenantId] = @__ef_filter__CurrentTenantId_0 AND [b].[Kind] = @__kind_0
+      ORDER BY [b].[SerialNo] DESC
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@__ef_filter__CurrentTenantId_0='?' (DbType = Guid), @__kind_0='?' (Size = 20)], CommandType='Text', CommandTimeout='30']
+      SELECT [b].[SerialNo], [b].[Id], [b].[JournalId], [b].[Kind], [b].[Number], [b].[Payload], [b].[RequestHash], [b].[RequestId], [b].[TenantId], [b].[Version]
+      FROM [BillingRecords] AS [b]
+      WHERE [b].[TenantId] = @__ef_filter__CurrentTenantId_0 AND [b].[Kind] = @__kind_0
+      ORDER BY [b].[SerialNo] DESC
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@__ef_filter__CurrentTenantId_0='?' (DbType = Guid), @__kind_0='?' (Size = 20)], CommandType='Text', CommandTimeout='30']
+      SELECT [b].[SerialNo], [b].[Id], [b].[JournalId], [b].[Kind], [b].[Number], [b].[Payload], [b].[RequestHash], [b].[RequestId], [b].[TenantId], [b].[Version]
+      FROM [BillingRecords] AS [b]
+      WHERE [b].[TenantId] = @__ef_filter__CurrentTenantId_0 AND [b].[Kind] = @__kind_0
+      ORDER BY [b].[SerialNo] DESC
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@__ef_filter__CurrentTenantId_0='?' (DbType = Guid), @__kind_0='?' (Size = 20)], CommandType='Text', CommandTimeout='30']
+      SELECT [b].[SerialNo], [b].[Id], [b].[JournalId], [b].[Kind], [b].[Number], [b].[Payload], [b].[RequestHash], [b].[RequestId], [b].[TenantId], [b].[Version]
+      FROM [BillingRecords] AS [b]
+      WHERE [b].[TenantId] = @__ef_filter__CurrentTenantId_0 AND [b].[Kind] = @__kind_0
+      ORDER BY [b].[SerialNo] DESC
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@__ef_filter__CurrentTenantId_0='?' (DbType = Guid), @__kind_0='?' (Size = 20)], CommandType='Text', CommandTimeout='30']
+      SELECT [b].[SerialNo], [b].[Id], [b].[JournalId], [b].[Kind], [b].[Number], [b].[Payload], [b].[RequestHash], [b].[RequestId], [b].[TenantId], [b].[Version]
+      FROM [BillingRecords] AS [b]
+      WHERE [b].[TenantId] = @__ef_filter__CurrentTenantId_0 AND [b].[Kind] = @__kind_0
+      ORDER BY [b].[SerialNo] DESC
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@__ef_filter__CurrentTenantId_0='?' (DbType = Guid), @__kind_0='?' (Size = 20)], CommandType='Text', CommandTimeout='30']
+      SELECT [b].[SerialNo], [b].[Id], [b].[JournalId], [b].[Kind], [b].[Number], [b].[Payload], [b].[RequestHash], [b].[RequestId], [b].[TenantId], [b].[Version]
+      FROM [BillingRecords] AS [b]
+      WHERE [b].[TenantId] = @__ef_filter__CurrentTenantId_0 AND [b].[Kind] = @__kind_0
+      ORDER BY [b].[SerialNo] DESC
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@__ef_filter__CurrentTenantId_0='?' (DbType = Guid), @__kind_0='?' (Size = 20)], CommandType='Text', CommandTimeout='30']
+      SELECT [b].[SerialNo], [b].[Id], [b].[JournalId], [b].[Kind], [b].[Number], [b].[Payload], [b].[RequestHash], [b].[RequestId], [b].[TenantId], [b].[Version]
+      FROM [BillingRecords] AS [b]
+      WHERE [b].[TenantId] = @__ef_filter__CurrentTenantId_0 AND [b].[Kind] = @__kind_0
+      ORDER BY [b].[SerialNo] DESC
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@__ef_filter__CurrentTenantId_0='?' (DbType = Guid), @__kind_0='?' (Size = 20)], CommandType='Text', CommandTimeout='30']
+      SELECT [b].[SerialNo], [b].[Id], [b].[JournalId], [b].[Kind], [b].[Number], [b].[Payload], [b].[RequestHash], [b].[RequestId], [b].[TenantId], [b].[Version]
+      FROM [BillingRecords] AS [b]
+      WHERE [b].[TenantId] = @__ef_filter__CurrentTenantId_0 AND [b].[Kind] = @__kind_0
+      ORDER BY [b].[SerialNo] DESC
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@__ef_filter__CurrentTenantId_0='?' (DbType = Guid), @__kind_0='?' (Size = 20)], CommandType='Text', CommandTimeout='30']
+      SELECT [b].[SerialNo], [b].[Id], [b].[JournalId], [b].[Kind], [b].[Number], [b].[Payload], [b].[RequestHash], [b].[RequestId], [b].[TenantId], [b].[Version]
+      FROM [BillingRecords] AS [b]
+      WHERE [b].[TenantId] = @__ef_filter__CurrentTenantId_0 AND [b].[Kind] = @__kind_0
+      ORDER BY [b].[SerialNo] DESC
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@__ef_filter__CurrentTenantId_0='?' (DbType = Guid), @__kind_0='?' (Size = 20)], CommandType='Text', CommandTimeout='30']
+      SELECT [b].[SerialNo], [b].[Id], [b].[JournalId], [b].[Kind], [b].[Number], [b].[Payload], [b].[RequestHash], [b].[RequestId], [b].[TenantId], [b].[Version]
+      FROM [BillingRecords] AS [b]
+      WHERE [b].[TenantId] = @__ef_filter__CurrentTenantId_0 AND [b].[Kind] = @__kind_0
+      ORDER BY [b].[SerialNo] DESC
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@__ef_filter__CurrentTenantId_0='?' (DbType = Guid), @__kind_0='?' (Size = 20)], CommandType='Text', CommandTimeout='30']
+      SELECT [b].[SerialNo], [b].[Id], [b].[JournalId], [b].[Kind], [b].[Number], [b].[Payload], [b].[RequestHash], [b].[RequestId], [b].[TenantId], [b].[Version]
+      FROM [BillingRecords] AS [b]
+      WHERE [b].[TenantId] = @__ef_filter__CurrentTenantId_0 AND [b].[Kind] = @__kind_0
+      ORDER BY [b].[SerialNo] DESC
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@__ef_filter__CurrentTenantId_0='?' (DbType = Guid), @__kind_0='?' (Size = 20)], CommandType='Text', CommandTimeout='30']
+      SELECT [b].[SerialNo], [b].[Id], [b].[JournalId], [b].[Kind], [b].[Number], [b].[Payload], [b].[RequestHash], [b].[RequestId], [b].[TenantId], [b].[Version]
+      FROM [BillingRecords] AS [b]
+      WHERE [b].[TenantId] = @__ef_filter__CurrentTenantId_0 AND [b].[Kind] = @__kind_0
+      ORDER BY [b].[SerialNo] DESC
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@__ef_filter__CurrentTenantId_0='?' (DbType = Guid), @__kind_0='?' (Size = 20)], CommandType='Text', CommandTimeout='30']
+      SELECT [b].[SerialNo], [b].[Id], [b].[JournalId], [b].[Kind], [b].[Number], [b].[Payload], [b].[RequestHash], [b].[RequestId], [b].[TenantId], [b].[Version]
+      FROM [BillingRecords] AS [b]
+      WHERE [b].[TenantId] = @__ef_filter__CurrentTenantId_0 AND [b].[Kind] = @__kind_0
+      ORDER BY [b].[SerialNo] DESC
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@__ef_filter__CurrentTenantId_0='?' (DbType = Guid), @__kind_0='?' (Size = 20)], CommandType='Text', CommandTimeout='30']
+      SELECT [b].[SerialNo], [b].[Id], [b].[JournalId], [b].[Kind], [b].[Number], [b].[Payload], [b].[RequestHash], [b].[RequestId], [b].[TenantId], [b].[Version]
+      FROM [BillingRecords] AS [b]
+      WHERE [b].[TenantId] = @__ef_filter__CurrentTenantId_0 AND [b].[Kind] = @__kind_0
+      ORDER BY [b].[SerialNo] DESC
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@__ef_filter__CurrentTenantId_0='?' (DbType = Guid), @__kind_0='?' (Size = 20)], CommandType='Text', CommandTimeout='30']
+      SELECT [b].[SerialNo], [b].[Id], [b].[JournalId], [b].[Kind], [b].[Number], [b].[Payload], [b].[RequestHash], [b].[RequestId], [b].[TenantId], [b].[Version]
+      FROM [BillingRecords] AS [b]
+      WHERE [b].[TenantId] = @__ef_filter__CurrentTenantId_0 AND [b].[Kind] = @__kind_0
+      ORDER BY [b].[SerialNo] DESC
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@__ef_filter__CurrentTenantId_0='?' (DbType = Guid), @__kind_0='?' (Size = 20)], CommandType='Text', CommandTimeout='30']
+      SELECT [b].[SerialNo], [b].[Id], [b].[JournalId], [b].[Kind], [b].[Number], [b].[Payload], [b].[RequestHash], [b].[RequestId], [b].[TenantId], [b].[Version]
+      FROM [BillingRecords] AS [b]
+      WHERE [b].[TenantId] = @__ef_filter__CurrentTenantId_0 AND [b].[Kind] = @__kind_0
+      ORDER BY [b].[SerialNo] DESC
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@__ef_filter__CurrentTenantId_0='?' (DbType = Guid), @__kind_0='?' (Size = 20)], CommandType='Text', CommandTimeout='30']
+      SELECT [b].[SerialNo], [b].[Id], [b].[JournalId], [b].[Kind], [b].[Number], [b].[Payload], [b].[RequestHash], [b].[RequestId], [b].[TenantId], [b].[Version]
+      FROM [BillingRecords] AS [b]
+      WHERE [b].[TenantId] = @__ef_filter__CurrentTenantId_0 AND [b].[Kind] = @__kind_0
+      ORDER BY [b].[SerialNo] DESC
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@__ef_filter__CurrentTenantId_0='?' (DbType = Guid), @__kind_0='?' (Size = 20)], CommandType='Text', CommandTimeout='30']
+      SELECT [b].[SerialNo], [b].[Id], [b].[JournalId], [b].[Kind], [b].[Number], [b].[Payload], [b].[RequestHash], [b].[RequestId], [b].[TenantId], [b].[Version]
+      FROM [BillingRecords] AS [b]
+      WHERE [b].[TenantId] = @__ef_filter__CurrentTenantId_0 AND [b].[Kind] = @__kind_0
+      ORDER BY [b].[SerialNo] DESC
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@__ef_filter__CurrentTenantId_0='?' (DbType = Guid), @__kind_0='?' (Size = 20)], CommandType='Text', CommandTimeout='30']
+      SELECT [b].[SerialNo], [b].[Id], [b].[JournalId], [b].[Kind], [b].[Number], [b].[Payload], [b].[RequestHash], [b].[RequestId], [b].[TenantId], [b].[Version]
+      FROM [BillingRecords] AS [b]
+      WHERE [b].[TenantId] = @__ef_filter__CurrentTenantId_0 AND [b].[Kind] = @__kind_0
+      ORDER BY [b].[SerialNo] DESC
+warn: Microsoft.EntityFrameworkCore.Database.Transaction[30004]
+      Savepoints are disabled because Multiple Active Result Sets (MARS) is enabled. If 'SaveChanges' fails, then the transaction cannot be automatically rolled back to a known clean state. Instead, the transaction should be rolled back by the application before retrying 'SaveChanges'. See https://go.microsoft.com/fwlink/?linkid=2149338 for more information and examples. To identify the code which triggers this warning, call 'ConfigureWarnings(w => w.Throw(SqlServerEventId.SavepointsDisabledBecauseOfMARS))'.
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (83ms) [Parameters=[@p0='?' (Size = 30), @p1='?' (Size = 254), @p2='?' (DbType = Guid), @p3='?' (Size = 4000), @p4='?' (DbType = DateTimeOffset), @p5='?' (Size = 80), @p6='?' (Size = 120), @p7='?' (DbType = Guid), @p8='?' (Size = 64), @p9='?' (DbType = Guid), @p10='?' (Size = 30), @p11='?' (Size = 254), @p12='?' (DbType = Guid), @p13='?' (Size = 4000), @p14='?' (DbType = DateTimeOffset), @p15='?' (Size = 80), @p16='?' (Size = 120), @p17='?' (DbType = Guid), @p18='?' (Size = 64), @p19='?' (DbType = Guid), @p20='?' (Size = 30), @p21='?' (Size = 254), @p22='?' (DbType = Guid), @p23='?' (Size = 4000), @p24='?' (DbType = DateTimeOffset), @p25='?' (Size = 80), @p26='?' (Size = 120), @p27='?' (DbType = Guid), @p28='?' (Size = 64), @p29='?' (DbType = Guid), @p30='?' (Size = 30), @p31='?' (Size = 254), @p32='?' (DbType = Guid), @p33='?' (Size = 4000), @p34='?' (DbType = DateTimeOffset), @p35='?' (Size = 80), @p36='?' (Size = 120), @p37='?' (DbType = Guid), @p38='?' (Size = 64), @p39='?' (DbType = Guid), @p40='?' (Size = 30), @p41='?' (Size = 254), @p42='?' (DbType = Guid), @p43='?' (Size = 4000), @p44='?' (DbType = DateTimeOffset), @p45='?' (Size = 80), @p46='?' (Size = 120), @p47='?' (DbType = Guid), @p48='?' (Size = 64), @p49='?' (DbType = Guid), @p50='?' (Size = 30), @p51='?' (Size = 254), @p52='?' (DbType = Guid), @p53='?' (Size = 4000), @p54='?' (DbType = DateTimeOffset), @p55='?' (Size = 80), @p56='?' (Size = 120), @p57='?' (DbType = Guid), @p58='?' (Size = 64), @p59='?' (DbType = Guid), @p60='?' (Size = 30), @p61='?' (Size = 254), @p62='?' (DbType = Guid), @p63='?' (Size = 4000), @p64='?' (DbType = DateTimeOffset), @p65='?' (Size = 80), @p66='?' (Size = 120), @p67='?' (DbType = Guid), @p68='?' (Size = 64), @p69='?' (DbType = Guid), @p70='?' (Size = 30), @p71='?' (Size = 254), @p72='?' (DbType = Guid), @p73='?' (Size = 4000), @p74='?' (DbType = DateTimeOffset), @p75='?' (Size = 80), @p76='?' (Size = 120), @p77='?' (DbType = Guid), @p78='?' (Size = 64), @p79='?' (DbType = Guid), @p80='?' (Size = 30), @p81='?' (Size = 254), @p82='?' (DbType = Guid), @p83='?' (Size = 4000), @p84='?' (DbType = DateTimeOffset), @p85='?' (Size = 80), @p86='?' (Size = 120), @p87='?' (DbType = Guid), @p88='?' (Size = 64), @p89='?' (DbType = Guid), @p90='?' (Size = 30), @p91='?' (Size = 254), @p92='?' (DbType = Guid), @p93='?' (Size = 4000), @p94='?' (DbType = DateTimeOffset), @p95='?' (Size = 80), @p96='?' (Size = 120), @p97='?' (DbType = Guid), @p98='?' (Size = 64), @p99='?' (DbType = Guid), @p100='?' (Size = 30), @p101='?' (Size = 254), @p102='?' (DbType = Guid), @p103='?' (Size = 4000), @p104='?' (DbType = DateTimeOffset), @p105='?' (Size = 80), @p106='?' (Size = 120), @p107='?' (DbType = Guid), @p108='?' (Size = 64), @p109='?' (DbType = Guid), @p110='?' (Size = 30), @p111='?' (Size = 254), @p112='?' (DbType = Guid), @p113='?' (Size = 4000), @p114='?' (DbType = DateTimeOffset), @p115='?' (Size = 80), @p116='?' (Size = 120), @p117='?' (DbType = Guid), @p118='?' (Size = 64), @p119='?' (DbType = Guid), @p120='?' (Size = 30), @p121='?' (Size = 254), @p122='?' (DbType = Guid), @p123='?' (Size = 4000), @p124='?' (DbType = DateTimeOffset), @p125='?' (Size = 80), @p126='?' (Size = 120), @p127='?' (DbType = Guid), @p128='?' (Size = 64), @p129='?' (DbType = Guid), @p130='?' (Size = 30), @p131='?' (Size = 254), @p132='?' (DbType = Guid), @p133='?' (Size = 4000), @p134='?' (DbType = DateTimeOffset), @p135='?' (Size = 80), @p136='?' (Size = 120), @p137='?' (DbType = Guid), @p138='?' (Size = 64), @p139='?' (DbType = Guid), @p140='?' (Size = 30), @p141='?' (Size = 254), @p142='?' (DbType = Guid), @p143='?' (Size = 4000), @p144='?' (DbType = DateTimeOffset), @p145='?' (Size = 80), @p146='?' (Size = 120), @p147='?' (DbType = Guid), @p148='?' (Size = 64), @p149='?' (DbType = Guid), @p150='?' (Size = 30), @p151='?' (Size = 254), @p152='?' (DbType = Guid), @p153='?' (Size = 4000), @p154='?' (DbType = DateTimeOffset), @p155='?' (Size = 80), @p156='?' (Size = 120), @p157='?' (DbType = Guid), @p158='?' (Size = 64), @p159='?' (DbType = Guid), @p160='?' (Size = 30), @p161='?' (Size = 254), @p162='?' (DbType = Guid), @p163='?' (Size = 4000), @p164='?' (DbType = DateTimeOffset), @p165='?' (Size = 80), @p166='?' (Size = 120), @p167='?' (DbType = Guid), @p168='?' (Size = 64), @p169='?' (DbType = Guid), @p170='?' (DbType = Guid), @p171='?' (DbType = Guid), @p172='?' (Size = 20), @p173='?' (Size = 40), @p174='?' (Size = 4000), @p175='?' (Size = 64), @p176='?' (DbType = Guid), @p177='?' (DbType = Guid), @p178='?' (DbType = Guid), @p179='?' (DbType = Guid), @p180='?' (DbType = Guid), @p181='?' (Size = 20), @p182='?' (Size = 40), @p183='?' (Size = 4000), @p184='?' (Size = 64), @p185='?' (DbType = Guid), @p186='?' (DbType = Guid), @p187='?' (DbType = Guid), @p188='?' (DbType = Guid), @p189='?' (DbType = Guid), @p190='?' (Size = 20), @p191='?' (Size = 40), @p192='?' (Size = 4000), @p193='?' (Size = 64), @p194='?' (DbType = Guid), @p195='?' (DbType = Guid), @p196='?' (DbType = Guid), @p197='?' (DbType = Guid), @p198='?' (DbType = Guid), @p199='?' (Size = 20), @p200='?' (Size = 40), @p201='?' (Size = 4000), @p202='?' (Size = 64), @p203='?' (DbType = Guid), @p204='?' (DbType = Guid), @p205='?' (DbType = Guid), @p206='?' (DbType = Guid), @p207='?' (DbType = Guid), @p208='?' (Size = 20), @p209='?' (Size = 40), @p210='?' (Size = 4000), @p211='?' (Size = 64), @p212='?' (DbType = Guid), @p213='?' (DbType = Guid), @p214='?' (DbType = Guid), @p215='?' (DbType = Guid), @p216='?' (DbType = Guid), @p217='?' (Size = 20), @p218='?' (Size = 40), @p219='?' (Size = 4000), @p220='?' (Size = 64), @p221='?' (DbType = Guid), @p222='?' (DbType = Guid), @p223='?' (DbType = Guid), @p224='?' (DbType = Guid), @p225='?' (DbType = Guid), @p226='?' (Size = 20), @p227='?' (Size = 40), @p228='?' (Size = 4000), @p229='?' (Size = 64), @p230='?' (DbType = Guid), @p231='?' (DbType = Guid), @p232='?' (DbType = Guid), @p233='?' (DbType = Guid), @p234='?' (DbType = Guid), @p235='?' (Size = 20), @p236='?' (Size = 40), @p237='?' (Size = 4000), @p238='?' (Size = 64), @p239='?' (DbType = Guid), @p240='?' (DbType = Guid), @p241='?' (DbType = Guid), @p242='?' (DbType = Guid), @p243='?' (DbType = Guid), @p244='?' (Size = 20), @p245='?' (Size = 40), @p246='?' (Size = 4000), @p247='?' (Size = 64), @p248='?' (DbType = Guid), @p249='?' (DbType = Guid), @p250='?' (DbType = Guid), @p251='?' (DbType = Guid), @p252='?' (DbType = Guid), @p253='?' (Size = 20), @p254='?' (Size = 40), @p255='?' (Size = 4000), @p256='?' (Size = 64), @p257='?' (DbType = Guid), @p258='?' (DbType = Guid), @p259='?' (DbType = Guid), @p260='?' (DbType = Guid), @p261='?' (DbType = Guid), @p262='?' (Size = 20), @p263='?' (Size = 40), @p264='?' (Size = 4000), @p265='?' (Size = 64), @p266='?' (DbType = Guid), @p267='?' (DbType = Guid), @p268='?' (DbType = Guid), @p269='?' (DbType = Guid), @p270='?' (DbType = Guid), @p271='?' (Size = 20), @p272='?' (Size = 40), @p273='?' (Size = 4000), @p274='?' (Size = 64), @p275='?' (DbType = Guid), @p276='?' (DbType = Guid), @p277='?' (DbType = Guid), @p278='?' (DbType = Guid), @p279='?' (DbType = Guid), @p280='?' (Size = 20), @p281='?' (Size = 40), @p282='?' (Size = 4000), @p283='?' (Size = 64), @p284='?' (DbType = Guid), @p285='?' (DbType = Guid), @p286='?' (DbType = Guid), @p287='?' (DbType = Guid), @p288='?' (DbType = Guid), @p289='?' (Size = 20), @p290='?' (Size = 40), @p291='?' (Size = 4000), @p292='?' (Size = 64), @p293='?' (DbType = Guid), @p294='?' (DbType = Guid), @p295='?' (DbType = Guid), @p296='?' (DbType = Guid), @p297='?' (DbType = Guid), @p298='?' (Size = 20), @p299='?' (Size = 40), @p300='?' (Size = 4000), @p301='?' (Size = 64), @p302='?' (DbType = Guid), @p303='?' (DbType = Guid), @p304='?' (DbType = Guid), @p305='?' (DbType = Guid), @p306='?' (DbType = Guid), @p307='?' (Size = 20), @p308='?' (Size = 40), @p309='?' (Size = 4000), @p310='?' (Size = 64), @p311='?' (DbType = Guid), @p312='?' (DbType = Guid), @p313='?' (DbType = Guid), @p314='?' (DbType = Guid), @p315='?' (DbType = Guid), @p316='?' (Size = 20), @p317='?' (Size = 40), @p318='?' (Size = 4000), @p319='?' (Size = 64), @p320='?' (DbType = Guid), @p321='?' (DbType = Guid), @p322='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      SET NOCOUNT ON;
+      MERGE [AuditLogs] USING (
+      VALUES (@p0, @p1, @p2, @p3, @p4, @p5, @p6, @p7, @p8, @p9, 0),
+      (@p10, @p11, @p12, @p13, @p14, @p15, @p16, @p17, @p18, @p19, 1),
+      (@p20, @p21, @p22, @p23, @p24, @p25, @p26, @p27, @p28, @p29, 2),
+      (@p30, @p31, @p32, @p33, @p34, @p35, @p36, @p37, @p38, @p39, 3),
+      (@p40, @p41, @p42, @p43, @p44, @p45, @p46, @p47, @p48, @p49, 4),
+      (@p50, @p51, @p52, @p53, @p54, @p55, @p56, @p57, @p58, @p59, 5),
+      (@p60, @p61, @p62, @p63, @p64, @p65, @p66, @p67, @p68, @p69, 6),
+      (@p70, @p71, @p72, @p73, @p74, @p75, @p76, @p77, @p78, @p79, 7),
+      (@p80, @p81, @p82, @p83, @p84, @p85, @p86, @p87, @p88, @p89, 8),
+      (@p90, @p91, @p92, @p93, @p94, @p95, @p96, @p97, @p98, @p99, 9),
+      (@p100, @p101, @p102, @p103, @p104, @p105, @p106, @p107, @p108, @p109, 10),
+      (@p110, @p111, @p112, @p113, @p114, @p115, @p116, @p117, @p118, @p119, 11),
+      (@p120, @p121, @p122, @p123, @p124, @p125, @p126, @p127, @p128, @p129, 12),
+      (@p130, @p131, @p132, @p133, @p134, @p135, @p136, @p137, @p138, @p139, 13),
+      (@p140, @p141, @p142, @p143, @p144, @p145, @p146, @p147, @p148, @p149, 14),
+      (@p150, @p151, @p152, @p153, @p154, @p155, @p156, @p157, @p158, @p159, 15),
+      (@p160, @p161, @p162, @p163, @p164, @p165, @p166, @p167, @p168, @p169, 16)) AS i ([Action], [ActorEmail], [ActorUserId], [Changes], [CreatedAtUtc], [EntityId], [EntityType], [Id], [IpAddress], [TenantId], _Position) ON 1=0
+      WHEN NOT MATCHED THEN
+      INSERT ([Action], [ActorEmail], [ActorUserId], [Changes], [CreatedAtUtc], [EntityId], [EntityType], [Id], [IpAddress], [TenantId])
+      VALUES (i.[Action], i.[ActorEmail], i.[ActorUserId], i.[Changes], i.[CreatedAtUtc], i.[EntityId], i.[EntityType], i.[Id], i.[IpAddress], i.[TenantId])
+      OUTPUT INSERTED.[SerialNo], i._Position;
+      MERGE [BillingRecords] USING (
+      VALUES (@p170, @p171, @p172, @p173, @p174, @p175, @p176, @p177, @p178, 0),
+      (@p179, @p180, @p181, @p182, @p183, @p184, @p185, @p186, @p187, 1),
+      (@p188, @p189, @p190, @p191, @p192, @p193, @p194, @p195, @p196, 2),
+      (@p197, @p198, @p199, @p200, @p201, @p202, @p203, @p204, @p205, 3),
+      (@p206, @p207, @p208, @p209, @p210, @p211, @p212, @p213, @p214, 4),
+      (@p215, @p216, @p217, @p218, @p219, @p220, @p221, @p222, @p223, 5),
+      (@p224, @p225, @p226, @p227, @p228, @p229, @p230, @p231, @p232, 6),
+      (@p233, @p234, @p235, @p236, @p237, @p238, @p239, @p240, @p241, 7),
+      (@p242, @p243, @p244, @p245, @p246, @p247, @p248, @p249, @p250, 8),
+      (@p251, @p252, @p253, @p254, @p255, @p256, @p257, @p258, @p259, 9),
+      (@p260, @p261, @p262, @p263, @p264, @p265, @p266, @p267, @p268, 10),
+      (@p269, @p270, @p271, @p272, @p273, @p274, @p275, @p276, @p277, 11),
+      (@p278, @p279, @p280, @p281, @p282, @p283, @p284, @p285, @p286, 12),
+      (@p287, @p288, @p289, @p290, @p291, @p292, @p293, @p294, @p295, 13),
+      (@p296, @p297, @p298, @p299, @p300, @p301, @p302, @p303, @p304, 14),
+      (@p305, @p306, @p307, @p308, @p309, @p310, @p311, @p312, @p313, 15),
+      (@p314, @p315, @p316, @p317, @p318, @p319, @p320, @p321, @p322, 16)) AS i ([Id], [JournalId], [Kind], [Number], [Payload], [RequestHash], [RequestId], [TenantId], [Version], _Position) ON 1=0
+      WHEN NOT MATCHED THEN
+      INSERT ([Id], [JournalId], [Kind], [Number], [Payload], [RequestHash], [RequestId], [TenantId], [Version])
+      VALUES (i.[Id], i.[JournalId], i.[Kind], i.[Number], i.[Payload], i.[RequestHash], i.[RequestId], i.[TenantId], i.[Version])
+      OUTPUT INSERTED.[SerialNo], i._Position;
+Created 17 SAMPLE rates for Al Kareem; existing currency schedules were preserved.

@@ -1,0 +1,19 @@
+-- Employee-linked users, salesman visibility, quotation workflow, charge master, and starter charges for PostgreSQL.
+BEGIN;
+ALTER TABLE "Designations" ADD COLUMN "IsSalesman" BOOLEAN NOT NULL DEFAULT FALSE;
+ALTER TABLE "Users" ADD COLUMN "EmployeeId" UUID REFERENCES "Employees"("Id");
+CREATE UNIQUE INDEX "UX_Users_EmployeeId" ON "Users"("EmployeeId") WHERE "EmployeeId" IS NOT NULL;
+
+CREATE TABLE "ChargeMasters" ("SerialNo" INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,"Id" UUID NOT NULL UNIQUE,"TenantId" UUID NOT NULL REFERENCES "Tenants"("Id"),"Code" VARCHAR(40) NOT NULL,"Name" VARCHAR(160) NOT NULL,"Unit" VARCHAR(40) NOT NULL,"DefaultRate" NUMERIC(18,2) NOT NULL,"TaxPercent" NUMERIC(7,3) NOT NULL,"Description" VARCHAR(500),"IsActive" BOOLEAN NOT NULL,"CreatedAtUtc" TIMESTAMPTZ NOT NULL,"UpdatedAtUtc" TIMESTAMPTZ NOT NULL,UNIQUE("TenantId","Code"));
+CREATE INDEX "IX_ChargeMasters_Tenant" ON "ChargeMasters"("TenantId");
+CREATE TABLE "Quotations" ("SerialNo" INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,"Id" UUID NOT NULL UNIQUE,"TenantId" UUID NOT NULL REFERENCES "Tenants"("Id"),"QuotationNumber" VARCHAR(40) NOT NULL,"SurveyId" UUID REFERENCES "Surveys"("Id"),"SalesLeadId" UUID REFERENCES "SalesLeads"("Id"),"CustomerName" VARCHAR(160) NOT NULL,"Phone" VARCHAR(40) NOT NULL,"Email" VARCHAR(254),"AssignedEmployeeId" UUID NOT NULL REFERENCES "Employees"("Id"),"Currency" VARCHAR(3) NOT NULL,"ValidUntil" DATE NOT NULL,"Terms" VARCHAR(4000),"Notes" VARCHAR(2000),"Status" VARCHAR(30) NOT NULL,"Subtotal" NUMERIC(18,2) NOT NULL,"DiscountTotal" NUMERIC(18,2) NOT NULL,"TaxTotal" NUMERIC(18,2) NOT NULL,"GrandTotal" NUMERIC(18,2) NOT NULL,"ShareTokenHash" VARCHAR(64),"ShareExpiresAtUtc" TIMESTAMPTZ,"SentAtUtc" TIMESTAMPTZ,"RespondedAtUtc" TIMESTAMPTZ,"RejectionReason" VARCHAR(1000),"CreatedAtUtc" TIMESTAMPTZ NOT NULL,"UpdatedAtUtc" TIMESTAMPTZ NOT NULL,UNIQUE("TenantId","QuotationNumber"));
+CREATE UNIQUE INDEX "UX_Quotations_ShareToken" ON "Quotations"("ShareTokenHash") WHERE "ShareTokenHash" IS NOT NULL; CREATE INDEX "IX_Quotations_Tenant_Latest" ON "Quotations"("TenantId","SerialNo" DESC); CREATE INDEX "IX_Quotations_Assignee" ON "Quotations"("TenantId","AssignedEmployeeId","SerialNo" DESC);
+CREATE TABLE "QuotationLines" ("SerialNo" INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,"Id" UUID NOT NULL UNIQUE,"TenantId" UUID NOT NULL REFERENCES "Tenants"("Id"),"QuotationId" UUID NOT NULL REFERENCES "Quotations"("Id") ON DELETE CASCADE,"ChargeMasterId" UUID NOT NULL REFERENCES "ChargeMasters"("Id"),"Description" VARCHAR(500) NOT NULL,"Quantity" NUMERIC(12,3) NOT NULL,"Unit" VARCHAR(40) NOT NULL,"Rate" NUMERIC(18,2) NOT NULL,"DiscountPercent" NUMERIC(7,3) NOT NULL,"DiscountAmount" NUMERIC(18,2) NOT NULL,"TaxPercent" NUMERIC(7,3) NOT NULL,"TaxAmount" NUMERIC(18,2) NOT NULL,"LineTotal" NUMERIC(18,2) NOT NULL,"DisplayOrder" INTEGER NOT NULL);
+CREATE INDEX "IX_QuotationLines_Quotation" ON "QuotationLines"("QuotationId","DisplayOrder");
+
+INSERT INTO "ChargeMasters"("Id","TenantId","Code","Name","Unit","DefaultRate","TaxPercent","Description","IsActive","CreatedAtUtc","UpdatedAtUtc")
+SELECT (md5(t."Id"::text||':charge:'||d.code))::uuid,t."Id",d.code,d.name,d.unit,d.rate,d.tax,d.description,TRUE,NOW(),NOW()
+FROM "Tenants" t CROSS JOIN (VALUES
+('SURVEY','Survey service','service',750.00,18.000,'On-site or remote survey fee'),('PACKING','Packing service','cbm',550.00,18.000,'Packing labour and handling'),('TRANSPORT','Transportation','trip',15000.00,18.000,'Origin to destination transportation'),('LOADING','Loading labour','service',3500.00,18.000,'Loading crew charge'),('UNLOADING','Unloading labour','service',3500.00,18.000,'Unloading crew charge'),('STORAGE','Warehouse storage','day',650.00,18.000,'Per-day storage charge'),('INSURANCE','Transit insurance','service',2500.00,18.000,'Transit risk coverage')) d(code,name,unit,rate,tax,description)
+ON CONFLICT("TenantId","Code") DO NOTHING;
+COMMIT;

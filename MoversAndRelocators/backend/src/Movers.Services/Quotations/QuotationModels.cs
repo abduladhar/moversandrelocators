@@ -1,0 +1,23 @@
+namespace Movers.Services.Quotations;
+
+public sealed record SaveChargeCommand(string Code, string Name, string Unit, decimal DefaultRate, decimal TaxPercent, string? Description);
+public sealed record ChargeModel(int SerialNo, Guid Id, string Code, string Name, string Unit, decimal DefaultRate, decimal TaxPercent, string? Description, bool IsActive, DateTimeOffset CreatedAtUtc, DateTimeOffset UpdatedAtUtc);
+public sealed record SaveTaxCommand(string Code, string Name, string Kind, string CalculationBasis, decimal Rate, bool IsDefault, string? Description);
+public sealed record TaxModel(int SerialNo, Guid Id, string Code, string Name, string Kind, string CalculationBasis, decimal Rate, bool IsDefault, string? Description, bool IsActive, DateTimeOffset CreatedAtUtc, DateTimeOffset UpdatedAtUtc);
+public sealed record SaveQuotationCommand(string QuotationNumber, Guid? SurveyId, Guid? SalesLeadId, string CustomerName, string Phone, string? Email, string? Origin, string? Destination, Guid AssignedEmployeeId, string Currency, DateOnly ValidUntil, string? Terms, string? Notes, bool IncludeSurveyItems);
+public sealed record SaveQuotationLineCommand(Guid ChargeMasterId, string? Description, decimal Quantity, decimal? Rate, decimal DiscountPercent, IReadOnlyList<Guid> TaxIds, int DisplayOrder);
+public sealed record SaveQuotationItemCommand(Guid HouseholdItemId, string RoomName, int Quantity, decimal? VolumePerUnitCbm, string? Notes, int DisplayOrder);
+public sealed record QuotationItemModel(int SerialNo, Guid Id, Guid HouseholdItemId, string RoomName, string ItemName, int Quantity, decimal VolumePerUnitCbm, decimal TotalVolumeCbm, string? Notes, int DisplayOrder);
+public sealed record QuotationModel(int SerialNo, Guid Id, string QuotationNumber, Guid? SurveyId, string? SurveyNumber, Guid? SalesLeadId, string? LeadNumber, string CustomerName, string Phone, string? Email, string Origin, string Destination, Guid AssignedEmployeeId, string AssignedEmployeeName, string Currency, DateOnly ValidUntil, string? Terms, string? Notes, bool IncludeSurveyItems, string Status, decimal Subtotal, decimal DiscountTotal, decimal TaxTotal, decimal GrandTotal, DateTimeOffset? SentAtUtc, DateTimeOffset? RespondedAtUtc, string? RejectionReason, DateTimeOffset CreatedAtUtc, DateTimeOffset UpdatedAtUtc, string? RevisedFromNumber = null, string? RevisionReason = null);
+public sealed record QuotationLineTaxModel(Guid TaxMasterId, string Code, string Name, string Kind, string CalculationBasis, decimal Rate, decimal TaxableBase, decimal Amount);
+public sealed record QuotationLineModel(int SerialNo, Guid Id, Guid ChargeMasterId, string ChargeName, string Description, decimal Quantity, string Unit, decimal Rate, decimal DiscountPercent, decimal DiscountAmount, decimal TaxPercent, decimal TaxAmount, decimal LineTotal, int DisplayOrder, IReadOnlyList<QuotationLineTaxModel> Taxes);
+public sealed record QuotationSurveyItemModel(Guid SurveyItemId, string ItemName, int Quantity, decimal VolumePerUnitCbm, decimal TotalVolumeCbm, string? Notes);
+public sealed record QuotationSurveyRoomModel(Guid RoomId, string RoomName, int DisplayOrder, IReadOnlyList<QuotationSurveyItemModel> Items, decimal TotalVolumeCbm);
+public sealed record RequoteItemInput(Guid SurveyItemId, int RequestedQuantity, string? Notes);
+public sealed record SubmitRequoteCommand(string? CustomerNotes, IReadOnlyList<RequoteItemInput> Items);
+public sealed record RequoteRequestedItemModel(Guid SurveyItemId, string RoomName, string ItemName, int OriginalQuantity, int RequestedQuantity, string? Notes);
+public sealed record QuotationRequoteRequestModel(int SerialNo, Guid Id, string? CustomerNotes, DateTimeOffset CreatedAtUtc, DateTimeOffset? AppliedAtUtc, IReadOnlyList<RequoteRequestedItemModel> Items);
+public sealed record QuotationDetailModel(QuotationModel Quotation, IReadOnlyList<QuotationLineModel> Lines, decimal? SurveyVolumeCbm, decimal? SurveyMaterialCost, IReadOnlyList<QuotationSurveyRoomModel> SurveyRooms, IReadOnlyList<QuotationItemModel> QuotationItems, IReadOnlyList<QuotationRequoteRequestModel> RequoteRequests);
+public sealed record GeneratedQuotationLinkModel(string Token, DateTimeOffset ExpiresAtUtc);
+public sealed record PublicQuotationModel(string TenantName, QuotationModel Quotation, IReadOnlyList<QuotationLineModel> Lines, IReadOnlyList<QuotationSurveyRoomModel> SurveyRooms, IReadOnlyList<QuotationItemModel> QuotationItems);
+public sealed record PublicQuotationResolutionModel(Guid QuotationId, string TenantName);

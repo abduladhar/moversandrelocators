@@ -1,0 +1,12 @@
+<Solution>
+  <Folder Name="/backend/" />
+  <Folder Name="/backend/src/">
+    <Project Path="backend/src/Movers.Api/Movers.Api.csproj" />
+    <Project Path="backend/src/Movers.DAL/Movers.DAL.csproj" />
+    <Project Path="backend/src/Movers.Domain/Movers.Domain.csproj" />
+    <Project Path="backend/src/Movers.Services/Movers.Services.csproj" />
+  </Folder>
+  <Folder Name="/backend/tests/">
+    <Project Path="backend/tests/Movers.Api.Tests/Movers.Api.Tests.csproj" />
+  </Folder>
+</Solution>

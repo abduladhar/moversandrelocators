@@ -1,0 +1,3 @@
+using Microsoft.AspNetCore.Authorization;using Microsoft.AspNetCore.Mvc;using Movers.Api.Contracts.Pickups;using Movers.Services.Pickups;
+namespace Movers.Api.Controllers;
+[ApiController,AllowAnonymous,Route("api/public/pickups/{token}")]public sealed class PublicPickupsController(IPickupService service):ControllerBase{[HttpGet]public async Task<ActionResult> Get(string token,CancellationToken t){var x=await service.Public(token,t);return x is null?NotFound(new{message="This pickup confirmation link is invalid or expired."}):Ok(x);}[HttpPost("confirm")]public async Task<ActionResult> Confirm(string token,ConfirmPickupRequest r,CancellationToken t){var x=await service.Confirm(token,r.Command(),t);return x is null?NotFound():Ok(x);}}
