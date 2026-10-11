@@ -1,6 +1,7 @@
 import { ChargeAccountMappings } from '../components/ChargeAccountMappings'
 import { useBilling } from '../billingApi'
 import { RowActions } from '../components/RowActions'
+import { useCompanyScopes } from '../companyScope'
 import { useEffect, useMemo, useState } from 'react'
 import { Button, Card, Form, Input, InputNumber, Modal, Popconfirm, Select, Space, message } from 'antd'
 import type { TableProps } from 'antd'
@@ -18,6 +19,7 @@ import { sortRecords, type SortDirection } from '../utils/sortRecords'
 type ChargeInput = Omit<ChargeMaster, 'id' | 'serialNo' | 'isActive' | 'createdAtUtc' | 'updatedAtUtc'>
 
 export function ChargeMastersPage() {
+  const scopes = useCompanyScopes('charge')
   const canBill=useBilling(), [mappingOpen,setMappingOpen]=useState(false)
   const [items, setItems] = useState<ChargeMaster[]>([])
   const [query, setQuery] = useState('')
@@ -49,6 +51,7 @@ export function ChargeMastersPage() {
     { title: 'Charge', dataIndex: 'name', sorter: true, sortOrder: sortField === 'name' ? (sortDirection === 'asc' ? 'ascend' : 'descend') : null, render: (_, item) => <div className="primary-cell"><strong>{item.name}</strong><small>#{item.serialNo} · {item.code}</small></div> },
     { title: 'Unit', dataIndex: 'unit', width: 120 },
     { title: 'Default rate', dataIndex: 'defaultRate', sorter: true, sortOrder: sortField === 'defaultRate' ? (sortDirection === 'asc' ? 'ascend' : 'descend') : null, render: value => value.toFixed(2) },
+    ...scopes.column<ChargeMaster>(x => x.id),
     { title: 'Status', dataIndex: 'isActive', width: 100, filters: [{ text: 'Active', value: true }, { text: 'Inactive', value: false }], filteredValue: active === undefined ? null : [active], render: value => <StatusTag active={value} /> },
     { title: 'Actions', width: 210, align: 'right', render: (_, item) => <ChargeActions item={item} onEdit={() => show(item)} onChanged={load} /> },
   ]

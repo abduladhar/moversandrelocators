@@ -1602,3 +1602,21 @@ body { margin: 0; min-width: 320px; min-height: 100vh; }
 .lead-inventory-ai { margin: -4px 0 12px; color: #5f7169; font-size: 13px; }
 .lead-inventory-ai .anticon { color: #7a3f86; margin-right: 4px; }
 @media (max-width: 900px) { .ai-price-grid { grid-template-columns: 1fr 1fr; } }
+
+/* Crateway brand mark (sidebar and sign-in) */
+.brand > svg { flex: 0 0 auto; border-radius: 10px; box-shadow: 0 4px 14px rgba(0, 0, 0, .18); }
+.brand b { letter-spacing: -.3px; font-weight: 800; }
+
+/* "Powered by Crateway" on customer link pages */
+.powered-by-space { height: 56px; }
+.powered-by { position: fixed; left: 50%; bottom: 10px; z-index: 20; transform: translateX(-50%); box-shadow: 0 4px 14px rgba(16, 39, 31, .1); backdrop-filter: blur(6px); display: flex; align-items: center; justify-content: center; gap: 6px; width: max-content; padding: 6px 12px; border-radius: 999px; color: #6f7f78; font-size: 12px; text-decoration: none; background: rgba(255, 255, 255, .7); border: 1px solid #e1ebe6; }
+.powered-by b { color: #173c2e; font-weight: 800; letter-spacing: -.2px; }
+.powered-by svg { border-radius: 5px; }
+
+
+/* Company switcher in the sidebar (tenant users) and the current company for company users */
+.tenant-context .company-switcher { width: 100%; margin: 4px 0 2px; }
+.tenant-context .company-switcher .ant-select-selector { background: #10271f !important; border-color: #3c6a57 !important; color: #e8f5ef !important; font-weight: 600; }
+.tenant-context .company-switcher .ant-select-arrow, .tenant-context .company-switcher .ant-select-selection-item { color: #e8f5ef; }
+.tenant-context .company-name { display: flex; align-items: center; gap: 6px; margin: 2px 0; color: #cfe6dc; font-size: 12px; font-weight: 600; }
+.companies-note { margin-bottom: 14px; }

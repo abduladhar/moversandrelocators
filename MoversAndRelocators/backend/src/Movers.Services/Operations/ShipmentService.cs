@@ -47,7 +47,7 @@ public interface IShipmentService
 }
 
 public sealed class ShipmentService(IShipmentRepository repository, IOperationsRepository unit, IJobRepository jobs,
-    IPickupService pickups, IPickupRepository packaging, ITenantContext tenant, IUserContext user, TimeProvider clock) : IShipmentService
+    IPickupService pickups, IPickupRepository packaging, ITenantContext tenant, IUserContext user, TimeProvider clock, Movers.Services.Tenants.ICompanyScope? companies = null) : IShipmentService
 {
     public async Task<ShipmentView> Get(Guid pickupId, CancellationToken ct)
     {
@@ -177,6 +177,7 @@ public sealed class ShipmentService(IShipmentRepository repository, IOperationsR
         if (c.RevokedAtUtc.HasValue || c.ExpiresAtUtc <= clock.GetUtcNow()) throw new KeyNotFoundException();
         if (!tenant.IsResolved) tenant.SetTenant(resolved.Tenant);
         if (tenant.TenantId != resolved.Tenant.Id) throw new KeyNotFoundException();
+        if (companies is not null) await companies.UseCompanyOfAsync(c, ct);
         return c;
     }
     private static PublicPacking View(PackingConfirmation c) => new(JsonSerializer.Deserialize<PackingSnapshot>(c.SnapshotJson)!,

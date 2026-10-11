@@ -27,7 +27,7 @@ export function CustomerUploadPage({ token }: { token: string }) {
   return (
     <div className="public-upload-page">
       <Card className="public-upload-card" loading={!info}>
-        <div className="upload-brand"><span>M</span><strong>{info?.tenantName ?? 'Movers'}</strong></div>
+        <div className="upload-brand"><span>{(info?.tenantName || 'M').charAt(0).toUpperCase()}</span><strong>{info?.tenantName ?? ''}</strong></div>
         <Typography.Title level={2}>Share your move details</Typography.Title>
         <Typography.Paragraph type="secondary">
           Record or upload videos, photos, voice notes and documents for {info?.customerName}. No account is required.

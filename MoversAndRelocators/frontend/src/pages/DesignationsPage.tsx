@@ -1,4 +1,5 @@
 import { RowActions } from '../components/RowActions'
+import { useCompanyScopes } from '../companyScope'
 import { useEffect, useMemo, useState } from 'react'
 import { Button, Card, Checkbox, Col, Form, Input, InputNumber, Modal, Popconfirm, Row, Select, Space, Statistic, Tag, message } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
@@ -14,6 +15,7 @@ import { ResponsiveDataView } from '../components/ResponsiveDataView'
 import { sortRecords, type SortDirection } from '../utils/sortRecords'
 
 export function DesignationsPage() {
+  const scopes = useCompanyScopes('designation')
   const [items, setItems] = useState<Designation[]>([])
   const [query, setQuery] = useState(''), [status, setStatus] = useState<boolean | undefined>(), [level, setLevel] = useState<number>()
   const [sortField, setSortField] = useState<keyof Designation>('serialNo'), [sortDirection, setSortDirection] = useState<SortDirection>('desc')
@@ -35,6 +37,7 @@ export function DesignationsPage() {
     { title: 'Level', dataIndex: 'level', width: 100, sorter: true, sortOrder: sortField === 'level' ? (sortDirection === 'asc' ? 'ascend' : 'descend') : null, filters: levels.map(value => ({ text: `Level ${value}`, value })), filteredValue: level ? [level] : null, filterSearch: true, render: value => <Tag color="cyan">Level {value}</Tag> },
     { title: 'Type', dataIndex: 'isSalesman', width: 120, render: value => value ? <Tag color="green">Salesman</Tag> : <Tag>General</Tag> },
     { title: 'Description', dataIndex: 'description', ellipsis: true, render: value => value || '—' },
+    ...scopes.column<Designation>(x => x.id),
     { title: 'Status', dataIndex: 'isActive', width: 110, sorter: true, sortOrder: sortField === 'isActive' ? (sortDirection === 'asc' ? 'ascend' : 'descend') : null, filters: [{ text: 'Active', value: true }, { text: 'Inactive', value: false }], filteredValue: status === undefined ? null : [status], render: value => <StatusTag active={value} /> },
     { title: 'Actions', key: 'actions', width: 210, align: 'right', render: (_, item) => <RowActions><Space><Button size="small" icon={<EditOutlined />} onClick={() => showForm(item)}>Edit</Button><Popconfirm title={`${item.isActive ? 'Deactivate' : 'Activate'} this designation?`} onConfirm={async () => { try { const saved = await employeesApi.setDesignationStatus(item.id, !item.isActive); setItems(all => all.map(x => x.id === saved.id ? saved : x)) } catch (reason) { message.error(reason instanceof Error ? reason.message : 'Unable to update status') } }}><Button size="small">{item.isActive ? 'Deactivate' : 'Activate'}</Button></Popconfirm></Space></RowActions> },
   ]

@@ -8,7 +8,7 @@ using Movers.Services.Tenancy;
 namespace Movers.Services.Sales;
 
 public sealed class LeadUploadService(ILeadUploadRepository repository, ITenantContext tenantContext,
-    ISecretProtector protector, IAwsObjectStorage storage, TimeProvider timeProvider) : ILeadUploadService
+    ISecretProtector protector, IAwsObjectStorage storage, TimeProvider timeProvider, Movers.Services.Tenants.ICompanyScope? companies = null) : ILeadUploadService
 {
 
     public async Task<GeneratedUploadLinkModel> GenerateLinkAsync(Guid leadId, int validDays, CancellationToken token, string? requestedItems = null, string? description = null)
@@ -34,7 +34,7 @@ public sealed class LeadUploadService(ILeadUploadRepository repository, ITenantC
         (await repository.ListAttachmentsAsync(leadId, token)).Select(Map).ToList();
 
     public async Task<PublicUploadInfoModel?> GetPublicInfoAsync(string token, CancellationToken cancellationToken)
-    { var r = await Resolve(token, cancellationToken); return r is null ? null : new(r.Tenant.Name, r.Lead.LeadNumber, r.Lead.CustomerName, r.Link.ExpiresAtUtc, r.Link.RequestedItems, r.Link.Description, r.Link.CustomerItems, r.Link.CustomerDescription); }
+    { var r = await Resolve(token, cancellationToken); return r is null ? null : new(tenantContext.Company?.Name ?? r.Tenant.Name, r.Lead.LeadNumber, r.Lead.CustomerName, r.Link.ExpiresAtUtc, r.Link.RequestedItems, r.Link.Description, r.Link.CustomerItems, r.Link.CustomerDescription); }
 
     public async Task<PresignedUploadModel> CreateUploadAsync(string token, UploadRequestModel request, CancellationToken cancellationToken)
     {
@@ -122,6 +122,7 @@ public sealed class LeadUploadService(ILeadUploadRepository repository, ITenantC
         if (storage.RequiresTenantCredentials && r.Aws is null) return null;
         if (!tenantContext.IsResolved) tenantContext.SetTenant(r.Tenant);
         if (tenantContext.TenantId != r.Tenant.Id) return null;
+        if (companies is not null) await companies.UseCompanyOfAsync(r.Lead, cancellationToken);
         return r;
     }
 

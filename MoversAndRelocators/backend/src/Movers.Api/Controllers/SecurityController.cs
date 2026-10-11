@@ -23,7 +23,7 @@ public sealed class SecurityController(ISecurityService securityService, IAuditS
         try
         {
             var user = await securityService.CreateUserAsync(
-                new(request.FullName, request.Email, request.Password, request.RoleId, request.EmployeeId), cancellationToken);
+                new(request.FullName, request.Email, request.Password, request.RoleId, request.EmployeeId, request.CompanyId), cancellationToken);
             return Created($"/api/security/users/{user.Id}", UserResponse.From(user));
         }
         catch (InvalidOperationException exception) { return BadRequest(new { message = exception.Message }); }
@@ -44,6 +44,18 @@ public sealed class SecurityController(ISecurityService securityService, IAuditS
         try
         {
             var user = await securityService.SetUserEmployeeAsync(id, request.EmployeeId, cancellationToken);
+            return user is null ? NotFound() : Ok(UserResponse.From(user));
+        }
+        catch (InvalidOperationException exception) { return BadRequest(new { message = exception.Message }); }
+    }
+
+    [Authorize(Policy = SecurityPermissions.UsersManage)]
+    [HttpPatch("users/{id:guid}/company")]
+    public async Task<ActionResult> SetUserCompany(Guid id, SetUserCompanyRequest request, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var user = await securityService.SetUserCompanyAsync(id, request.CompanyId, cancellationToken);
             return user is null ? NotFound() : Ok(UserResponse.From(user));
         }
         catch (InvalidOperationException exception) { return BadRequest(new { message = exception.Message }); }

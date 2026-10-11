@@ -104,7 +104,7 @@ public interface IPackingRepository
 /// Packing jobs: crew, labelled boxes with items, packing materials (box recipes derived automatically plus extras),
 /// income and expenses (to the accountant's cash queue as source PACKING), and the material-consumption journal.
 /// </summary>
-public sealed class PackingService(IPackingRepository r, BusinessMasterService masters, BillingService billing, CurrencyService currencies, IRecordNumbers numbers, ITenantContext tenant, IUserContext user, TimeProvider clock, Movers.Services.Crew.ICrewRepository crewRepo)
+public sealed class PackingService(IPackingRepository r, BusinessMasterService masters, BillingService billing, CurrencyService currencies, IRecordNumbers numbers, ITenantContext tenant, IUserContext user, TimeProvider clock, Movers.Services.Crew.ICrewRepository crewRepo, Movers.Services.Tenants.ICompanyScope? companies = null)
 {
     public const string SourceKind = "PACKING";
 
@@ -515,8 +515,9 @@ public sealed class PackingService(IPackingRepository r, BusinessMasterService m
         if (found is null || found.Value.Link.ExpiresAtUtc < clock.GetUtcNow()) return null;
         if (purpose is not null && found.Value.Link.Purpose != purpose) throw new InvalidOperationException("This link cannot be used for that.");
         if (!tenant.IsResolved) tenant.SetTenant(found.Value.Tenant);
+        if (companies is not null) await companies.UseCompanyOfAsync(found.Value.Job, t);
         var job = track ? await r.Job(found.Value.Job.Id, true, t) : found.Value.Job;
-        return job is null ? null : (job, found.Value.Link, found.Value.Tenant.Name);
+        return job is null ? null : (job, found.Value.Link, tenant.Company?.Name ?? found.Value.Tenant.Name);
     }
 
     private async Task<PublicPackingJobModel> PublicModel(PackingJob job, PackingJobLink link, string tenantName, CancellationToken t)

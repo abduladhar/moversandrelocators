@@ -1,4 +1,5 @@
 import { RowActions } from '../components/RowActions'
+import { useCompanyScopes } from '../companyScope'
 import { useEffect, useMemo, useState } from 'react'
 import { Avatar, Button, Card, Col, Form, Input, Modal, Popconfirm, Row, Segmented, Select, Space, Statistic, Tag, Tree, message } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
@@ -18,6 +19,7 @@ const emptyEmployee = (): EmployeeInput => ({ employeeNumber: '', firstName: '',
 const toTreeNode = (node: EmployeeHierarchyNode): DataNode => ({ key: node.id, title: <div className="tree-person"><Avatar>{node.fullName.charAt(0)}</Avatar><span><strong>{node.fullName}</strong><small>{node.designation} · {node.employeeNumber}</small></span></div>, children: node.directReports.map(toTreeNode) })
 
 export function EmployeesPage() {
+  const scopes = useCompanyScopes('employee')
   const [employees, setEmployees] = useState<Employee[]>([]), [designations, setDesignations] = useState<Designation[]>([]), [hierarchy, setHierarchy] = useState<EmployeeHierarchyNode[]>([])
   const [query, setQuery] = useState(''), [status, setStatus] = useState<boolean | undefined>(), [designationId, setDesignationId] = useState<string>(), [managerId, setManagerId] = useState<string>()
   const [sortField, setSortField] = useState<keyof Employee>('serialNo'), [sortDirection, setSortDirection] = useState<SortDirection>('desc')
@@ -41,6 +43,7 @@ export function EmployeesPage() {
     { title: 'Designation', dataIndex: 'designationName', sorter: true, sortOrder: sortField === 'designationName' ? (sortDirection === 'asc' ? 'ascend' : 'descend') : null, filters: designations.map(item => ({ text: item.name, value: item.id })), filteredValue: designationId ? [designationId] : null, filterSearch: true, render: (_, employee) => <div className="primary-cell"><span>{employee.designationName}</span><small>Level {employee.designationLevel}</small></div> },
     { title: 'Reports to', dataIndex: 'reportsToName', sorter: true, sortOrder: sortField === 'reportsToName' ? (sortDirection === 'asc' ? 'ascend' : 'descend') : null, filters: employees.map(item => ({ text: item.fullName, value: item.id })), filteredValue: managerId ? [managerId] : null, filterSearch: true, render: value => value || <Tag>Top level</Tag> },
     { title: 'Joined', dataIndex: 'joiningDate', width: 120, sorter: true, sortOrder: sortField === 'joiningDate' ? (sortDirection === 'asc' ? 'ascend' : 'descend') : null, render: value => new Date(`${value}T00:00:00`).toLocaleDateString() },
+    ...scopes.column<Employee>(x => x.id),
     { title: 'Status', dataIndex: 'isActive', width: 100, sorter: true, sortOrder: sortField === 'isActive' ? (sortDirection === 'asc' ? 'ascend' : 'descend') : null, filters: [{ text: 'Active', value: true }, { text: 'Inactive', value: false }], filteredValue: status === undefined ? null : [status], render: value => <StatusTag active={value} /> },
     { title: 'Actions', key: 'actions', width: 210, align: 'right', render: (_, employee) => <RowActions><Space><Button size="small" icon={<EditOutlined />} onClick={() => showForm(employee)}>Edit</Button><Popconfirm title={`${employee.isActive ? 'Deactivate' : 'Activate'} this employee?`} onConfirm={async () => { try { const saved = await employeesApi.setEmployeeStatus(employee.id, !employee.isActive); setEmployees(all => all.map(x => x.id === saved.id ? saved : x)); setHierarchy(await employeesApi.hierarchy()) } catch (reason) { message.error(reason instanceof Error ? reason.message : 'Unable to update status') } }}><Button size="small">{employee.isActive ? 'Deactivate' : 'Activate'}</Button></Popconfirm></Space></RowActions> },
   ]

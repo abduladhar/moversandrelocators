@@ -1,10 +1,12 @@
+using System.Security.Claims;
+using Movers.Services.Security;
 using Movers.Services.Tenants;
 
 namespace Movers.Api.Tenancy;
 
 public sealed class TenantResolutionMiddleware(RequestDelegate next)
 {
-    public async Task InvokeAsync(HttpContext httpContext, ITenantService tenantService)
+    public async Task InvokeAsync(HttpContext httpContext, ITenantService tenantService, CompanyService companyService)
     {
         if (IsTenantOptionalPath(httpContext.Request.Path))
         {
@@ -31,6 +33,25 @@ public sealed class TenantResolutionMiddleware(RequestDelegate next)
             {
                 error = "tenant_required",
                 message = "Select an active tenant before using tenant-scoped features."
+            });
+            return;
+        }
+
+        // Company users always work in their own company (read from the user, so a reassignment applies at once);
+        // tenant users and system administrators work in the company they selected, else the default one.
+        var user = httpContext.User;
+        var companyResolved = await companyService.ResolveCurrentAsync(
+            Guid.TryParse(user.FindFirstValue(ClaimTypes.NameIdentifier), out var userId) ? userId : null,
+            user.IsInRole(RoleCodes.SystemAdmin),
+            user.FindFirst("company_id")?.Value,
+            httpContext.RequestAborted);
+        if (!companyResolved)
+        {
+            httpContext.Response.StatusCode = StatusCodes.Status403Forbidden;
+            await httpContext.Response.WriteAsJsonAsync(new
+            {
+                error = "company_unavailable",
+                message = "Your company is not active. Ask your administrator to activate it or move you to another company."
             });
             return;
         }

@@ -96,7 +96,7 @@ public interface IDeliveryRepository
 /// (to the accountant's cash queue as source DELIVERY). Package custody is kept in step through PackageHandover rows.
 /// </summary>
 public sealed class DeliveryService(IDeliveryRepository r, WarehouseService warehouse, IJobRepository jobs, BusinessMasterService masters, CurrencyService currencies,
-    IRecordNumbers numbers, ITenantContext tenant, IUserContext user, TimeProvider clock, Movers.Services.Crew.ICrewRepository crewRepo)
+    IRecordNumbers numbers, ITenantContext tenant, IUserContext user, TimeProvider clock, Movers.Services.Crew.ICrewRepository crewRepo, Movers.Services.Tenants.ICompanyScope? companies = null)
 {
     public const string SourceKind = "DELIVERY";
     public const int MaxSignatureLength = 400_000;
@@ -481,8 +481,9 @@ public sealed class DeliveryService(IDeliveryRepository r, WarehouseService ware
         if (found is null || found.Value.Link.ExpiresAtUtc < clock.GetUtcNow()) return null;
         if (purpose is not null && found.Value.Link.Purpose != purpose) throw new InvalidOperationException("This link cannot be used for that.");
         if (!tenant.IsResolved) tenant.SetTenant(found.Value.Tenant);
+        if (companies is not null) await companies.UseCompanyOfAsync(found.Value.Job, t);
         var note = track ? (await r.Notes(found.Value.Job.Id, true, t)).SingleOrDefault(x => x.Id == found.Value.Note.Id) : found.Value.Note;
-        return note is null ? null : new(found.Value.Link, note, found.Value.Job, found.Value.Tenant.Name);
+        return note is null ? null : new(found.Value.Link, note, found.Value.Job, tenant.Company?.Name ?? found.Value.Tenant.Name);
     }
 
     private async Task<PublicDeliveryNoteModel> PublicModel(SharedLink s, CancellationToken t)

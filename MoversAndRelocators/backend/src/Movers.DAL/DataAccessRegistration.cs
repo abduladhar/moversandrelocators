@@ -34,6 +34,11 @@ public static class DataAccessRegistration
     {
         services.AddDbContext<MoversDbContext>(options => ConfigureProvider(options, provider, connectionString));
         services.AddScoped<ITenantRepository, TenantRepository>();
+        services.AddScoped<Movers.Services.Tenants.ICompanyRepository, CompanyRepository>();
+        services.AddScoped<Movers.Services.Tenants.ICompanyScope, Movers.Services.Tenants.CompanyScope>();
+        services.AddScoped<Movers.Services.Tenants.CompanyService>();
+        services.AddScoped<Movers.Services.Tenants.IMasterScopeRepository, MasterScopeRepository>();
+        services.AddScoped<Movers.Services.Tenants.MasterScopeService>();
         services.AddScoped<ISecurityRepository, SecurityRepository>();
         services.AddScoped<IAuditRepository, AuditRepository>();
         services.AddScoped<IEmployeeRepository, EmployeeRepository>();
@@ -127,6 +132,7 @@ public static class DataAccessRegistration
         await Movers.DAL.Persistence.ExpenseAttachmentSchema.Apply(db);
         await Movers.DAL.Persistence.LeadInventorySchema.Apply(db);
         await Movers.DAL.Persistence.AiUsageSchema.Apply(db);
+        await Movers.DAL.Persistence.CompanySchema.Apply(db);
         await Movers.DAL.Numbering.NumberSequenceRepository.Initialize(db);
         var seeder = scope.ServiceProvider.GetRequiredService<SecuritySeeder>();
         await seeder.SeedAsync(systemAdminEmail, systemAdminPassword, resetSystemAdminPassword);

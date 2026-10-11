@@ -55,6 +55,15 @@ public sealed class User : Entity
         UpdatedAtUtc = DateTimeOffset.UtcNow;
     }
 
+    /// <summary>Null for tenant users (they can switch between the tenant's companies); otherwise the one company this user works in.</summary>
+    public Guid? CompanyId { get; private set; }
+
+    public void SetCompany(Guid? companyId)
+    {
+        CompanyId = companyId;
+        UpdatedAtUtc = DateTimeOffset.UtcNow;
+    }
+
     public void RecordLogin() => LastLoginAtUtc = DateTimeOffset.UtcNow;
     public static string NormalizeEmail(string email) => email.Trim().ToUpperInvariant();
 }

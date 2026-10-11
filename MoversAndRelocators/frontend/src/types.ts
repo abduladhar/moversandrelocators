@@ -40,6 +40,9 @@ export type User = {
   employeeId: string | null
   employeeName: string | null
   roles: Role[]
+  /** Null: a tenant user who can switch between the tenant's companies. */
+  companyId: string | null
+  companyName: string | null
 }
 
 export type AuditLog = {
@@ -69,7 +72,35 @@ export type AuthSession = {
   }
   tenantId: string | null
   tenantName: string | null
+  /** The company the session works in (inside the tenant). */
+  companyId?: string | null
+  companyName?: string | null
+  /** Companies the user can switch to (only their own for company users). */
+  companies?: CompanyOption[]
+  /** Tenant users and system administrators can switch companies; company users cannot. */
+  canSwitchCompany?: boolean
 }
+
+export type CompanyOption = { id: string; code: string; name: string; isDefault: boolean }
+
+export type Company = {
+  id: string
+  serialNo: number
+  code: string
+  name: string
+  legalName: string | null
+  taxNumber: string | null
+  address: string | null
+  phone: string | null
+  email: string | null
+  website: string | null
+  numberCode: string | null
+  isDefault: boolean
+  isActive: boolean
+  userCount: number
+}
+
+export type CompanyInput = Omit<Company, 'id' | 'serialNo' | 'isDefault' | 'isActive' | 'userCount'>
 
 export type Designation = {
   serialNo: number

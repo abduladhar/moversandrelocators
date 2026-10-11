@@ -11,6 +11,7 @@ import { CustomerQuotationPage } from './pages/CustomerQuotationPage'
 import { CustomerPackingPage } from './pages/CustomerPackingPage'
 import { CustomerPickupPage } from './pages/CustomerPickupPage'
 import { CustomerPackingDatePage, CustomerPackingItemsPage, CustomerPackingLocationPage } from './pages/CustomerPackingLinkPages'
+import { PoweredBy } from './components/BrandMark'
 import { CustomerDeliveryDatePage, CustomerDeliveryLocationPage } from './pages/CustomerDeliveryLinkPages'
 
 export default function App() {
@@ -30,6 +31,7 @@ export default function App() {
   return <ConfigProvider theme={{ token: { colorPrimary: '#176b52', colorInfo: '#176b52', borderRadius: 8, fontFamily: "Inter, 'Segoe UI', sans-serif" }, components: { Layout: { siderBg: '#10271f' }, Menu: { darkItemBg: '#10271f', darkItemSelectedBg: '#245441' }, Table: { headerBg: '#f7f9f8' } } }}>
     {(packingToken || uploadToken || surveyToken || quotationToken || pickupToken || packingJobToken || deliveryToken) && <div className="public-refresh-bar"><RefreshButton onRefresh={() => window.location.reload()} confirmText="Reload the latest customer page? Unsaved entries and files that have not been uploaded will be cleared." /></div>}
     {packingToken ? <CustomerPackingPage token={decodeURIComponent(packingToken)} /> : uploadToken ? <CustomerUploadPage token={decodeURIComponent(uploadToken)} /> : surveyToken ? <CustomerSurveyPage token={decodeURIComponent(surveyToken)} /> : quotationToken ? <CustomerQuotationPage token={decodeURIComponent(quotationToken)} /> : pickupToken ? <CustomerPickupPage token={decodeURIComponent(pickupToken)} /> : packingJobToken ? (packingLink === 'date' ? <CustomerPackingDatePage token={packingJobToken} /> : packingLink === 'location' ? <CustomerPackingLocationPage token={packingJobToken} /> : <CustomerPackingItemsPage token={packingJobToken} />) : deliveryToken ? (deliveryLink === 'date' ? <CustomerDeliveryDatePage token={deliveryToken} /> : <CustomerDeliveryLocationPage token={deliveryToken} />) : session ? <WorkspaceLayout session={session} onSession={updateSession} /> : <LoginPage onLogin={updateSession} />}
+    {(packingToken || uploadToken || surveyToken || quotationToken || pickupToken || packingJobToken || deliveryToken) && <PoweredBy />}
   </ConfigProvider>
 }
 

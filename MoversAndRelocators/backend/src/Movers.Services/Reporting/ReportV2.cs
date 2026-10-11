@@ -158,8 +158,8 @@ public record ReportBrandingView(Guid? Version, ReportBranding Branding);
 public record SaveReportBranding(Guid? Version, ReportBranding Branding);
 
 /// <summary>
-/// Stores the tenant letterhead as a single BillingRecord (kind REPORT_BRANDING). Unset fields fall back to the
-/// tenant's own name, address, phone and email, so reports carry a sensible header before anything is configured.
+/// Stores each company's letterhead as a single BillingRecord (kind REPORT_BRANDING, one per company). Unset fields fall
+/// back to the company profile, then the tenant's, so reports carry a sensible header before anything is configured.
 /// </summary>
 public sealed partial class ReportBrandingService(IBillingRepository repository, IOperationsRepository unit, ITenantContext tenant, IUserContext user, TimeProvider clock)
 {
@@ -172,17 +172,18 @@ public sealed partial class ReportBrandingService(IBillingRepository repository,
         return new(r?.Version, r is null ? new ReportBranding(null, null, null, null, null, null, null, null) : JsonSerializer.Deserialize<ReportBranding>(r.Payload)!);
     }
 
-    /// <summary>The letterhead with blanks filled from the tenant profile.</summary>
+    /// <summary>The letterhead with blanks filled from the company profile, then the tenant profile.</summary>
     public async Task<ReportBranding> Effective(CancellationToken ct) {
-        var b = (await Get(ct)).Branding; var t = tenant.Tenant;
+        var b = (await Get(ct)).Branding; var t = tenant.Tenant; var c = tenant.Company;
         static string? Pick(string? a, string? b) => string.IsNullOrWhiteSpace(a) ? b : a;
-        return new(Pick(b.CompanyName, t?.Name) ?? "", b.Logo, Pick(b.Address, t?.Address), Pick(b.Phone, t?.Phone), Pick(b.Email, t?.ContactEmail), b.Website, b.TaxId, b.FooterNote);
+        return new(Pick(b.CompanyName, Pick(c?.LegalName, Pick(c?.Name, t?.Name))) ?? "", b.Logo, Pick(b.Address, Pick(c?.Address, t?.Address)),
+            Pick(b.Phone, Pick(c?.Phone, t?.Phone)), Pick(b.Email, Pick(c?.Email, t?.ContactEmail)), Pick(b.Website, c?.Website), Pick(b.TaxId, c?.TaxNumber), b.FooterNote);
     }
 
     public Task<ReportBrandingView> Save(SaveReportBranding c, CancellationToken ct) => unit.Transaction(async () => {
         var b = Clean(c.Branding ?? throw new InvalidOperationException("Provide the letterhead details."));
         var r = await Record(ct);
-        if (r is null) { r = new BillingRecord(tenant.TenantId) { Kind = Kind, Number = "BRANDING", RequestId = Guid.NewGuid() }; unit.Add(r); }
+        if (r is null) { r = new BillingRecord(tenant.TenantId) { Kind = Kind, Number = tenant.Company is { } company ? "BRANDING-" + company.Code : "BRANDING", RequestId = Guid.NewGuid() }; unit.Add(r); }
         else if (r.Version != c.Version) throw new OperationConflictException("The letterhead changed. Refresh before saving.");
         r.Payload = JsonSerializer.Serialize(b); r.Version = Guid.NewGuid();
         unit.Add(new BillingRecord(tenant.TenantId) { Kind = "BRANDING_HISTORY", Number = Guid.NewGuid().ToString("N"), RequestId = Guid.NewGuid(),

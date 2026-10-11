@@ -33,6 +33,7 @@ public sealed class CurrencyService(IBillingRepository repository,IOperationsRep
   return value with{BaseCurrency=value.BaseCurrency??"USD"};
  }
  public async Task<bool> BaseLocked(CancellationToken ct) {
+  using var everyCompany=tenant.IsResolved?tenant.AllCompanies():null;
   foreach(var kind in new[]{"FXSNAPSHOT","FXJOURNAL","CHARGE","CASH","DOCUMENT","VOUCHER","CASHPOST"})
    if((await repository.List(kind,ct)).Count>0)return true;
   return (await unit.Journals(ct)).Count>0;

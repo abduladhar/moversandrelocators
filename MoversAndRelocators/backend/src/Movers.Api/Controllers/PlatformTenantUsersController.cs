@@ -11,7 +11,8 @@ public sealed record CreateTenantUserRequest(
     [Required, StringLength(160, MinimumLength = 2)] string FullName,
     [Required, EmailAddress, StringLength(254)] string Email,
     [Required, MinLength(10), StringLength(200)] string Password,
-    Guid RoleId);
+    Guid RoleId,
+    Guid? CompanyId = null);
 
 /// <summary>System administrators manage a tenant's users (for example its first administrator) without entering the tenant.</summary>
 [ApiController, Authorize(Roles = RoleCodes.SystemAdmin), Route("api/platform/tenants/{tenantId:guid}")]
@@ -21,6 +22,10 @@ public sealed class PlatformTenantUsersController(ITenantService tenants, ISecur
     public async Task<ActionResult> Users(Guid tenantId, CancellationToken t) =>
         await tenants.GetAsync(tenantId, t) is null ? NotFound() : Ok((await security.ListTenantUsersAsync(tenantId, t)).Select(UserResponse.From));
 
+    [HttpGet("companies")]
+    public async Task<ActionResult> Companies(Guid tenantId, [FromServices] CompanyService companies, CancellationToken t) =>
+        await tenants.GetAsync(tenantId, t) is null ? NotFound() : Ok(await companies.OptionsAsync(tenantId, null, t));
+
     [HttpGet("roles")]
     public async Task<ActionResult> Roles(Guid tenantId, CancellationToken t) =>
         await tenants.GetAsync(tenantId, t) is null ? NotFound() : Ok(await security.ListTenantRolesAsync(tenantId, t));
@@ -29,7 +34,7 @@ public sealed class PlatformTenantUsersController(ITenantService tenants, ISecur
     public async Task<ActionResult> Create(Guid tenantId, CreateTenantUserRequest r, CancellationToken t)
     {
         if (await tenants.GetAsync(tenantId, t) is null) return NotFound();
-        try { return Ok(UserResponse.From(await security.CreateTenantUserAsync(tenantId, r.FullName, r.Email, r.Password, r.RoleId, t))); }
+        try { return Ok(UserResponse.From(await security.CreateTenantUserAsync(tenantId, r.FullName, r.Email, r.Password, r.RoleId, t, r.CompanyId))); }
         catch (InvalidOperationException e) { return BadRequest(new { message = e.Message }); }
     }
 

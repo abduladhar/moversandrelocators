@@ -9,7 +9,7 @@ using Movers.Services.Quotations;
 
 namespace Movers.Services.Tenants;
 
-public sealed class TenantService(ITenantRepository repository, ITenantContext tenantContext, ISalesRepository? salesRepository = null, ISurveyRepository? surveyRepository = null, IQuotationRepository? quotationRepository = null, TenantSeedDefaults? seedDefaults = null) : ITenantService
+public sealed class TenantService(ITenantRepository repository, ITenantContext tenantContext, ISalesRepository? salesRepository = null, ISurveyRepository? surveyRepository = null, IQuotationRepository? quotationRepository = null, TenantSeedDefaults? seedDefaults = null, ICompanyRepository? companyRepository = null) : ITenantService
 {
     public async Task<IReadOnlyList<TenantModel>> ListAsync(CancellationToken cancellationToken) =>
         (await repository.ListAsync(cancellationToken)).Select(Map).ToList();
@@ -26,8 +26,10 @@ public sealed class TenantService(ITenantRepository repository, ITenantContext t
         await EnsureUniqueSlugAsync(slug, null, cancellationToken);
         var tenant = new Tenant(command.Name, slug, command.ContactEmail, command.Phone, command.Address);
         repository.Add(tenant);
-        if (salesRepository is not null || surveyRepository is not null || quotationRepository is not null)
+        if (salesRepository is not null || surveyRepository is not null || quotationRepository is not null || companyRepository is not null)
             tenantContext.SetTenant(tenant);
+        // Every tenant starts with one company (its own name); more can be added from Companies.
+        companyRepository?.Add(new Company(tenant.Id, "MAIN", tenant.Name, true));
         if (salesRepository is not null)
         {
             AddSalesDefaults(tenant.Id, salesRepository);

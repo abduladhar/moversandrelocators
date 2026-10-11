@@ -1,22 +1,49 @@
 using Movers.Domain.Security;
 using Movers.Services.Tenancy;
+using Movers.Services.Tenants;
 
 namespace Movers.Services.Security;
 
-public sealed class SecurityService(ISecurityRepository repository, ITenantContext tenantContext, IPasswordHasher passwordHasher)
+public sealed class SecurityService(ISecurityRepository repository, ITenantContext tenantContext, IPasswordHasher passwordHasher,
+    ICompanyRepository? companies = null, IUserContext? userContext = null)
     : ISecurityService
 {
+    /// <summary>A company user who manages users only sees and creates users of their own company.</summary>
+    private async Task<Guid?> RequesterCompanyAsync(CancellationToken cancellationToken) =>
+        companies is not null && userContext?.UserId is { } id && !userContext.IsSystemAdmin ? await companies.UserCompanyAsync(id, cancellationToken) : null;
+
     public async Task<IReadOnlyList<UserModel>> ListUsersAsync(CancellationToken cancellationToken)
     {
-        var users = await repository.ListUsersAsync(tenantContext.TenantId, cancellationToken);
+        var own = await RequesterCompanyAsync(cancellationToken);
+        var users = (await repository.ListUsersAsync(tenantContext.TenantId, cancellationToken)).Where(x => own is null || x.CompanyId == own);
         var result = new List<UserModel>();
         foreach (var user in users)
             result.Add(await MapUserAsync(user, cancellationToken));
         return result;
     }
 
-    public Task<UserModel> CreateUserAsync(CreateUserCommand command, CancellationToken cancellationToken) =>
-        CreateAsync(tenantContext.TenantId, command.FullName, command.Email, command.Password, command.RoleId, command.EmployeeId, cancellationToken);
+    public async Task<UserModel> CreateUserAsync(CreateUserCommand command, CancellationToken cancellationToken) =>
+        await CreateAsync(tenantContext.TenantId, command.FullName, command.Email, command.Password, command.RoleId, command.EmployeeId,
+            await RequesterCompanyAsync(cancellationToken) ?? command.CompanyId, cancellationToken);
+
+    /// <summary>Moves a user to one company, or (null) makes them a tenant user who can switch companies. Tenant users only.</summary>
+    public async Task<UserModel?> SetUserCompanyAsync(Guid id, Guid? companyId, CancellationToken cancellationToken)
+    {
+        if (await RequesterCompanyAsync(cancellationToken) is not null) throw new InvalidOperationException("Only tenant users can change a user's company.");
+        var user = (await repository.ListUsersAsync(tenantContext.TenantId, cancellationToken)).SingleOrDefault(x => x.Id == id);
+        if (user is null) return null;
+        await EnsureCompanyAsync(tenantContext.TenantId, companyId, cancellationToken);
+        user.SetCompany(companyId);
+        await repository.SaveChangesAsync(cancellationToken);
+        return await MapUserAsync(user, cancellationToken);
+    }
+
+    private async Task EnsureCompanyAsync(Guid tenantId, Guid? companyId, CancellationToken cancellationToken)
+    {
+        if (companyId is not { } id || companies is null) return;
+        var company = await companies.GetAsync(tenantId, id, false, cancellationToken);
+        if (company is null || !company.IsActive) throw new InvalidOperationException("Select an active company of this tenant.");
+    }
 
     /* Platform (system administrator): manage the users of any tenant without entering it. */
     public async Task<IReadOnlyList<UserModel>> ListTenantUsersAsync(Guid tenantId, CancellationToken cancellationToken)
@@ -34,8 +61,8 @@ public sealed class SecurityService(ISecurityRepository repository, ITenantConte
     }
 
     /// <summary>Creates a tenant user from the platform. It has no employee link, so a new tenant can get its first administrator; link an employee later from the tenant's Users page.</summary>
-    public Task<UserModel> CreateTenantUserAsync(Guid tenantId, string fullName, string email, string password, Guid roleId, CancellationToken cancellationToken) =>
-        CreateAsync(tenantId, fullName, email, password, roleId, null, cancellationToken);
+    public Task<UserModel> CreateTenantUserAsync(Guid tenantId, string fullName, string email, string password, Guid roleId, CancellationToken cancellationToken, Guid? companyId = null) =>
+        CreateAsync(tenantId, fullName, email, password, roleId, null, companyId, cancellationToken);
 
     public async Task<UserModel?> SetTenantUserStatusAsync(Guid tenantId, Guid id, bool active, CancellationToken cancellationToken)
     {
@@ -46,8 +73,9 @@ public sealed class SecurityService(ISecurityRepository repository, ITenantConte
         return await MapUserAsync(user, cancellationToken);
     }
 
-    private async Task<UserModel> CreateAsync(Guid tenantId, string fullName, string email, string password, Guid roleId, Guid? employeeId, CancellationToken cancellationToken)
+    private async Task<UserModel> CreateAsync(Guid tenantId, string fullName, string email, string password, Guid roleId, Guid? employeeId, Guid? companyId, CancellationToken cancellationToken)
     {
+        await EnsureCompanyAsync(tenantId, companyId, cancellationToken);
         var normalized = User.NormalizeEmail(email);
         if (await repository.EmailExistsAsync(normalized, cancellationToken))
             throw new InvalidOperationException("A user with this email already exists in the system.");
@@ -63,6 +91,7 @@ public sealed class SecurityService(ISecurityRepository repository, ITenantConte
         }
 
         var user = new User(tenantId, fullName, email, passwordHasher.Hash(password), employeeId);
+        if (companyId.HasValue) user.SetCompany(companyId);
         repository.AddUser(user);
         repository.AddUserRole(new UserRole(user.Id, role.Id));
         await repository.SaveChangesAsync(cancellationToken);
@@ -71,8 +100,9 @@ public sealed class SecurityService(ISecurityRepository repository, ITenantConte
 
     public async Task<UserModel?> SetUserStatusAsync(Guid id, bool active, CancellationToken cancellationToken)
     {
+        var own = await RequesterCompanyAsync(cancellationToken);
         var users = await repository.ListUsersAsync(tenantContext.TenantId, cancellationToken);
-        var user = users.SingleOrDefault(x => x.Id == id);
+        var user = users.SingleOrDefault(x => x.Id == id && (own is null || x.CompanyId == own));
         if (user is null) return null;
         user.SetActive(active);
         await repository.SaveChangesAsync(cancellationToken);
@@ -81,8 +111,9 @@ public sealed class SecurityService(ISecurityRepository repository, ITenantConte
 
     public async Task<UserModel?> SetUserEmployeeAsync(Guid id, Guid employeeId, CancellationToken cancellationToken)
     {
+        var own = await RequesterCompanyAsync(cancellationToken);
         var users = await repository.ListUsersAsync(tenantContext.TenantId, cancellationToken);
-        var user = users.SingleOrDefault(x => x.Id == id);
+        var user = users.SingleOrDefault(x => x.Id == id && (own is null || x.CompanyId == own));
         if (user is null) return null;
         var employee = await repository.GetEmployeeAsync(employeeId, cancellationToken);
         if (employee is null || !employee.IsActive) throw new InvalidOperationException("Select an active employee from this tenant.");
@@ -120,7 +151,10 @@ public sealed class SecurityService(ISecurityRepository repository, ITenantConte
         var models = new List<RoleModel>();
         foreach (var role in roles) models.Add(await MapRoleAsync(role, cancellationToken));
         var employee = user.EmployeeId.HasValue ? await repository.GetEmployeeAsync(user.EmployeeId.Value, cancellationToken) : null;
-        return new UserModel(user.Id, user.SerialNo, user.FullName, user.Email, user.IsActive, user.LastLoginAtUtc, user.EmployeeId, employee?.FullName, models);
+        var company = user.CompanyId is { } companyId && user.TenantId is { } tenantId && companies is not null
+            ? await companies.GetAsync(tenantId, companyId, false, cancellationToken) : null;
+        return new UserModel(user.Id, user.SerialNo, user.FullName, user.Email, user.IsActive, user.LastLoginAtUtc, user.EmployeeId, employee?.FullName, models)
+            { CompanyId = user.CompanyId, CompanyName = company?.Name };
     }
 
     private async Task<RoleModel> MapRoleAsync(Role role, CancellationToken cancellationToken) =>

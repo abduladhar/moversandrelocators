@@ -47,7 +47,7 @@ public sealed class BusinessMasterService(IBusinessMasterRepository repository, 
   var existing = code is null ? null : await repository.Get(kind, code, ct);
   if (code is not null && existing is null && !Defaults(kind).Any(x => x.Code == code)) throw new KeyNotFoundException("Master record not found.");
   var prefix = kind switch { "customer" => "CUS", "vendor" => "VEN", "crew-role" => "ROLE", "payment-method" => "PAY", "payment-purpose" => "PUR", _ => "EXP" };
-  code ??= await numbers.Next(prefix, ct);
+  code ??= await numbers.NextShared(prefix, ct);
   var payload = JsonSerializer.Serialize(input);
   if (existing is null) { existing = new BusinessMaster(tenant.TenantId, kind, code, payload); repository.Add(existing); } else existing.Update(payload);
   await repository.Save(ct); return Map(existing);

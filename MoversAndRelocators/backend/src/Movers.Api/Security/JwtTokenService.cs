@@ -39,6 +39,13 @@ public sealed class JwtTokenService(IConfiguration configuration) : IJwtTokenSer
             claims.Add(new Claim("acting_tenant_id", authentication.ActingTenantId.Value.ToString()));
         if (authentication.ActingTenantName is not null)
             claims.Add(new Claim("acting_tenant_name", authentication.ActingTenantName));
+        if (authentication.Company is not null)
+        {
+            claims.Add(new Claim("company_id", authentication.Company.Id.ToString()));
+            claims.Add(new Claim("company_name", authentication.Company.Name));
+        }
+        if (authentication.User.CompanyId.HasValue)
+            claims.Add(new Claim("company_scope", "company"));
 
         var credentials = new SigningCredentials(
             new SymmetricSecurityKey(Encoding.UTF8.GetBytes(signingKey)), SecurityAlgorithms.HmacSha256);

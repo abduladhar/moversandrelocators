@@ -10,6 +10,7 @@ public static class SecurityPermissions
 {
     public const string TenantsManage = "platform.tenants.manage";
     public const string UsersView = "security.users.view";
+    public const string CompaniesManage = "settings.companies.manage";
     public const string UsersManage = "security.users.manage";
     public const string RolesView = "security.roles.view";
     public const string RolesManage = "security.roles.manage";
@@ -52,6 +53,7 @@ public static class SecurityPermissions
         (SalesExtract, "Extract inventory with OpenAI", "Sales"),
         (SalesView, "View sales leads", "Sales"), (SalesManage, "Manage sales leads and follow-ups", "Sales"),
         (SalesStatusesManage, "Manage sales status masters", "Sales"),
+        (CompaniesManage, "Manage companies (tenant users only)", "Settings"),
         (AwsConfigurationManage, "Manage tenant AWS configuration", "Settings"), (SurveysManage, "Manage surveys", "Surveys"),
         (OpenAiConfigurationManage, "Manage tenant OpenAI configuration", "Settings"),
         (QuotesManage, "Manage quotations", "Quotations"),

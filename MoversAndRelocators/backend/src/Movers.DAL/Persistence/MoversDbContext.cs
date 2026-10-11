@@ -23,6 +23,7 @@ public sealed class MoversDbContext(
 {
     public DbSet<Movers.Domain.Masters.BusinessMaster> BusinessMasters => Set<Movers.Domain.Masters.BusinessMaster>();
     public DbSet<Tenant> Tenants => Set<Tenant>();
+    public DbSet<Company> Companies => Set<Company>();
     public DbSet<User> Users => Set<User>();
     public DbSet<Role> Roles => Set<Role>();
     public DbSet<Permission> Permissions => Set<Permission>();
@@ -61,6 +62,33 @@ public sealed class MoversDbContext(
     public DbSet<PickupStatus> PickupStatuses => Set<PickupStatus>(); public DbSet<Vehicle> Vehicles => Set<Vehicle>(); public DbSet<Pickup> Pickups => Set<Pickup>(); public DbSet<PickupAssignment> PickupAssignments => Set<PickupAssignment>(); public DbSet<Movers.Domain.Employees.Team> Teams => Set<Movers.Domain.Employees.Team>(); public DbSet<Movers.Domain.Employees.TeamMembership> TeamMemberships => Set<Movers.Domain.Employees.TeamMembership>(); public DbSet<PickupPackage> PickupPackages => Set<PickupPackage>(); public DbSet<PickupPackageItem> PickupPackageItems => Set<PickupPackageItem>(); public DbSet<PickupMaterialUsage> PickupMaterialUsages => Set<PickupMaterialUsage>(); public DbSet<PickupTransaction> PickupTransactions => Set<PickupTransaction>();
     public DbSet<PickupPackingJob> PickupPackingJobs => Set<PickupPackingJob>(); public DbSet<PickupBoxPick> PickupBoxPicks => Set<PickupBoxPick>(); public DbSet<PickupBoxPickEvent> PickupBoxPickEvents => Set<PickupBoxPickEvent>(); public DbSet<PickupCollectionApproval> PickupCollectionApprovals => Set<PickupCollectionApproval>();
     private Guid CurrentTenantId => tenantContext.TenantId;
+    private Guid? CurrentCompanyId => tenantContext.CompanyId;
+
+    /// <summary>Tenant records with no company at all: the companies themselves, settings, and children that follow their parent master.</summary>
+    public static readonly IReadOnlySet<Type> SharedTypes = new HashSet<Type>
+    {
+        typeof(Company), typeof(Movers.Domain.Employees.TeamMembership), typeof(BoxTypeMaterial),
+        typeof(Movers.Domain.Operations.SavedReport), typeof(TenantAwsConfiguration), typeof(TenantOpenAiConfiguration)
+    };
+
+    /// <summary>
+    /// Masters that are shared by every company (no company, the default) or marked for one company only.
+    /// All other tenant records belong to one company.
+    /// </summary>
+    public static readonly IReadOnlySet<Type> OptionalCompanyTypes = new HashSet<Type>
+    {
+        typeof(Movers.Domain.Masters.BusinessMaster), typeof(Employee), typeof(Designation), typeof(Movers.Domain.Employees.Team),
+        typeof(LeadStatus), typeof(FollowUpStatus), typeof(MoveType),
+        typeof(HouseholdItem), typeof(PackingMaterial), typeof(BoxType),
+        typeof(ChargeMaster), typeof(TaxMaster), typeof(PickupStatus), typeof(Vehicle), typeof(Warehouse)
+    };
+
+    /// <summary>Billing store kinds that are tenant settings (chart of accounts, currencies, mappings, report designs); every other kind is company data.</summary>
+    public static readonly IReadOnlySet<string> SharedBillingKinds = new HashSet<string>(StringComparer.Ordinal)
+    {
+        "ACCOUNT", "CURRENCY", "FXRATE", "FXSETTINGS", "CHARGEMAP", "CASHFLOWMAP",
+        "REPORT_TEMPLATE_V2", "REPORT_TEMPLATE_V2_DELETED", "REPORT_HISTORY_V2"
+    };
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -81,6 +109,20 @@ public sealed class MoversDbContext(
         tenant.Property(x => x.Address).HasMaxLength(500);
         tenant.HasIndex(x => x.Slug).IsUnique();
 
+        var company = modelBuilder.Entity<Company>();
+        company.ToTable("Companies");
+        company.Property(x => x.Code).HasMaxLength(20).IsRequired();
+        company.Property(x => x.Name).HasMaxLength(160).IsRequired();
+        company.Property(x => x.LegalName).HasMaxLength(200);
+        company.Property(x => x.TaxNumber).HasMaxLength(40);
+        company.Property(x => x.Address).HasMaxLength(500);
+        company.Property(x => x.Phone).HasMaxLength(40);
+        company.Property(x => x.Email).HasMaxLength(254);
+        company.Property(x => x.Website).HasMaxLength(200);
+        company.Property(x => x.NumberCode).HasMaxLength(10);
+        company.HasIndex(x => new { x.TenantId, x.Code }).IsUnique();
+        company.HasOne<Tenant>().WithMany().HasForeignKey(x => x.TenantId).HasPrincipalKey(x => x.Id).OnDelete(DeleteBehavior.Restrict);
+
         var user = modelBuilder.Entity<User>();
         user.ToTable("Users");
         user.Property(x => x.FullName).HasMaxLength(160).IsRequired();
@@ -88,6 +130,7 @@ public sealed class MoversDbContext(
         user.Property(x => x.NormalizedEmail).HasMaxLength(254).IsRequired();
         user.Property(x => x.PasswordHash).HasMaxLength(600).IsRequired();
         user.HasIndex(x => x.NormalizedEmail).IsUnique();
+        user.HasIndex(x => x.CompanyId);
         user.HasIndex(x => x.EmployeeId).IsUnique();
         user.HasOne<Tenant>().WithMany().HasForeignKey(x => x.TenantId).HasPrincipalKey(x => x.Id).OnDelete(DeleteBehavior.Restrict);
         user.HasOne<Employee>().WithMany().HasForeignKey(x => x.EmployeeId).HasPrincipalKey(x => x.Id).OnDelete(DeleteBehavior.Restrict);
@@ -271,10 +314,12 @@ public sealed class MoversDbContext(
         }
 
         foreach (var entityType in modelBuilder.Model.GetEntityTypes()
-                     .Where(x => typeof(ITenantOwned).IsAssignableFrom(x.ClrType)))
+                     .Where(x => typeof(ITenantOwned).IsAssignableFrom(x.ClrType)).ToList())
         {
+            var configure = !typeof(TenantOwnedEntity).IsAssignableFrom(entityType.ClrType) ? nameof(ConfigureTenantEntity)
+                : SharedTypes.Contains(entityType.ClrType) ? nameof(ConfigureSharedEntity) : nameof(ConfigureCompanyEntity);
             typeof(MoversDbContext)
-                .GetMethod(nameof(ConfigureTenantEntity), System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!
+                .GetMethod(configure, System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!
                 .MakeGenericMethod(entityType.ClrType)
                 .Invoke(this, [modelBuilder]);
         }
@@ -289,8 +334,13 @@ public sealed class MoversDbContext(
         var audits = CaptureAudits();
         PersistAudits(audits);
         try { return base.SaveChanges(acceptAllChangesOnSuccess); }
+        catch (DbUpdateException e) when (IsUniqueViolation(e)) { DetachPendingAudits(); throw new InvalidOperationException(DuplicateMessage, e); }
         catch { DetachPendingAudits(); throw; }
     }
+
+    private const string DuplicateMessage = "This code or number is already used in this tenant (possibly by a record another company keeps to itself). Use a different one.";
+    private static bool IsUniqueViolation(DbUpdateException e) => e is not DbUpdateConcurrencyException && e.InnerException?.Message is { } m
+        && (m.Contains("UNIQUE", StringComparison.OrdinalIgnoreCase) || m.Contains("duplicate key", StringComparison.OrdinalIgnoreCase));
 
     public override async Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken cancellationToken = default)
     {
@@ -299,6 +349,7 @@ public sealed class MoversDbContext(
         var audits = CaptureAudits();
         PersistAudits(audits);
         try { return await base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken); }
+        catch (DbUpdateException e) when (IsUniqueViolation(e)) { DetachPendingAudits(); throw new InvalidOperationException(DuplicateMessage, e); }
         catch { DetachPendingAudits(); throw; }
     }
 
@@ -311,6 +362,26 @@ public sealed class MoversDbContext(
     {
         modelBuilder.Entity<TEntity>().HasIndex(x => x.TenantId);
         modelBuilder.Entity<TEntity>().HasQueryFilter(x => x.TenantId == CurrentTenantId);
+    }
+
+    private void ConfigureSharedEntity<TEntity>(ModelBuilder modelBuilder) where TEntity : TenantOwnedEntity
+    {
+        modelBuilder.Entity<TEntity>().Ignore(x => x.CompanyId);
+        ConfigureTenantEntity<TEntity>(modelBuilder);
+    }
+
+    // Company records: the tenant filter plus the request company. With no company resolved (customer links before
+    // the record is found, start-up seeding) only the tenant filter applies. Billing rows with no company are tenant
+    // settings, and masters with no company are shared, so both stay visible in every company.
+    private void ConfigureCompanyEntity<TEntity>(ModelBuilder modelBuilder) where TEntity : TenantOwnedEntity
+    {
+        var entity = modelBuilder.Entity<TEntity>();
+        entity.HasIndex(x => x.TenantId);
+        entity.HasIndex(x => new { x.TenantId, x.CompanyId });
+        if (typeof(TEntity) == typeof(Movers.Domain.Operations.BillingRecord) || OptionalCompanyTypes.Contains(typeof(TEntity)))
+            entity.HasQueryFilter(x => x.TenantId == CurrentTenantId && (CurrentCompanyId == null || x.CompanyId == null || x.CompanyId == CurrentCompanyId));
+        else
+            entity.HasQueryFilter(x => x.TenantId == CurrentTenantId && (CurrentCompanyId == null || x.CompanyId == CurrentCompanyId));
     }
 
     private void ConfigureEntityIdentity<TEntity>(ModelBuilder modelBuilder) where TEntity : Entity
@@ -338,6 +409,41 @@ public sealed class MoversDbContext(
             throw new InvalidOperationException("A tenant must be resolved before tenant-owned data can be changed.");
         if (writes.Any(x => x.Entity.TenantId != tenantContext.TenantId))
             throw new InvalidOperationException("Cross-tenant writes are not permitted.");
+        StampCompanies(writes);
+    }
+
+    /// <summary>Records that always belong to one company (stamped when added), as opposed to masters and tenant settings.</summary>
+    private static bool IsCompanyRecord(EntityEntry entry) =>
+        !OptionalCompanyTypes.Contains(entry.Entity.GetType())
+        && !(entry.Entity is Movers.Domain.Operations.BillingRecord billing && SharedBillingKinds.Contains(billing.Kind));
+
+    // New company records get the request company (or the tenant's default company for background work); masters keep
+    // the scope they were given (none = shared). Records of another company can never be written.
+    private void StampCompanies(IReadOnlyList<EntityEntry<ITenantOwned>> writes)
+    {
+        Guid? companyId = null;
+        foreach (var entry in writes.Where(x => x.Entity is TenantOwnedEntity && !SharedTypes.Contains(x.Entity.GetType())))
+        {
+            var property = entry.Property(nameof(TenantOwnedEntity.CompanyId));
+            var current = (Guid?)property.CurrentValue;
+            var original = entry.State == EntityState.Added ? null : (Guid?)property.OriginalValue;
+            if (entry.State == EntityState.Added && current is null && IsCompanyRecord(entry))
+                property.CurrentValue = companyId ??= tenantContext.Company?.Id ?? DefaultCompanyId();
+            else if (tenantContext.CompanyId is { } request && (current is { } owner && owner != request || original is { } before && before != request))
+                throw new InvalidOperationException("Cross-company writes are not permitted.");
+        }
+    }
+
+    private Guid DefaultCompanyId()
+    {
+        var tenantId = tenantContext.TenantId;
+        var pending = ChangeTracker.Entries<Company>().FirstOrDefault(x => x.State == EntityState.Added && x.Entity.TenantId == tenantId && x.Entity.IsDefault);
+        if (pending is not null) return pending.Entity.Id;
+        var existing = Companies.IgnoreQueryFilters().Where(x => x.TenantId == tenantId && x.IsDefault).Select(x => (Guid?)x.Id).FirstOrDefault();
+        if (existing is { } id) return id;
+        var created = new Company(tenantId, "MAIN", tenantContext.Tenant?.Name ?? "Main company", true);
+        Companies.Add(created);
+        return created.Id;
     }
 
     private List<PendingAudit> CaptureAudits()

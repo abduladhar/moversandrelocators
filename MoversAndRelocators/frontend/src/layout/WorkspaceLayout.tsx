@@ -1,4 +1,5 @@
 import { ReportTemplatesPage } from '../reportingV2/ReportTemplatesPage'
+import { BrandMark, PRODUCT_NAME } from '../components/BrandMark'
 import { AccountingReportsPage } from '../pages/AccountingReportsPage'
 import { AccountingDocumentQueue } from '../components/AccountingDocumentQueue'
 import { CurrencyConfigurationPage } from '../pages/CurrencyConfigurationPage'
@@ -14,8 +15,8 @@ import { ShipmentsPage } from '../pages/ShipmentsPage'
 import { OperationsCostsPage } from '../pages/OperationsCostsPage'
 import { TransportTripsPage } from '../pages/TransportTripsPage'
 import { useState } from 'react'
-import { Avatar, Button, Grid, Layout, Menu, Space, Tag, Typography, message } from 'antd'
-import { DownOutlined, RightOutlined, InboxOutlined, SendOutlined, AppstoreOutlined, ApartmentOutlined, AuditOutlined, BankOutlined, CarOutlined, CloudServerOutlined, DollarOutlined, FileDoneOutlined, FileSearchOutlined, HomeOutlined, IdcardOutlined, LogoutOutlined, MenuFoldOutlined, MenuUnfoldOutlined, RobotOutlined, SafetyCertificateOutlined, ShopOutlined, TagsOutlined, TeamOutlined, ToolOutlined, UserSwitchOutlined } from '@ant-design/icons'
+import { Avatar, Button, Grid, Layout, Menu, Modal, Select, Space, Tag, Typography, message } from 'antd'
+import { DownOutlined, RightOutlined, InboxOutlined, SendOutlined, AppstoreOutlined, ApartmentOutlined, AuditOutlined, BankOutlined, CarOutlined, CloudServerOutlined, DollarOutlined, FileDoneOutlined, FileSearchOutlined, HomeOutlined, IdcardOutlined, LogoutOutlined, MenuFoldOutlined, MenuUnfoldOutlined, RobotOutlined, SafetyCertificateOutlined, ShopOutlined, TagsOutlined, TeamOutlined, ToolOutlined, UserSwitchOutlined, ClusterOutlined } from '@ant-design/icons'
 import { authApi } from '../api'
 import type { AuthSession, Tenant } from '../types'
 import { TenantsPage } from '../pages/TenantsPage'
@@ -39,8 +40,10 @@ import { PickupsPage } from '../pages/PickupsPage'
 import { PackingJobsPage } from '../pages/PackingJobsPage'
 import { DeliveryJobsPage } from '../pages/DeliveryJobsPage'
 import { PickupMastersPage } from '../pages/PickupMastersPage'
+import { CompaniesPage } from '../pages/CompaniesPage'
+import { rememberCompany } from '../session'
 
-type PageKey = 'delivery' | 'report-designs' | 'accounting-reports' | `billing-${string}` | 'currency-settings' | 'posting' | 'billing' | 'customers' | 'vendors' | 'jobs' | 'warehouse' | 'master-data' | 'shipments' | 'costs' | 'trips' | 'dashboard' | 'tenants' | 'users' | 'roles' | 'designations' | 'employees' | 'crew' | 'sales' | 'sales-statuses' | 'surveys' | 'survey-masters' | 'quotations' | 'charge-masters' | 'tax-masters' | 'pickups' | 'packing' | 'pickup-masters' | 'vehicle-master' | 'warehouse-master' | 'box-type-master' | 'packing-material-master' | 'aws-settings' | 'openai-settings' | 'audit'
+type PageKey = 'delivery' | 'report-designs' | 'accounting-reports' | `billing-${string}` | 'currency-settings' | 'posting' | 'billing' | 'customers' | 'vendors' | 'jobs' | 'warehouse' | 'master-data' | 'shipments' | 'costs' | 'trips' | 'dashboard' | 'tenants' | 'users' | 'roles' | 'designations' | 'employees' | 'crew' | 'sales' | 'sales-statuses' | 'surveys' | 'survey-masters' | 'quotations' | 'charge-masters' | 'tax-masters' | 'pickups' | 'packing' | 'pickup-masters' | 'vehicle-master' | 'warehouse-master' | 'box-type-master' | 'packing-material-master' | 'aws-settings' | 'openai-settings' | 'audit' | 'companies'
 
 export function WorkspaceLayout({ session, onSession }: { session: AuthSession; onSession: (session: AuthSession | null) => void }) {
   const isSystem = session.user.isSystemAdmin
@@ -53,6 +56,12 @@ export function WorkspaceLayout({ session, onSession }: { session: AuthSession; 
   const canManageOperations = session.user.permissions.includes('operations.manage')
   const canManagePacking = canManageOperations || session.user.permissions.includes('packing.manage')
   const canManageDelivery = canManageOperations || session.user.permissions.includes('delivery.manage')
+  // Company users work in one company; tenant users and system administrators can switch and manage companies.
+  const tenantWide = isSystem || session.canSwitchCompany !== false
+  const canManageCompanies = tenantWide && session.user.permissions.includes('settings.companies.manage')
+  const companies = session.companies ?? []
+  /** Name printed on documents and shown in headers: the current company, else the tenant. */
+  const companyLabel = session.companyName ?? session.tenantName ?? PRODUCT_NAME
   const [page, setPage] = useState<PageKey>(isSystem && !tenantReady ? 'tenants' : 'dashboard')
   const [collapsed, setCollapsed] = useState(false)
   const [minimizedSections, setMinimizedSections] = useState<Record<string, boolean>>({})
@@ -61,6 +70,19 @@ export function WorkspaceLayout({ session, onSession }: { session: AuthSession; 
   const selectTenant = async (tenant: Tenant) => {
     try { onSession(await authApi.selectTenant(tenant.id)); setPage('dashboard') }
     catch (reason) { message.error(reason instanceof Error ? reason.message : 'Unable to open tenant.') }
+  }
+  const switchCompany = (companyId: string) => {
+    if (companyId === session.companyId) return
+    const target = companies.find(x => x.id === companyId)
+    Modal.confirm({
+      title: `Switch to ${target?.name ?? 'this company'}?`,
+      content: 'Open pages reload with that company\'s records. Unsaved changes on this page are lost.',
+      okText: 'Switch company',
+      onOk: async () => {
+        try { const next = await authApi.selectCompany(companyId); rememberCompany(next.companyId); onSession(next); message.success(`Now working in ${next.companyName ?? target?.name}`) }
+        catch (reason) { message.error(reason instanceof Error ? reason.message : 'Unable to switch company.') }
+      },
+    })
   }
   const items = [
     ...(session.user.permissions.includes('reports.design')?[{key:'report-designs',icon:<FileDoneOutlined/>,label:'Report designs',disabled:!tenantReady}]:[]),
@@ -85,7 +107,7 @@ export function WorkspaceLayout({ session, onSession }: { session: AuthSession; 
     ...(canManageQuotes ? [{ key: 'quotation-group', icon: <FileDoneOutlined />, label: 'Quotation', disabled: !tenantReady, children: [{ key: 'quotations', icon: <FileDoneOutlined />, label: 'Quotations' }, { key: 'charge-masters', icon: <DollarOutlined />, label: 'Charge master' }, { key: 'tax-masters', icon: <TagsOutlined />, label: 'Tax configuration' }] }] : []),
     ...(canManageOperations ? [{ key: 'operations-group', icon: <CarOutlined />, label: 'Operations setup', disabled: !tenantReady, children: [{ key: 'pickup-masters', icon: <TagsOutlined />, label: 'Pickup statuses' }, { key: 'vehicle-master', icon: <CarOutlined />, label: 'Vehicles' }, { key: 'warehouse-master', icon: <HomeOutlined />, label: 'Warehouses' }, ...(canManageSurveys ? [{ key: 'box-type-master', icon: <AppstoreOutlined />, label: 'Box types' }, { key: 'packing-material-master', icon: <ToolOutlined />, label: 'Packing materials' }] : [])] }] : []),
     { key: 'administration', icon: <SafetyCertificateOutlined />, label: 'Administration', disabled: !tenantReady, children: [{ key: 'users', icon: <UserSwitchOutlined />, label: 'Users' }, { key: 'roles', icon: <SafetyCertificateOutlined />, label: 'Roles & permissions' }, { key: 'audit', icon: <AuditOutlined />, label: 'Audit trail' }] },
-    ...((canManageCurrency || canManageAws || canManageOpenAi) ? [{ key: 'settings', icon: <CloudServerOutlined />, label: 'Settings', disabled: !tenantReady, children: [...(canManageCurrency ? [{ key: 'currency-settings', icon: <DollarOutlined />, label: 'System currency' }] : []), ...(canManageAws ? [{ key: 'aws-settings', icon: <CloudServerOutlined />, label: 'AWS configuration' }] : []), ...(canManageOpenAi ? [{ key: 'openai-settings', icon: <RobotOutlined />, label: 'OpenAI configuration' }] : [])] }] : []),
+    ...((canManageCurrency || canManageAws || canManageOpenAi || canManageCompanies) ? [{ key: 'settings', icon: <CloudServerOutlined />, label: 'Settings', disabled: !tenantReady, children: [...(canManageCompanies ? [{ key: 'companies', icon: <ClusterOutlined />, label: 'Companies' }] : []), ...(canManageCurrency ? [{ key: 'currency-settings', icon: <DollarOutlined />, label: 'System currency' }] : []), ...(canManageAws ? [{ key: 'aws-settings', icon: <CloudServerOutlined />, label: 'AWS configuration' }] : []), ...(canManageOpenAi ? [{ key: 'openai-settings', icon: <RobotOutlined />, label: 'OpenAI configuration' }] : [])] }] : []),
   ]
   const permissionByPage: Partial<Record<PageKey, string>> = {
     customers: 'operations.manage', vendors: 'operations.manage', employees: 'employees.view', designations: 'designations.manage', sales: 'sales.view',
@@ -137,23 +159,26 @@ export function WorkspaceLayout({ session, onSession }: { session: AuthSession; 
   return <BillingPermissions.Provider value={session.user.permissions}><Layout className="workspace-layout">
     <NavigationMenuDialog columns={menuGroup==='billing'?3:2} title={activeGroup?.label ?? ''} open={Boolean(activeGroup?.children)}
       items={activeGroup?.children ?? []} onClose={() => setMenuGroup(null)} onSelect={navigate} />
-    <Layout.Sider collapsible collapsed={collapsed} onCollapse={setCollapsed} trigger={null} breakpoint="lg" onBreakpoint={broken => setCollapsed(broken)} collapsedWidth={screens.lg ? 72 : 0} width={252} theme="dark" className={`app-sider ${collapsed ? 'is-collapsed' : ''}`}><div className="brand"><span>M</span><b>Movers</b></div><div className="tenant-context"><small>ACTIVE WORKSPACE</small><strong>{session.tenantName ?? 'Platform administration'}</strong><Typography.Text>{isSystem ? 'System administrator' : 'Tenant administrator'}</Typography.Text></div><div className="sidebar-menu-scroll"><Menu theme="dark" mode="inline" inlineCollapsed={collapsed} selectedKeys={[parentKey ?? page]} items={groupedItems} onClick={({ key }) => { const item = visibleItems.find(entry => entry.key === key); if (item?.children) setMenuGroup(key); else navigate(key) }} /></div><div className="user-card"><Avatar>{session.user.fullName.charAt(0)}</Avatar><div><strong>{session.user.fullName}</strong><small>{session.user.email}</small></div><Button type="text" aria-label="Sign out" icon={<LogoutOutlined />} onClick={() => onSession(null)} /></div></Layout.Sider>
-    <Layout><Layout.Header className="topbar"><Button type="text" className="menu-toggle" aria-label={collapsed ? 'Expand side menu' : 'Collapse side menu'} icon={collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />} onClick={() => setCollapsed(value => !value)} /><Space><Tag color="green">Protected session</Tag><Typography.Text type="secondary">{session.tenantName ?? 'Select a tenant to continue'}</Typography.Text></Space></Layout.Header><Layout.Content className="workspace-content">
+    <Layout.Sider collapsible collapsed={collapsed} onCollapse={setCollapsed} trigger={null} breakpoint="lg" onBreakpoint={broken => setCollapsed(broken)} collapsedWidth={screens.lg ? 72 : 0} width={252} theme="dark" className={`app-sider ${collapsed ? 'is-collapsed' : ''}`}><div className="brand"><BrandMark size={36} /><b>crateway</b></div><div className="tenant-context"><small>ACTIVE WORKSPACE</small><strong>{session.tenantName ?? 'Platform administration'}</strong>{tenantReady && session.companyId && (tenantWide && companies.length > 1
+      ? <Select className="company-switcher" size="small" value={session.companyId} onChange={switchCompany} aria-label="Company" popupMatchSelectWidth={false} suffixIcon={<UserSwitchOutlined />} options={companies.map(x => ({ value: x.id, label: x.name }))} />
+      : <span className="company-name"><ClusterOutlined /> {session.companyName}</span>)}<Typography.Text>{isSystem ? 'System administrator' : tenantWide ? 'Tenant user · all companies' : 'Company user'}</Typography.Text></div><div className="sidebar-menu-scroll"><Menu theme="dark" mode="inline" inlineCollapsed={collapsed} selectedKeys={[parentKey ?? page]} items={groupedItems} onClick={({ key }) => { const item = visibleItems.find(entry => entry.key === key); if (item?.children) setMenuGroup(key); else navigate(key) }} /></div><div className="user-card"><Avatar>{session.user.fullName.charAt(0)}</Avatar><div><strong>{session.user.fullName}</strong><small>{session.user.email}</small></div><Button type="text" aria-label="Sign out" icon={<LogoutOutlined />} onClick={() => onSession(null)} /></div></Layout.Sider>
+    <Layout><Layout.Header className="topbar"><Button type="text" className="menu-toggle" aria-label={collapsed ? 'Expand side menu' : 'Collapse side menu'} icon={collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />} onClick={() => setCollapsed(value => !value)} /><Space><Tag color="green">Protected session</Tag><Typography.Text type="secondary">{session.tenantName ? [session.tenantName, session.companyName].filter(Boolean).join(' · ') : 'Select a tenant to continue'}</Typography.Text></Space></Layout.Header><Layout.Content className="workspace-content" key={session.companyId ?? 'tenant'}>
       {page === 'report-designs' && tenantReady && session.user.permissions.includes('reports.design') && <ReportTemplatesPage />}
       {page === 'accounting-reports' && tenantReady && session.user.permissions.includes('billing.view') && <AccountingReportsPage/>}
       {page === 'posting' && tenantReady && session.user.permissions.includes('billing.view') && session.user.permissions.includes('billing.pay') && <><h1>Accountant posting</h1><AccountingDocumentQueue/><CashPostingPanel/></>}
-      {(page === 'billing'||page.startsWith('billing-')) && tenantReady && <BillingPanel key={page} section={page==='billing'?undefined:page.slice(8)} companyName={session.tenantName ?? 'Movers'} />}
+      {(page === 'billing'||page.startsWith('billing-')) && tenantReady && <BillingPanel key={page} section={page==='billing'?undefined:page.slice(8)} companyName={companyLabel} />}
       {page === 'master-data' && tenantReady && <MasterDataPage key={session.tenantId} permissions={session.user.permissions} />}
       {page === 'customers' && tenantReady && canManageOperations && <BusinessMastersPage key='customer' kind='customer' />}
       {page === 'vendors' && tenantReady && canManageOperations && <BusinessMastersPage key='vendor' kind='vendor' />}
-      {page === 'jobs' && tenantReady && canManageOperations && <JobsPage companyName={session.tenantName ?? 'Movers'} userName={session.user.fullName} />}
-      {page === 'warehouse' && tenantReady && canManageOperations && <WarehousePage companyName={session.tenantName ?? 'Movers'} userName={session.user.fullName} />}
+      {page === 'jobs' && tenantReady && canManageOperations && <JobsPage companyName={companyLabel} userName={session.user.fullName} />}
+      {page === 'warehouse' && tenantReady && canManageOperations && <WarehousePage companyName={companyLabel} userName={session.user.fullName} />}
       {page === 'shipments' && tenantReady && canManageOperations && <ShipmentsPage />}
       {page === 'costs' && tenantReady && session.user.permissions.includes('accounting.manage') && <OperationsCostsPage />}
       {page === 'trips' && tenantReady && session.user.permissions.includes('transportation.manage') && <TransportTripsPage />}
       {page === 'tenants' && <TenantsPage onSelect={selectTenant} />}
       {page === 'dashboard' && tenantReady && <MyTasksPage onNavigate={target => setPage(target as PageKey)} />}
-      {page === 'users' && tenantReady && <UsersPage />}
+      {page === 'users' && tenantReady && <UsersPage tenantWide={tenantWide} />}
+      {page === 'companies' && tenantReady && canManageCompanies && <CompaniesPage currentCompanyId={session.companyId} onChanged={rows => onSession({ ...session, companies: rows.filter(x => x.isActive).map(x => ({ id: x.id, code: x.code, name: x.name, isDefault: x.isDefault })), companyName: rows.find(x => x.id === session.companyId)?.name ?? session.companyName })} />}
       {page === 'roles' && tenantReady && <RolesPage />}
       {page === 'designations' && tenantReady && <DesignationsPage />}
       {page === 'sales' && tenantReady && <SalesLeadsPage />}
@@ -163,7 +188,7 @@ export function WorkspaceLayout({ session, onSession }: { session: AuthSession; 
       {page === 'quotations' && tenantReady && canManageQuotes && <QuotationsPage />}
       {page === 'charge-masters' && tenantReady && canManageQuotes && <ChargeMastersPage />}
       {page === 'tax-masters' && tenantReady && canManageQuotes && <TaxMastersPage />}
-      {page === 'pickups' && tenantReady && canManageOperations && <PickupsPage key={page} companyName={session.tenantName ?? 'Movers'} userName={session.user.fullName} />}
+      {page === 'pickups' && tenantReady && canManageOperations && <PickupsPage key={page} companyName={companyLabel} userName={session.user.fullName} />}
       {page === 'packing' && tenantReady && canManagePacking && <PackingJobsPage />}
       {page === 'delivery' && tenantReady && canManageDelivery && <DeliveryJobsPage />}
       {page === 'pickup-masters' && tenantReady && canManageOperations && <PickupMastersPage key="status" initialTab="status" />}

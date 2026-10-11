@@ -9,6 +9,7 @@ CREATE TABLE [BillingRecords] (
     [JournalId] uniqueidentifier NULL,
     [Id] uniqueidentifier NOT NULL,
     [TenantId] uniqueidentifier NOT NULL,
+    [CompanyId] uniqueidentifier NULL,
     CONSTRAINT [PK_BillingRecords] PRIMARY KEY ([SerialNo])
 );
 GO
@@ -21,6 +22,7 @@ CREATE TABLE [BusinessMasters] (
     [Payload] nvarchar(max) NOT NULL,
     [Id] uniqueidentifier NOT NULL,
     [TenantId] uniqueidentifier NOT NULL,
+    [CompanyId] uniqueidentifier NULL,
     CONSTRAINT [PK_BusinessMasters] PRIMARY KEY ([SerialNo])
 );
 GO
@@ -39,6 +41,7 @@ CREATE TABLE [JobCargo] (
     [UnloadedBy] nvarchar(320) NULL,
     [Id] uniqueidentifier NOT NULL,
     [TenantId] uniqueidentifier NOT NULL,
+    [CompanyId] uniqueidentifier NULL,
     CONSTRAINT [PK_JobCargo] PRIMARY KEY ([SerialNo])
 );
 GO
@@ -70,6 +73,7 @@ CREATE TABLE [PickupBoxPickEvents] (
     [Notes] nvarchar(max) NULL,
     [Id] uniqueidentifier NOT NULL,
     [TenantId] uniqueidentifier NOT NULL,
+    [CompanyId] uniqueidentifier NULL,
     CONSTRAINT [PK_PickupBoxPickEvents] PRIMARY KEY ([SerialNo])
 );
 GO
@@ -96,6 +100,7 @@ CREATE TABLE [PickupBoxPicks] (
     [Version] uniqueidentifier NOT NULL,
     [Id] uniqueidentifier NOT NULL,
     [TenantId] uniqueidentifier NOT NULL,
+    [CompanyId] uniqueidentifier NULL,
     CONSTRAINT [PK_PickupBoxPicks] PRIMARY KEY ([SerialNo])
 );
 GO
@@ -116,6 +121,7 @@ CREATE TABLE [PickupCollectionApprovals] (
     [ReopenReason] nvarchar(max) NULL,
     [Id] uniqueidentifier NOT NULL,
     [TenantId] uniqueidentifier NOT NULL,
+    [CompanyId] uniqueidentifier NULL,
     CONSTRAINT [PK_PickupCollectionApprovals] PRIMARY KEY ([SerialNo])
 );
 GO
@@ -129,6 +135,7 @@ CREATE TABLE [PickupPackingJobs] (
     [LinkedBy] nvarchar(max) NOT NULL,
     [Id] uniqueidentifier NOT NULL,
     [TenantId] uniqueidentifier NOT NULL,
+    [CompanyId] uniqueidentifier NULL,
     CONSTRAINT [PK_PickupPackingJobs] PRIMARY KEY ([SerialNo])
 );
 GO
@@ -144,6 +151,7 @@ CREATE TABLE [PickupStatuses] (
     [IsActive] bit NOT NULL,
     [Id] uniqueidentifier NOT NULL,
     [TenantId] uniqueidentifier NOT NULL,
+    [CompanyId] uniqueidentifier NULL,
     CONSTRAINT [PK_PickupStatuses] PRIMARY KEY ([SerialNo]),
     CONSTRAINT [AK_PickupStatuses_Id] UNIQUE ([Id])
 );
@@ -179,6 +187,7 @@ CREATE TABLE [Teams] (
     [Version] uniqueidentifier NOT NULL,
     [Id] uniqueidentifier NOT NULL,
     [TenantId] uniqueidentifier NOT NULL,
+    [CompanyId] uniqueidentifier NULL,
     CONSTRAINT [PK_Teams] PRIMARY KEY ([SerialNo])
 );
 GO
@@ -214,6 +223,7 @@ CREATE TABLE [TransportJobs] (
     [ArrivedAtUtc] datetimeoffset NULL,
     [Id] uniqueidentifier NOT NULL,
     [TenantId] uniqueidentifier NOT NULL,
+    [CompanyId] uniqueidentifier NULL,
     CONSTRAINT [PK_TransportJobs] PRIMARY KEY ([SerialNo])
 );
 GO
@@ -230,6 +240,7 @@ CREATE TABLE [Vehicles] (
     [IsActive] bit NOT NULL,
     [Id] uniqueidentifier NOT NULL,
     [TenantId] uniqueidentifier NOT NULL,
+    [CompanyId] uniqueidentifier NULL,
     CONSTRAINT [PK_Vehicles] PRIMARY KEY ([SerialNo]),
     CONSTRAINT [AK_Vehicles_Id] UNIQUE ([Id])
 );
@@ -250,6 +261,7 @@ CREATE TABLE [WarehouseAttachments] (
     [UploadedAtUtc] datetimeoffset NULL,
     [Id] uniqueidentifier NOT NULL,
     [TenantId] uniqueidentifier NOT NULL,
+    [CompanyId] uniqueidentifier NULL,
     CONSTRAINT [PK_WarehouseAttachments] PRIMARY KEY ([SerialNo])
 );
 GO
@@ -268,6 +280,7 @@ CREATE TABLE [WarehouseReceipts] (
     [SnapshotJson] nvarchar(max) NOT NULL,
     [Id] uniqueidentifier NOT NULL,
     [TenantId] uniqueidentifier NOT NULL,
+    [CompanyId] uniqueidentifier NULL,
     CONSTRAINT [PK_WarehouseReceipts] PRIMARY KEY ([SerialNo])
 );
 GO
@@ -292,6 +305,7 @@ CREATE TABLE [AiUsageRecords] (
     [CreatedAtUtc] datetimeoffset NOT NULL,
     [Id] uniqueidentifier NOT NULL,
     [TenantId] uniqueidentifier NOT NULL,
+    [CompanyId] uniqueidentifier NULL,
     CONSTRAINT [PK_AiUsageRecords] PRIMARY KEY ([SerialNo]),
     CONSTRAINT [FK_AiUsageRecords_Tenants_TenantId] FOREIGN KEY ([TenantId]) REFERENCES [Tenants] ([Id]) ON DELETE NO ACTION
 );
@@ -307,6 +321,7 @@ CREATE TABLE [BoxTypes] (
     [IsActive] bit NOT NULL,
     [Id] uniqueidentifier NOT NULL,
     [TenantId] uniqueidentifier NOT NULL,
+    [CompanyId] uniqueidentifier NULL,
     CONSTRAINT [PK_BoxTypes] PRIMARY KEY ([SerialNo]),
     CONSTRAINT [AK_BoxTypes_Id] UNIQUE ([Id]),
     CONSTRAINT [FK_BoxTypes_Tenants_TenantId] FOREIGN KEY ([TenantId]) REFERENCES [Tenants] ([Id]) ON DELETE NO ACTION
@@ -327,9 +342,33 @@ CREATE TABLE [ChargeMasters] (
     [UpdatedAtUtc] datetimeoffset NOT NULL,
     [Id] uniqueidentifier NOT NULL,
     [TenantId] uniqueidentifier NOT NULL,
+    [CompanyId] uniqueidentifier NULL,
     CONSTRAINT [PK_ChargeMasters] PRIMARY KEY ([SerialNo]),
     CONSTRAINT [AK_ChargeMasters_Id] UNIQUE ([Id]),
     CONSTRAINT [FK_ChargeMasters_Tenants_TenantId] FOREIGN KEY ([TenantId]) REFERENCES [Tenants] ([Id]) ON DELETE NO ACTION
+);
+GO
+
+
+CREATE TABLE [Companies] (
+    [SerialNo] int NOT NULL IDENTITY,
+    [Code] nvarchar(20) NOT NULL,
+    [Name] nvarchar(160) NOT NULL,
+    [LegalName] nvarchar(200) NULL,
+    [TaxNumber] nvarchar(40) NULL,
+    [Address] nvarchar(500) NULL,
+    [Phone] nvarchar(40) NULL,
+    [Email] nvarchar(254) NULL,
+    [Website] nvarchar(200) NULL,
+    [NumberCode] nvarchar(10) NULL,
+    [IsDefault] bit NOT NULL,
+    [IsActive] bit NOT NULL,
+    [CreatedAtUtc] datetimeoffset NOT NULL,
+    [UpdatedAtUtc] datetimeoffset NOT NULL,
+    [Id] uniqueidentifier NOT NULL,
+    [TenantId] uniqueidentifier NOT NULL,
+    CONSTRAINT [PK_Companies] PRIMARY KEY ([SerialNo]),
+    CONSTRAINT [FK_Companies_Tenants_TenantId] FOREIGN KEY ([TenantId]) REFERENCES [Tenants] ([Id]) ON DELETE NO ACTION
 );
 GO
 
@@ -346,6 +385,7 @@ CREATE TABLE [Designations] (
     [UpdatedAtUtc] datetimeoffset NOT NULL,
     [Id] uniqueidentifier NOT NULL,
     [TenantId] uniqueidentifier NOT NULL,
+    [CompanyId] uniqueidentifier NULL,
     CONSTRAINT [PK_Designations] PRIMARY KEY ([SerialNo]),
     CONSTRAINT [AK_Designations_Id] UNIQUE ([Id]),
     CONSTRAINT [FK_Designations_Tenants_TenantId] FOREIGN KEY ([TenantId]) REFERENCES [Tenants] ([Id]) ON DELETE NO ACTION
@@ -369,6 +409,7 @@ CREATE TABLE [ExpenseAttachments] (
     [UploadedAtUtc] datetimeoffset NULL,
     [Id] uniqueidentifier NOT NULL,
     [TenantId] uniqueidentifier NOT NULL,
+    [CompanyId] uniqueidentifier NULL,
     CONSTRAINT [PK_ExpenseAttachments] PRIMARY KEY ([SerialNo]),
     CONSTRAINT [FK_ExpenseAttachments_Tenants_TenantId] FOREIGN KEY ([TenantId]) REFERENCES [Tenants] ([Id]) ON DELETE NO ACTION
 );
@@ -387,6 +428,7 @@ CREATE TABLE [FollowUpStatuses] (
     [UpdatedAtUtc] datetimeoffset NOT NULL,
     [Id] uniqueidentifier NOT NULL,
     [TenantId] uniqueidentifier NOT NULL,
+    [CompanyId] uniqueidentifier NULL,
     CONSTRAINT [PK_FollowUpStatuses] PRIMARY KEY ([SerialNo]),
     CONSTRAINT [AK_FollowUpStatuses_Id] UNIQUE ([Id]),
     CONSTRAINT [FK_FollowUpStatuses_Tenants_TenantId] FOREIGN KEY ([TenantId]) REFERENCES [Tenants] ([Id]) ON DELETE NO ACTION
@@ -403,6 +445,7 @@ CREATE TABLE [HouseholdItems] (
     [IsActive] bit NOT NULL,
     [Id] uniqueidentifier NOT NULL,
     [TenantId] uniqueidentifier NOT NULL,
+    [CompanyId] uniqueidentifier NULL,
     CONSTRAINT [PK_HouseholdItems] PRIMARY KEY ([SerialNo]),
     CONSTRAINT [AK_HouseholdItems_Id] UNIQUE ([Id]),
     CONSTRAINT [FK_HouseholdItems_Tenants_TenantId] FOREIGN KEY ([TenantId]) REFERENCES [Tenants] ([Id]) ON DELETE NO ACTION
@@ -422,6 +465,7 @@ CREATE TABLE [LeadStatuses] (
     [UpdatedAtUtc] datetimeoffset NOT NULL,
     [Id] uniqueidentifier NOT NULL,
     [TenantId] uniqueidentifier NOT NULL,
+    [CompanyId] uniqueidentifier NULL,
     CONSTRAINT [PK_LeadStatuses] PRIMARY KEY ([SerialNo]),
     CONSTRAINT [AK_LeadStatuses_Id] UNIQUE ([Id]),
     CONSTRAINT [FK_LeadStatuses_Tenants_TenantId] FOREIGN KEY ([TenantId]) REFERENCES [Tenants] ([Id]) ON DELETE NO ACTION
@@ -440,6 +484,7 @@ CREATE TABLE [MoveTypes] (
     [UpdatedAtUtc] datetimeoffset NOT NULL,
     [Id] uniqueidentifier NOT NULL,
     [TenantId] uniqueidentifier NOT NULL,
+    [CompanyId] uniqueidentifier NULL,
     CONSTRAINT [PK_MoveTypes] PRIMARY KEY ([SerialNo]),
     CONSTRAINT [AK_MoveTypes_Id] UNIQUE ([Id]),
     CONSTRAINT [FK_MoveTypes_Tenants_TenantId] FOREIGN KEY ([TenantId]) REFERENCES [Tenants] ([Id]) ON DELETE NO ACTION
@@ -457,6 +502,7 @@ CREATE TABLE [PackingMaterials] (
     [IsActive] bit NOT NULL,
     [Id] uniqueidentifier NOT NULL,
     [TenantId] uniqueidentifier NOT NULL,
+    [CompanyId] uniqueidentifier NULL,
     CONSTRAINT [PK_PackingMaterials] PRIMARY KEY ([SerialNo]),
     CONSTRAINT [AK_PackingMaterials_Id] UNIQUE ([Id]),
     CONSTRAINT [FK_PackingMaterials_Tenants_TenantId] FOREIGN KEY ([TenantId]) REFERENCES [Tenants] ([Id]) ON DELETE NO ACTION
@@ -508,6 +554,7 @@ CREATE TABLE [TaxMasters] (
     [UpdatedAtUtc] datetimeoffset NOT NULL,
     [Id] uniqueidentifier NOT NULL,
     [TenantId] uniqueidentifier NOT NULL,
+    [CompanyId] uniqueidentifier NULL,
     CONSTRAINT [PK_TaxMasters] PRIMARY KEY ([SerialNo]),
     CONSTRAINT [AK_TaxMasters_Id] UNIQUE ([Id]),
     CONSTRAINT [FK_TaxMasters_Tenants_TenantId] FOREIGN KEY ([TenantId]) REFERENCES [Tenants] ([Id]) ON DELETE NO ACTION
@@ -560,6 +607,7 @@ CREATE TABLE [Warehouses] (
     [IsActive] bit NOT NULL,
     [Id] uniqueidentifier NOT NULL,
     [TenantId] uniqueidentifier NOT NULL,
+    [CompanyId] uniqueidentifier NULL,
     CONSTRAINT [PK_Warehouses] PRIMARY KEY ([SerialNo]),
     CONSTRAINT [AK_Warehouses_Id] UNIQUE ([Id]),
     CONSTRAINT [FK_Warehouses_Tenants_TenantId] FOREIGN KEY ([TenantId]) REFERENCES [Tenants] ([Id]) ON DELETE NO ACTION
@@ -588,6 +636,7 @@ CREATE TABLE [TransportTrips] (
     [Version] uniqueidentifier NOT NULL,
     [Id] uniqueidentifier NOT NULL,
     [TenantId] uniqueidentifier NOT NULL,
+    [CompanyId] uniqueidentifier NULL,
     CONSTRAINT [PK_TransportTrips] PRIMARY KEY ([SerialNo]),
     CONSTRAINT [AK_TransportTrips_Id] UNIQUE ([Id]),
     CONSTRAINT [FK_TransportTrips_Tenants_TenantId] FOREIGN KEY ([TenantId]) REFERENCES [Tenants] ([Id]) ON DELETE NO ACTION,
@@ -611,6 +660,7 @@ CREATE TABLE [Employees] (
     [UpdatedAtUtc] datetimeoffset NOT NULL,
     [Id] uniqueidentifier NOT NULL,
     [TenantId] uniqueidentifier NOT NULL,
+    [CompanyId] uniqueidentifier NULL,
     CONSTRAINT [PK_Employees] PRIMARY KEY ([SerialNo]),
     CONSTRAINT [AK_Employees_Id] UNIQUE ([Id]),
     CONSTRAINT [FK_Employees_Designations_DesignationId] FOREIGN KEY ([DesignationId]) REFERENCES [Designations] ([Id]) ON DELETE NO ACTION,
@@ -665,6 +715,7 @@ CREATE TABLE [DeliveryJobs] (
     [Version] uniqueidentifier NOT NULL,
     [Id] uniqueidentifier NOT NULL,
     [TenantId] uniqueidentifier NOT NULL,
+    [CompanyId] uniqueidentifier NULL,
     CONSTRAINT [PK_DeliveryJobs] PRIMARY KEY ([SerialNo]),
     CONSTRAINT [AK_DeliveryJobs_Id] UNIQUE ([Id]),
     CONSTRAINT [FK_DeliveryJobs_Employees_DriverEmployeeId] FOREIGN KEY ([DriverEmployeeId]) REFERENCES [Employees] ([Id]) ON DELETE NO ACTION,
@@ -693,6 +744,7 @@ CREATE TABLE [SalesLeads] (
     [UpdatedAtUtc] datetimeoffset NOT NULL,
     [Id] uniqueidentifier NOT NULL,
     [TenantId] uniqueidentifier NOT NULL,
+    [CompanyId] uniqueidentifier NULL,
     CONSTRAINT [PK_SalesLeads] PRIMARY KEY ([SerialNo]),
     CONSTRAINT [AK_SalesLeads_Id] UNIQUE ([Id]),
     CONSTRAINT [FK_SalesLeads_Employees_AssignedEmployeeId] FOREIGN KEY ([AssignedEmployeeId]) REFERENCES [Employees] ([Id]) ON DELETE NO ACTION,
@@ -715,6 +767,7 @@ CREATE TABLE [Users] (
     [LastLoginAtUtc] datetimeoffset NULL,
     [CreatedAtUtc] datetimeoffset NOT NULL,
     [UpdatedAtUtc] datetimeoffset NOT NULL,
+    [CompanyId] uniqueidentifier NULL,
     [Id] uniqueidentifier NOT NULL,
     CONSTRAINT [PK_Users] PRIMARY KEY ([SerialNo]),
     CONSTRAINT [AK_Users_Id] UNIQUE ([Id]),
@@ -734,6 +787,7 @@ CREATE TABLE [DeliveryJobCrew] (
     [AssignedAtUtc] datetimeoffset NOT NULL,
     [Id] uniqueidentifier NOT NULL,
     [TenantId] uniqueidentifier NOT NULL,
+    [CompanyId] uniqueidentifier NULL,
     CONSTRAINT [PK_DeliveryJobCrew] PRIMARY KEY ([SerialNo]),
     CONSTRAINT [FK_DeliveryJobCrew_DeliveryJobs_DeliveryJobId] FOREIGN KEY ([DeliveryJobId]) REFERENCES [DeliveryJobs] ([Id]) ON DELETE CASCADE,
     CONSTRAINT [FK_DeliveryJobCrew_Employees_EmployeeId] FOREIGN KEY ([EmployeeId]) REFERENCES [Employees] ([Id]) ON DELETE NO ACTION,
@@ -751,6 +805,7 @@ CREATE TABLE [DeliveryJobTimeEvents] (
     [RecordedBy] nvarchar(254) NOT NULL,
     [Id] uniqueidentifier NOT NULL,
     [TenantId] uniqueidentifier NOT NULL,
+    [CompanyId] uniqueidentifier NULL,
     CONSTRAINT [PK_DeliveryJobTimeEvents] PRIMARY KEY ([SerialNo]),
     CONSTRAINT [FK_DeliveryJobTimeEvents_DeliveryJobs_DeliveryJobId] FOREIGN KEY ([DeliveryJobId]) REFERENCES [DeliveryJobs] ([Id]) ON DELETE CASCADE,
     CONSTRAINT [FK_DeliveryJobTimeEvents_Tenants_TenantId] FOREIGN KEY ([TenantId]) REFERENCES [Tenants] ([Id]) ON DELETE NO ACTION
@@ -783,6 +838,7 @@ CREATE TABLE [DeliveryNotes] (
     [LocationSharedAtUtc] datetimeoffset NULL,
     [Id] uniqueidentifier NOT NULL,
     [TenantId] uniqueidentifier NOT NULL,
+    [CompanyId] uniqueidentifier NULL,
     CONSTRAINT [PK_DeliveryNotes] PRIMARY KEY ([SerialNo]),
     CONSTRAINT [AK_DeliveryNotes_Id] UNIQUE ([Id]),
     CONSTRAINT [FK_DeliveryNotes_DeliveryJobs_DeliveryJobId] FOREIGN KEY ([DeliveryJobId]) REFERENCES [DeliveryJobs] ([Id]) ON DELETE CASCADE,
@@ -802,6 +858,7 @@ CREATE TABLE [LeadFollowUps] (
     [UpdatedAtUtc] datetimeoffset NOT NULL,
     [Id] uniqueidentifier NOT NULL,
     [TenantId] uniqueidentifier NOT NULL,
+    [CompanyId] uniqueidentifier NULL,
     CONSTRAINT [PK_LeadFollowUps] PRIMARY KEY ([SerialNo]),
     CONSTRAINT [FK_LeadFollowUps_FollowUpStatuses_StatusId] FOREIGN KEY ([StatusId]) REFERENCES [FollowUpStatuses] ([Id]) ON DELETE NO ACTION,
     CONSTRAINT [FK_LeadFollowUps_SalesLeads_SalesLeadId] FOREIGN KEY ([SalesLeadId]) REFERENCES [SalesLeads] ([Id]) ON DELETE NO ACTION,
@@ -825,6 +882,7 @@ CREATE TABLE [SalesLeadInventoryItems] (
     [CreatedAtUtc] datetimeoffset NOT NULL,
     [Id] uniqueidentifier NOT NULL,
     [TenantId] uniqueidentifier NOT NULL,
+    [CompanyId] uniqueidentifier NULL,
     CONSTRAINT [PK_SalesLeadInventoryItems] PRIMARY KEY ([SerialNo]),
     CONSTRAINT [FK_SalesLeadInventoryItems_SalesLeads_SalesLeadId] FOREIGN KEY ([SalesLeadId]) REFERENCES [SalesLeads] ([Id]) ON DELETE CASCADE,
     CONSTRAINT [FK_SalesLeadInventoryItems_Tenants_TenantId] FOREIGN KEY ([TenantId]) REFERENCES [Tenants] ([Id]) ON DELETE NO ACTION
@@ -845,6 +903,7 @@ CREATE TABLE [SalesLeadUploadLinks] (
     [CustomerDescription] nvarchar(max) NULL,
     [Id] uniqueidentifier NOT NULL,
     [TenantId] uniqueidentifier NOT NULL,
+    [CompanyId] uniqueidentifier NULL,
     CONSTRAINT [PK_SalesLeadUploadLinks] PRIMARY KEY ([SerialNo]),
     CONSTRAINT [AK_SalesLeadUploadLinks_Id] UNIQUE ([Id]),
     CONSTRAINT [FK_SalesLeadUploadLinks_SalesLeads_SalesLeadId] FOREIGN KEY ([SalesLeadId]) REFERENCES [SalesLeads] ([Id]) ON DELETE NO ACTION,
@@ -883,6 +942,7 @@ CREATE TABLE [Surveys] (
     [CustomerChangeRequestedAtUtc] datetimeoffset NULL,
     [Id] uniqueidentifier NOT NULL,
     [TenantId] uniqueidentifier NOT NULL,
+    [CompanyId] uniqueidentifier NULL,
     CONSTRAINT [PK_Surveys] PRIMARY KEY ([SerialNo]),
     CONSTRAINT [AK_Surveys_Id] UNIQUE ([Id]),
     CONSTRAINT [FK_Surveys_Employees_AssignedEmployeeId] FOREIGN KEY ([AssignedEmployeeId]) REFERENCES [Employees] ([Id]) ON DELETE NO ACTION,
@@ -947,6 +1007,7 @@ CREATE TABLE [DeliveryItems] (
     [UpdatedBy] nvarchar(254) NULL,
     [Id] uniqueidentifier NOT NULL,
     [TenantId] uniqueidentifier NOT NULL,
+    [CompanyId] uniqueidentifier NULL,
     CONSTRAINT [PK_DeliveryItems] PRIMARY KEY ([SerialNo]),
     CONSTRAINT [FK_DeliveryItems_DeliveryJobs_DeliveryJobId] FOREIGN KEY ([DeliveryJobId]) REFERENCES [DeliveryJobs] ([Id]) ON DELETE CASCADE,
     CONSTRAINT [FK_DeliveryItems_DeliveryNotes_DeliveryNoteId] FOREIGN KEY ([DeliveryNoteId]) REFERENCES [DeliveryNotes] ([Id]) ON DELETE NO ACTION,
@@ -968,6 +1029,7 @@ CREATE TABLE [DeliveryJobTransactions] (
     [CreatedAtUtc] datetimeoffset NOT NULL,
     [Id] uniqueidentifier NOT NULL,
     [TenantId] uniqueidentifier NOT NULL,
+    [CompanyId] uniqueidentifier NULL,
     CONSTRAINT [PK_DeliveryJobTransactions] PRIMARY KEY ([SerialNo]),
     CONSTRAINT [FK_DeliveryJobTransactions_DeliveryJobs_DeliveryJobId] FOREIGN KEY ([DeliveryJobId]) REFERENCES [DeliveryJobs] ([Id]) ON DELETE CASCADE,
     CONSTRAINT [FK_DeliveryJobTransactions_DeliveryNotes_DeliveryNoteId] FOREIGN KEY ([DeliveryNoteId]) REFERENCES [DeliveryNotes] ([Id]) ON DELETE NO ACTION,
@@ -986,6 +1048,7 @@ CREATE TABLE [DeliveryNoteLinks] (
     [CreatedAtUtc] datetimeoffset NOT NULL,
     [Id] uniqueidentifier NOT NULL,
     [TenantId] uniqueidentifier NOT NULL,
+    [CompanyId] uniqueidentifier NULL,
     CONSTRAINT [PK_DeliveryNoteLinks] PRIMARY KEY ([SerialNo]),
     CONSTRAINT [FK_DeliveryNoteLinks_DeliveryJobs_DeliveryJobId] FOREIGN KEY ([DeliveryJobId]) REFERENCES [DeliveryJobs] ([Id]) ON DELETE CASCADE,
     CONSTRAINT [FK_DeliveryNoteLinks_DeliveryNotes_DeliveryNoteId] FOREIGN KEY ([DeliveryNoteId]) REFERENCES [DeliveryNotes] ([Id]) ON DELETE NO ACTION,
@@ -1009,6 +1072,7 @@ CREATE TABLE [SalesLeadAttachments] (
     [ExtractionJson] nvarchar(max) NULL,
     [Id] uniqueidentifier NOT NULL,
     [TenantId] uniqueidentifier NOT NULL,
+    [CompanyId] uniqueidentifier NULL,
     CONSTRAINT [PK_SalesLeadAttachments] PRIMARY KEY ([SerialNo]),
     CONSTRAINT [FK_SalesLeadAttachments_SalesLeadUploadLinks_UploadLinkId] FOREIGN KEY ([UploadLinkId]) REFERENCES [SalesLeadUploadLinks] ([Id]) ON DELETE NO ACTION,
     CONSTRAINT [FK_SalesLeadAttachments_SalesLeads_SalesLeadId] FOREIGN KEY ([SalesLeadId]) REFERENCES [SalesLeads] ([Id]) ON DELETE NO ACTION,
@@ -1049,6 +1113,7 @@ CREATE TABLE [Quotations] (
     [UpdatedAtUtc] datetimeoffset NOT NULL,
     [Id] uniqueidentifier NOT NULL,
     [TenantId] uniqueidentifier NOT NULL,
+    [CompanyId] uniqueidentifier NULL,
     CONSTRAINT [PK_Quotations] PRIMARY KEY ([SerialNo]),
     CONSTRAINT [AK_Quotations_Id] UNIQUE ([Id]),
     CONSTRAINT [FK_Quotations_Employees_AssignedEmployeeId] FOREIGN KEY ([AssignedEmployeeId]) REFERENCES [Employees] ([Id]) ON DELETE NO ACTION,
@@ -1074,6 +1139,7 @@ CREATE TABLE [SurveyAttachments] (
     [UploadedAtUtc] datetimeoffset NULL,
     [Id] uniqueidentifier NOT NULL,
     [TenantId] uniqueidentifier NOT NULL,
+    [CompanyId] uniqueidentifier NULL,
     CONSTRAINT [PK_SurveyAttachments] PRIMARY KEY ([SerialNo]),
     CONSTRAINT [FK_SurveyAttachments_Surveys_SurveyId] FOREIGN KEY ([SurveyId]) REFERENCES [Surveys] ([Id]) ON DELETE CASCADE,
     CONSTRAINT [FK_SurveyAttachments_Tenants_TenantId] FOREIGN KEY ([TenantId]) REFERENCES [Tenants] ([Id]) ON DELETE NO ACTION
@@ -1093,6 +1159,7 @@ CREATE TABLE [SurveyExpenses] (
     [CreatedAtUtc] datetimeoffset NOT NULL,
     [Id] uniqueidentifier NOT NULL,
     [TenantId] uniqueidentifier NOT NULL,
+    [CompanyId] uniqueidentifier NULL,
     CONSTRAINT [PK_SurveyExpenses] PRIMARY KEY ([SerialNo]),
     CONSTRAINT [FK_SurveyExpenses_Employees_PaidByEmployeeId] FOREIGN KEY ([PaidByEmployeeId]) REFERENCES [Employees] ([Id]) ON DELETE NO ACTION,
     CONSTRAINT [FK_SurveyExpenses_Surveys_SurveyId] FOREIGN KEY ([SurveyId]) REFERENCES [Surveys] ([Id]) ON DELETE CASCADE,
@@ -1108,6 +1175,7 @@ CREATE TABLE [SurveyExtraMaterials] (
     [Quantity] decimal(12,3) NOT NULL,
     [Id] uniqueidentifier NOT NULL,
     [TenantId] uniqueidentifier NOT NULL,
+    [CompanyId] uniqueidentifier NULL,
     CONSTRAINT [PK_SurveyExtraMaterials] PRIMARY KEY ([SerialNo]),
     CONSTRAINT [FK_SurveyExtraMaterials_PackingMaterials_MaterialId] FOREIGN KEY ([MaterialId]) REFERENCES [PackingMaterials] ([Id]) ON DELETE NO ACTION,
     CONSTRAINT [FK_SurveyExtraMaterials_Surveys_SurveyId] FOREIGN KEY ([SurveyId]) REFERENCES [Surveys] ([Id]) ON DELETE CASCADE,
@@ -1123,6 +1191,7 @@ CREATE TABLE [SurveyRooms] (
     [DisplayOrder] int NOT NULL,
     [Id] uniqueidentifier NOT NULL,
     [TenantId] uniqueidentifier NOT NULL,
+    [CompanyId] uniqueidentifier NULL,
     CONSTRAINT [PK_SurveyRooms] PRIMARY KEY ([SerialNo]),
     CONSTRAINT [AK_SurveyRooms_Id] UNIQUE ([Id]),
     CONSTRAINT [FK_SurveyRooms_Surveys_SurveyId] FOREIGN KEY ([SurveyId]) REFERENCES [Surveys] ([Id]) ON DELETE CASCADE,
@@ -1140,6 +1209,7 @@ CREATE TABLE [SurveyTimeEvents] (
     [RecordedBy] nvarchar(254) NOT NULL,
     [Id] uniqueidentifier NOT NULL,
     [TenantId] uniqueidentifier NOT NULL,
+    [CompanyId] uniqueidentifier NULL,
     CONSTRAINT [PK_SurveyTimeEvents] PRIMARY KEY ([SerialNo]),
     CONSTRAINT [FK_SurveyTimeEvents_Surveys_SurveyId] FOREIGN KEY ([SurveyId]) REFERENCES [Surveys] ([Id]) ON DELETE CASCADE,
     CONSTRAINT [FK_SurveyTimeEvents_Tenants_TenantId] FOREIGN KEY ([TenantId]) REFERENCES [Tenants] ([Id]) ON DELETE NO ACTION
@@ -1176,6 +1246,7 @@ CREATE TABLE [Pickups] (
     [UpdatedAtUtc] datetimeoffset NOT NULL,
     [Id] uniqueidentifier NOT NULL,
     [TenantId] uniqueidentifier NOT NULL,
+    [CompanyId] uniqueidentifier NULL,
     CONSTRAINT [PK_Pickups] PRIMARY KEY ([SerialNo]),
     CONSTRAINT [AK_Pickups_Id] UNIQUE ([Id]),
     CONSTRAINT [FK_Pickups_PickupStatuses_StatusId] FOREIGN KEY ([StatusId]) REFERENCES [PickupStatuses] ([Id]) ON DELETE NO ACTION,
@@ -1198,6 +1269,7 @@ CREATE TABLE [QuotationItems] (
     [DisplayOrder] int NOT NULL,
     [Id] uniqueidentifier NOT NULL,
     [TenantId] uniqueidentifier NOT NULL,
+    [CompanyId] uniqueidentifier NULL,
     CONSTRAINT [PK_QuotationItems] PRIMARY KEY ([SerialNo]),
     CONSTRAINT [FK_QuotationItems_HouseholdItems_HouseholdItemId] FOREIGN KEY ([HouseholdItemId]) REFERENCES [HouseholdItems] ([Id]) ON DELETE NO ACTION,
     CONSTRAINT [FK_QuotationItems_Quotations_QuotationId] FOREIGN KEY ([QuotationId]) REFERENCES [Quotations] ([Id]) ON DELETE CASCADE
@@ -1221,6 +1293,7 @@ CREATE TABLE [QuotationLines] (
     [DisplayOrder] int NOT NULL,
     [Id] uniqueidentifier NOT NULL,
     [TenantId] uniqueidentifier NOT NULL,
+    [CompanyId] uniqueidentifier NULL,
     CONSTRAINT [PK_QuotationLines] PRIMARY KEY ([SerialNo]),
     CONSTRAINT [AK_QuotationLines_Id] UNIQUE ([Id]),
     CONSTRAINT [FK_QuotationLines_ChargeMasters_ChargeMasterId] FOREIGN KEY ([ChargeMasterId]) REFERENCES [ChargeMasters] ([Id]) ON DELETE NO ACTION,
@@ -1239,6 +1312,7 @@ CREATE TABLE [QuotationRequoteRequests] (
     [AppliedAtUtc] datetimeoffset NULL,
     [Id] uniqueidentifier NOT NULL,
     [TenantId] uniqueidentifier NOT NULL,
+    [CompanyId] uniqueidentifier NULL,
     CONSTRAINT [PK_QuotationRequoteRequests] PRIMARY KEY ([SerialNo]),
     CONSTRAINT [FK_QuotationRequoteRequests_Quotations_QuotationId] FOREIGN KEY ([QuotationId]) REFERENCES [Quotations] ([Id]) ON DELETE CASCADE,
     CONSTRAINT [FK_QuotationRequoteRequests_Tenants_TenantId] FOREIGN KEY ([TenantId]) REFERENCES [Tenants] ([Id]) ON DELETE NO ACTION
@@ -1256,6 +1330,7 @@ CREATE TABLE [SurveyItems] (
     [Notes] nvarchar(500) NULL,
     [Id] uniqueidentifier NOT NULL,
     [TenantId] uniqueidentifier NOT NULL,
+    [CompanyId] uniqueidentifier NULL,
     CONSTRAINT [PK_SurveyItems] PRIMARY KEY ([SerialNo]),
     CONSTRAINT [FK_SurveyItems_HouseholdItems_HouseholdItemId] FOREIGN KEY ([HouseholdItemId]) REFERENCES [HouseholdItems] ([Id]) ON DELETE NO ACTION,
     CONSTRAINT [FK_SurveyItems_SurveyRooms_RoomId] FOREIGN KEY ([RoomId]) REFERENCES [SurveyRooms] ([Id]) ON DELETE NO ACTION,
@@ -1279,6 +1354,7 @@ CREATE TABLE [JobExpenses] (
     [RequestHash] nvarchar(160) NOT NULL,
     [Id] uniqueidentifier NOT NULL,
     [TenantId] uniqueidentifier NOT NULL,
+    [CompanyId] uniqueidentifier NULL,
     CONSTRAINT [PK_JobExpenses] PRIMARY KEY ([SerialNo]),
     CONSTRAINT [FK_JobExpenses_Pickups_PickupId] FOREIGN KEY ([PickupId]) REFERENCES [Pickups] ([Id]) ON DELETE NO ACTION,
     CONSTRAINT [FK_JobExpenses_Tenants_TenantId] FOREIGN KEY ([TenantId]) REFERENCES [Tenants] ([Id]) ON DELETE NO ACTION
@@ -1300,6 +1376,7 @@ CREATE TABLE [JournalEntries] (
     [PostedAtUtc] datetimeoffset NOT NULL,
     [Id] uniqueidentifier NOT NULL,
     [TenantId] uniqueidentifier NOT NULL,
+    [CompanyId] uniqueidentifier NULL,
     CONSTRAINT [PK_JournalEntries] PRIMARY KEY ([SerialNo]),
     CONSTRAINT [AK_JournalEntries_Id] UNIQUE ([Id]),
     CONSTRAINT [FK_JournalEntries_JournalEntries_ReversesId] FOREIGN KEY ([ReversesId]) REFERENCES [JournalEntries] ([Id]) ON DELETE NO ACTION,
@@ -1330,6 +1407,7 @@ CREATE TABLE [LabourEntries] (
     [RecordedBy] uniqueidentifier NOT NULL,
     [Id] uniqueidentifier NOT NULL,
     [TenantId] uniqueidentifier NOT NULL,
+    [CompanyId] uniqueidentifier NULL,
     CONSTRAINT [PK_LabourEntries] PRIMARY KEY ([SerialNo]),
     CONSTRAINT [FK_LabourEntries_Employees_EmployeeId] FOREIGN KEY ([EmployeeId]) REFERENCES [Employees] ([Id]) ON DELETE NO ACTION,
     CONSTRAINT [FK_LabourEntries_Pickups_PickupId] FOREIGN KEY ([PickupId]) REFERENCES [Pickups] ([Id]) ON DELETE NO ACTION,
@@ -1353,6 +1431,7 @@ CREATE TABLE [PackingConfirmations] (
     [Version] uniqueidentifier NOT NULL,
     [Id] uniqueidentifier NOT NULL,
     [TenantId] uniqueidentifier NOT NULL,
+    [CompanyId] uniqueidentifier NULL,
     CONSTRAINT [PK_PackingConfirmations] PRIMARY KEY ([SerialNo]),
     CONSTRAINT [FK_PackingConfirmations_Pickups_PickupId] FOREIGN KEY ([PickupId]) REFERENCES [Pickups] ([Id]) ON DELETE NO ACTION,
     CONSTRAINT [FK_PackingConfirmations_Tenants_TenantId] FOREIGN KEY ([TenantId]) REFERENCES [Tenants] ([Id]) ON DELETE NO ACTION
@@ -1393,6 +1472,7 @@ CREATE TABLE [PackingJobs] (
     [DurationMinutes] int NOT NULL,
     [Id] uniqueidentifier NOT NULL,
     [TenantId] uniqueidentifier NOT NULL,
+    [CompanyId] uniqueidentifier NULL,
     CONSTRAINT [PK_PackingJobs] PRIMARY KEY ([SerialNo]),
     CONSTRAINT [AK_PackingJobs_Id] UNIQUE ([Id]),
     CONSTRAINT [FK_PackingJobs_Pickups_PickupId] FOREIGN KEY ([PickupId]) REFERENCES [Pickups] ([Id]) ON DELETE NO ACTION,
@@ -1413,6 +1493,7 @@ CREATE TABLE [PickupAssignments] (
     [AssignedAtUtc] datetimeoffset NOT NULL,
     [Id] uniqueidentifier NOT NULL,
     [TenantId] uniqueidentifier NOT NULL,
+    [CompanyId] uniqueidentifier NULL,
     CONSTRAINT [PK_PickupAssignments] PRIMARY KEY ([SerialNo]),
     CONSTRAINT [FK_PickupAssignments_Employees_EmployeeId] FOREIGN KEY ([EmployeeId]) REFERENCES [Employees] ([Id]) ON DELETE NO ACTION,
     CONSTRAINT [FK_PickupAssignments_Pickups_PickupId] FOREIGN KEY ([PickupId]) REFERENCES [Pickups] ([Id]) ON DELETE CASCADE
@@ -1438,6 +1519,7 @@ CREATE TABLE [PickupAttachments] (
     [UploadedAtUtc] datetimeoffset NULL,
     [Id] uniqueidentifier NOT NULL,
     [TenantId] uniqueidentifier NOT NULL,
+    [CompanyId] uniqueidentifier NULL,
     CONSTRAINT [PK_PickupAttachments] PRIMARY KEY ([SerialNo]),
     CONSTRAINT [FK_PickupAttachments_Pickups_PickupId] FOREIGN KEY ([PickupId]) REFERENCES [Pickups] ([Id]) ON DELETE CASCADE,
     CONSTRAINT [FK_PickupAttachments_Tenants_TenantId] FOREIGN KEY ([TenantId]) REFERENCES [Tenants] ([Id]) ON DELETE NO ACTION
@@ -1457,6 +1539,7 @@ CREATE TABLE [PickupExpenses] (
     [CreatedAtUtc] datetimeoffset NOT NULL,
     [Id] uniqueidentifier NOT NULL,
     [TenantId] uniqueidentifier NOT NULL,
+    [CompanyId] uniqueidentifier NULL,
     CONSTRAINT [PK_PickupExpenses] PRIMARY KEY ([SerialNo]),
     CONSTRAINT [FK_PickupExpenses_Employees_PaidByEmployeeId] FOREIGN KEY ([PaidByEmployeeId]) REFERENCES [Employees] ([Id]) ON DELETE NO ACTION,
     CONSTRAINT [FK_PickupExpenses_Pickups_PickupId] FOREIGN KEY ([PickupId]) REFERENCES [Pickups] ([Id]) ON DELETE CASCADE,
@@ -1474,6 +1557,7 @@ CREATE TABLE [PickupMaterialUsages] (
     [IsBoxRecipe] bit NOT NULL,
     [Id] uniqueidentifier NOT NULL,
     [TenantId] uniqueidentifier NOT NULL,
+    [CompanyId] uniqueidentifier NULL,
     CONSTRAINT [PK_PickupMaterialUsages] PRIMARY KEY ([SerialNo]),
     CONSTRAINT [FK_PickupMaterialUsages_PackingMaterials_MaterialId] FOREIGN KEY ([MaterialId]) REFERENCES [PackingMaterials] ([Id]) ON DELETE NO ACTION,
     CONSTRAINT [FK_PickupMaterialUsages_Pickups_PickupId] FOREIGN KEY ([PickupId]) REFERENCES [Pickups] ([Id]) ON DELETE CASCADE
@@ -1491,6 +1575,7 @@ CREATE TABLE [PickupPackages] (
     [IsFragile] bit NOT NULL,
     [Id] uniqueidentifier NOT NULL,
     [TenantId] uniqueidentifier NOT NULL,
+    [CompanyId] uniqueidentifier NULL,
     CONSTRAINT [PK_PickupPackages] PRIMARY KEY ([SerialNo]),
     CONSTRAINT [AK_PickupPackages_Id] UNIQUE ([Id]),
     CONSTRAINT [FK_PickupPackages_BoxTypes_BoxTypeId] FOREIGN KEY ([BoxTypeId]) REFERENCES [BoxTypes] ([Id]) ON DELETE NO ACTION,
@@ -1512,6 +1597,7 @@ CREATE TABLE [PickupSignoffs] (
     [RecordedBy] nvarchar(254) NOT NULL,
     [Id] uniqueidentifier NOT NULL,
     [TenantId] uniqueidentifier NOT NULL,
+    [CompanyId] uniqueidentifier NULL,
     CONSTRAINT [PK_PickupSignoffs] PRIMARY KEY ([SerialNo]),
     CONSTRAINT [FK_PickupSignoffs_Employees_EmployeeId] FOREIGN KEY ([EmployeeId]) REFERENCES [Employees] ([Id]) ON DELETE NO ACTION,
     CONSTRAINT [FK_PickupSignoffs_Pickups_PickupId] FOREIGN KEY ([PickupId]) REFERENCES [Pickups] ([Id]) ON DELETE CASCADE,
@@ -1529,6 +1615,7 @@ CREATE TABLE [PickupTimeEvents] (
     [RecordedBy] nvarchar(254) NOT NULL,
     [Id] uniqueidentifier NOT NULL,
     [TenantId] uniqueidentifier NOT NULL,
+    [CompanyId] uniqueidentifier NULL,
     CONSTRAINT [PK_PickupTimeEvents] PRIMARY KEY ([SerialNo]),
     CONSTRAINT [FK_PickupTimeEvents_Pickups_PickupId] FOREIGN KEY ([PickupId]) REFERENCES [Pickups] ([Id]) ON DELETE CASCADE,
     CONSTRAINT [FK_PickupTimeEvents_Tenants_TenantId] FOREIGN KEY ([TenantId]) REFERENCES [Tenants] ([Id]) ON DELETE NO ACTION
@@ -1548,6 +1635,7 @@ CREATE TABLE [PickupTransactions] (
     [CreatedAtUtc] datetimeoffset NOT NULL,
     [Id] uniqueidentifier NOT NULL,
     [TenantId] uniqueidentifier NOT NULL,
+    [CompanyId] uniqueidentifier NULL,
     CONSTRAINT [PK_PickupTransactions] PRIMARY KEY ([SerialNo]),
     CONSTRAINT [FK_PickupTransactions_Pickups_PickupId] FOREIGN KEY ([PickupId]) REFERENCES [Pickups] ([Id]) ON DELETE CASCADE
 );
@@ -1563,6 +1651,7 @@ CREATE TABLE [TripAllocations] (
     [OtherCost] decimal(18,2) NOT NULL,
     [Id] uniqueidentifier NOT NULL,
     [TenantId] uniqueidentifier NOT NULL,
+    [CompanyId] uniqueidentifier NULL,
     CONSTRAINT [PK_TripAllocations] PRIMARY KEY ([SerialNo]),
     CONSTRAINT [FK_TripAllocations_Pickups_PickupId] FOREIGN KEY ([PickupId]) REFERENCES [Pickups] ([Id]) ON DELETE NO ACTION,
     CONSTRAINT [FK_TripAllocations_Tenants_TenantId] FOREIGN KEY ([TenantId]) REFERENCES [Tenants] ([Id]) ON DELETE NO ACTION,
@@ -1584,6 +1673,7 @@ CREATE TABLE [QuotationLineTaxes] (
     [Amount] decimal(20,4) NOT NULL,
     [Id] uniqueidentifier NOT NULL,
     [TenantId] uniqueidentifier NOT NULL,
+    [CompanyId] uniqueidentifier NULL,
     CONSTRAINT [PK_QuotationLineTaxes] PRIMARY KEY ([SerialNo]),
     CONSTRAINT [FK_QuotationLineTaxes_QuotationLines_QuotationLineId] FOREIGN KEY ([QuotationLineId]) REFERENCES [QuotationLines] ([Id]) ON DELETE CASCADE,
     CONSTRAINT [FK_QuotationLineTaxes_TaxMasters_TaxMasterId] FOREIGN KEY ([TaxMasterId]) REFERENCES [TaxMasters] ([Id]) ON DELETE NO ACTION,
@@ -1600,6 +1690,7 @@ CREATE TABLE [JournalLines] (
     [Credit] decimal(18,2) NOT NULL,
     [Id] uniqueidentifier NOT NULL,
     [TenantId] uniqueidentifier NOT NULL,
+    [CompanyId] uniqueidentifier NULL,
     CONSTRAINT [PK_JournalLines] PRIMARY KEY ([SerialNo]),
     CONSTRAINT [FK_JournalLines_JournalEntries_JournalId] FOREIGN KEY ([JournalId]) REFERENCES [JournalEntries] ([Id]) ON DELETE NO ACTION,
     CONSTRAINT [FK_JournalLines_Tenants_TenantId] FOREIGN KEY ([TenantId]) REFERENCES [Tenants] ([Id]) ON DELETE NO ACTION
@@ -1621,6 +1712,7 @@ CREATE TABLE [PackingJobBoxes] (
     [CustomMaterials] bit NOT NULL,
     [Id] uniqueidentifier NOT NULL,
     [TenantId] uniqueidentifier NOT NULL,
+    [CompanyId] uniqueidentifier NULL,
     CONSTRAINT [PK_PackingJobBoxes] PRIMARY KEY ([SerialNo]),
     CONSTRAINT [AK_PackingJobBoxes_Id] UNIQUE ([Id]),
     CONSTRAINT [FK_PackingJobBoxes_BoxTypes_BoxTypeId] FOREIGN KEY ([BoxTypeId]) REFERENCES [BoxTypes] ([Id]) ON DELETE NO ACTION,
@@ -1640,6 +1732,7 @@ CREATE TABLE [PackingJobCrew] (
     [AssignedAtUtc] datetimeoffset NOT NULL,
     [Id] uniqueidentifier NOT NULL,
     [TenantId] uniqueidentifier NOT NULL,
+    [CompanyId] uniqueidentifier NULL,
     CONSTRAINT [PK_PackingJobCrew] PRIMARY KEY ([SerialNo]),
     CONSTRAINT [FK_PackingJobCrew_Employees_EmployeeId] FOREIGN KEY ([EmployeeId]) REFERENCES [Employees] ([Id]) ON DELETE NO ACTION,
     CONSTRAINT [FK_PackingJobCrew_PackingJobs_PackingJobId] FOREIGN KEY ([PackingJobId]) REFERENCES [PackingJobs] ([Id]) ON DELETE CASCADE,
@@ -1657,6 +1750,7 @@ CREATE TABLE [PackingJobLinks] (
     [CreatedAtUtc] datetimeoffset NOT NULL,
     [Id] uniqueidentifier NOT NULL,
     [TenantId] uniqueidentifier NOT NULL,
+    [CompanyId] uniqueidentifier NULL,
     CONSTRAINT [PK_PackingJobLinks] PRIMARY KEY ([SerialNo]),
     CONSTRAINT [FK_PackingJobLinks_PackingJobs_PackingJobId] FOREIGN KEY ([PackingJobId]) REFERENCES [PackingJobs] ([Id]) ON DELETE CASCADE,
     CONSTRAINT [FK_PackingJobLinks_Tenants_TenantId] FOREIGN KEY ([TenantId]) REFERENCES [Tenants] ([Id]) ON DELETE NO ACTION
@@ -1673,6 +1767,7 @@ CREATE TABLE [PackingJobMaterials] (
     [IsBoxRecipe] bit NOT NULL,
     [Id] uniqueidentifier NOT NULL,
     [TenantId] uniqueidentifier NOT NULL,
+    [CompanyId] uniqueidentifier NULL,
     CONSTRAINT [PK_PackingJobMaterials] PRIMARY KEY ([SerialNo]),
     CONSTRAINT [FK_PackingJobMaterials_PackingJobs_PackingJobId] FOREIGN KEY ([PackingJobId]) REFERENCES [PackingJobs] ([Id]) ON DELETE CASCADE,
     CONSTRAINT [FK_PackingJobMaterials_PackingMaterials_MaterialId] FOREIGN KEY ([MaterialId]) REFERENCES [PackingMaterials] ([Id]) ON DELETE NO ACTION,
@@ -1690,6 +1785,7 @@ CREATE TABLE [PackingJobTimeEvents] (
     [RecordedBy] nvarchar(254) NOT NULL,
     [Id] uniqueidentifier NOT NULL,
     [TenantId] uniqueidentifier NOT NULL,
+    [CompanyId] uniqueidentifier NULL,
     CONSTRAINT [PK_PackingJobTimeEvents] PRIMARY KEY ([SerialNo]),
     CONSTRAINT [FK_PackingJobTimeEvents_PackingJobs_PackingJobId] FOREIGN KEY ([PackingJobId]) REFERENCES [PackingJobs] ([Id]) ON DELETE CASCADE,
     CONSTRAINT [FK_PackingJobTimeEvents_Tenants_TenantId] FOREIGN KEY ([TenantId]) REFERENCES [Tenants] ([Id]) ON DELETE NO ACTION
@@ -1709,6 +1805,7 @@ CREATE TABLE [PackingJobTransactions] (
     [CreatedAtUtc] datetimeoffset NOT NULL,
     [Id] uniqueidentifier NOT NULL,
     [TenantId] uniqueidentifier NOT NULL,
+    [CompanyId] uniqueidentifier NULL,
     CONSTRAINT [PK_PackingJobTransactions] PRIMARY KEY ([SerialNo]),
     CONSTRAINT [FK_PackingJobTransactions_PackingJobs_PackingJobId] FOREIGN KEY ([PackingJobId]) REFERENCES [PackingJobs] ([Id]) ON DELETE CASCADE,
     CONSTRAINT [FK_PackingJobTransactions_Tenants_TenantId] FOREIGN KEY ([TenantId]) REFERENCES [Tenants] ([Id]) ON DELETE NO ACTION
@@ -1730,6 +1827,7 @@ CREATE TABLE [PackageHandovers] (
     [WarehouseId] uniqueidentifier NULL,
     [Id] uniqueidentifier NOT NULL,
     [TenantId] uniqueidentifier NOT NULL,
+    [CompanyId] uniqueidentifier NULL,
     CONSTRAINT [PK_PackageHandovers] PRIMARY KEY ([SerialNo]),
     CONSTRAINT [FK_PackageHandovers_PickupPackages_PackageId] FOREIGN KEY ([PackageId]) REFERENCES [PickupPackages] ([Id]) ON DELETE NO ACTION,
     CONSTRAINT [FK_PackageHandovers_Pickups_PickupId] FOREIGN KEY ([PickupId]) REFERENCES [Pickups] ([Id]) ON DELETE NO ACTION,
@@ -1749,6 +1847,7 @@ CREATE TABLE [PickupPackageItems] (
     [HouseholdItemId] uniqueidentifier NULL,
     [Id] uniqueidentifier NOT NULL,
     [TenantId] uniqueidentifier NOT NULL,
+    [CompanyId] uniqueidentifier NULL,
     CONSTRAINT [PK_PickupPackageItems] PRIMARY KEY ([SerialNo]),
     CONSTRAINT [FK_PickupPackageItems_PickupPackages_PickupPackageId] FOREIGN KEY ([PickupPackageId]) REFERENCES [PickupPackages] ([Id]) ON DELETE CASCADE
 );
@@ -1769,6 +1868,7 @@ CREATE TABLE [ShipmentClaims] (
     [Version] uniqueidentifier NOT NULL,
     [Id] uniqueidentifier NOT NULL,
     [TenantId] uniqueidentifier NOT NULL,
+    [CompanyId] uniqueidentifier NULL,
     CONSTRAINT [PK_ShipmentClaims] PRIMARY KEY ([SerialNo]),
     CONSTRAINT [FK_ShipmentClaims_PickupPackages_PackageId] FOREIGN KEY ([PackageId]) REFERENCES [PickupPackages] ([Id]) ON DELETE NO ACTION,
     CONSTRAINT [FK_ShipmentClaims_Pickups_PickupId] FOREIGN KEY ([PickupId]) REFERENCES [Pickups] ([Id]) ON DELETE NO ACTION,
@@ -1786,6 +1886,7 @@ CREATE TABLE [PackingJobBoxItems] (
     [HouseholdItemId] uniqueidentifier NULL,
     [Id] uniqueidentifier NOT NULL,
     [TenantId] uniqueidentifier NOT NULL,
+    [CompanyId] uniqueidentifier NULL,
     CONSTRAINT [PK_PackingJobBoxItems] PRIMARY KEY ([SerialNo]),
     CONSTRAINT [FK_PackingJobBoxItems_PackingJobBoxes_PackingJobBoxId] FOREIGN KEY ([PackingJobBoxId]) REFERENCES [PackingJobBoxes] ([Id]) ON DELETE CASCADE,
     CONSTRAINT [FK_PackingJobBoxItems_Tenants_TenantId] FOREIGN KEY ([TenantId]) REFERENCES [Tenants] ([Id]) ON DELETE NO ACTION
@@ -1800,6 +1901,7 @@ CREATE TABLE [PackingJobBoxMaterials] (
     [Quantity] decimal(12,3) NOT NULL,
     [Id] uniqueidentifier NOT NULL,
     [TenantId] uniqueidentifier NOT NULL,
+    [CompanyId] uniqueidentifier NULL,
     CONSTRAINT [PK_PackingJobBoxMaterials] PRIMARY KEY ([SerialNo]),
     CONSTRAINT [FK_PackingJobBoxMaterials_PackingJobBoxes_PackingJobBoxId] FOREIGN KEY ([PackingJobBoxId]) REFERENCES [PackingJobBoxes] ([Id]) ON DELETE CASCADE,
     CONSTRAINT [FK_PackingJobBoxMaterials_PackingMaterials_MaterialId] FOREIGN KEY ([MaterialId]) REFERENCES [PackingMaterials] ([Id]) ON DELETE NO ACTION,
@@ -1820,6 +1922,10 @@ CREATE INDEX [IX_AiUsageRecords_TenantId] ON [AiUsageRecords] ([TenantId]);
 GO
 
 
+CREATE INDEX [IX_AiUsageRecords_TenantId_CompanyId] ON [AiUsageRecords] ([TenantId], [CompanyId]);
+GO
+
+
 CREATE INDEX [IX_AuditLogs_ActorUserId] ON [AuditLogs] ([ActorUserId]);
 GO
 
@@ -1837,6 +1943,10 @@ GO
 
 
 CREATE INDEX [IX_BillingRecords_TenantId] ON [BillingRecords] ([TenantId]);
+GO
+
+
+CREATE INDEX [IX_BillingRecords_TenantId_CompanyId] ON [BillingRecords] ([TenantId], [CompanyId]);
 GO
 
 
@@ -1876,11 +1986,19 @@ CREATE UNIQUE INDEX [IX_BoxTypes_TenantId_Code] ON [BoxTypes] ([TenantId], [Code
 GO
 
 
+CREATE INDEX [IX_BoxTypes_TenantId_CompanyId] ON [BoxTypes] ([TenantId], [CompanyId]);
+GO
+
+
 CREATE UNIQUE INDEX [IX_BusinessMasters_Id] ON [BusinessMasters] ([Id]);
 GO
 
 
 CREATE INDEX [IX_BusinessMasters_TenantId] ON [BusinessMasters] ([TenantId]);
+GO
+
+
+CREATE INDEX [IX_BusinessMasters_TenantId_CompanyId] ON [BusinessMasters] ([TenantId], [CompanyId]);
 GO
 
 
@@ -1897,6 +2015,22 @@ GO
 
 
 CREATE UNIQUE INDEX [IX_ChargeMasters_TenantId_Code] ON [ChargeMasters] ([TenantId], [Code]);
+GO
+
+
+CREATE INDEX [IX_ChargeMasters_TenantId_CompanyId] ON [ChargeMasters] ([TenantId], [CompanyId]);
+GO
+
+
+CREATE UNIQUE INDEX [IX_Companies_Id] ON [Companies] ([Id]);
+GO
+
+
+CREATE INDEX [IX_Companies_TenantId] ON [Companies] ([TenantId]);
+GO
+
+
+CREATE UNIQUE INDEX [IX_Companies_TenantId_Code] ON [Companies] ([TenantId], [Code]);
 GO
 
 
@@ -1920,6 +2054,10 @@ CREATE INDEX [IX_DeliveryItems_TenantId] ON [DeliveryItems] ([TenantId]);
 GO
 
 
+CREATE INDEX [IX_DeliveryItems_TenantId_CompanyId] ON [DeliveryItems] ([TenantId], [CompanyId]);
+GO
+
+
 CREATE INDEX [IX_DeliveryJobCrew_DeliveryJobId] ON [DeliveryJobCrew] ([DeliveryJobId]);
 GO
 
@@ -1936,6 +2074,10 @@ CREATE INDEX [IX_DeliveryJobCrew_TenantId] ON [DeliveryJobCrew] ([TenantId]);
 GO
 
 
+CREATE INDEX [IX_DeliveryJobCrew_TenantId_CompanyId] ON [DeliveryJobCrew] ([TenantId], [CompanyId]);
+GO
+
+
 CREATE INDEX [IX_DeliveryJobs_DriverEmployeeId] ON [DeliveryJobs] ([DriverEmployeeId]);
 GO
 
@@ -1945,6 +2087,10 @@ GO
 
 
 CREATE INDEX [IX_DeliveryJobs_TenantId] ON [DeliveryJobs] ([TenantId]);
+GO
+
+
+CREATE INDEX [IX_DeliveryJobs_TenantId_CompanyId] ON [DeliveryJobs] ([TenantId], [CompanyId]);
 GO
 
 
@@ -1968,6 +2114,10 @@ CREATE INDEX [IX_DeliveryJobTimeEvents_TenantId] ON [DeliveryJobTimeEvents] ([Te
 GO
 
 
+CREATE INDEX [IX_DeliveryJobTimeEvents_TenantId_CompanyId] ON [DeliveryJobTimeEvents] ([TenantId], [CompanyId]);
+GO
+
+
 CREATE INDEX [IX_DeliveryJobTransactions_DeliveryJobId] ON [DeliveryJobTransactions] ([DeliveryJobId]);
 GO
 
@@ -1981,6 +2131,10 @@ GO
 
 
 CREATE INDEX [IX_DeliveryJobTransactions_TenantId] ON [DeliveryJobTransactions] ([TenantId]);
+GO
+
+
+CREATE INDEX [IX_DeliveryJobTransactions_TenantId_CompanyId] ON [DeliveryJobTransactions] ([TenantId], [CompanyId]);
 GO
 
 
@@ -2004,6 +2158,10 @@ CREATE INDEX [IX_DeliveryNoteLinks_TenantId] ON [DeliveryNoteLinks] ([TenantId])
 GO
 
 
+CREATE INDEX [IX_DeliveryNoteLinks_TenantId_CompanyId] ON [DeliveryNoteLinks] ([TenantId], [CompanyId]);
+GO
+
+
 CREATE UNIQUE INDEX [IX_DeliveryNoteLinks_TokenHash] ON [DeliveryNoteLinks] ([TokenHash]);
 GO
 
@@ -2017,6 +2175,10 @@ GO
 
 
 CREATE INDEX [IX_DeliveryNotes_TenantId] ON [DeliveryNotes] ([TenantId]);
+GO
+
+
+CREATE INDEX [IX_DeliveryNotes_TenantId_CompanyId] ON [DeliveryNotes] ([TenantId], [CompanyId]);
 GO
 
 
@@ -2036,6 +2198,10 @@ CREATE UNIQUE INDEX [IX_Designations_TenantId_Code] ON [Designations] ([TenantId
 GO
 
 
+CREATE INDEX [IX_Designations_TenantId_CompanyId] ON [Designations] ([TenantId], [CompanyId]);
+GO
+
+
 CREATE INDEX [IX_Employees_DesignationId] ON [Employees] ([DesignationId]);
 GO
 
@@ -2052,6 +2218,10 @@ CREATE INDEX [IX_Employees_TenantId] ON [Employees] ([TenantId]);
 GO
 
 
+CREATE INDEX [IX_Employees_TenantId_CompanyId] ON [Employees] ([TenantId], [CompanyId]);
+GO
+
+
 CREATE UNIQUE INDEX [IX_Employees_TenantId_EmployeeNumber] ON [Employees] ([TenantId], [EmployeeNumber]);
 GO
 
@@ -2061,6 +2231,10 @@ GO
 
 
 CREATE INDEX [IX_ExpenseAttachments_TenantId] ON [ExpenseAttachments] ([TenantId]);
+GO
+
+
+CREATE INDEX [IX_ExpenseAttachments_TenantId_CompanyId] ON [ExpenseAttachments] ([TenantId], [CompanyId]);
 GO
 
 
@@ -2080,6 +2254,10 @@ CREATE UNIQUE INDEX [IX_FollowUpStatuses_TenantId_Code] ON [FollowUpStatuses] ([
 GO
 
 
+CREATE INDEX [IX_FollowUpStatuses_TenantId_CompanyId] ON [FollowUpStatuses] ([TenantId], [CompanyId]);
+GO
+
+
 CREATE UNIQUE INDEX [IX_HouseholdItems_Id] ON [HouseholdItems] ([Id]);
 GO
 
@@ -2092,6 +2270,10 @@ CREATE UNIQUE INDEX [IX_HouseholdItems_TenantId_Code] ON [HouseholdItems] ([Tena
 GO
 
 
+CREATE INDEX [IX_HouseholdItems_TenantId_CompanyId] ON [HouseholdItems] ([TenantId], [CompanyId]);
+GO
+
+
 CREATE UNIQUE INDEX [IX_JobCargo_Id] ON [JobCargo] ([Id]);
 GO
 
@@ -2101,6 +2283,10 @@ GO
 
 
 CREATE UNIQUE INDEX [IX_JobCargo_TenantId_BoxId] ON [JobCargo] ([TenantId], [BoxId]) WHERE [IsActive] = 1;
+GO
+
+
+CREATE INDEX [IX_JobCargo_TenantId_CompanyId] ON [JobCargo] ([TenantId], [CompanyId]);
 GO
 
 
@@ -2117,6 +2303,10 @@ GO
 
 
 CREATE INDEX [IX_JobExpenses_TenantId] ON [JobExpenses] ([TenantId]);
+GO
+
+
+CREATE INDEX [IX_JobExpenses_TenantId_CompanyId] ON [JobExpenses] ([TenantId], [CompanyId]);
 GO
 
 
@@ -2144,6 +2334,10 @@ CREATE INDEX [IX_JournalEntries_TenantId] ON [JournalEntries] ([TenantId]);
 GO
 
 
+CREATE INDEX [IX_JournalEntries_TenantId_CompanyId] ON [JournalEntries] ([TenantId], [CompanyId]);
+GO
+
+
 CREATE UNIQUE INDEX [IX_JournalEntries_TenantId_Reference] ON [JournalEntries] ([TenantId], [Reference]);
 GO
 
@@ -2164,6 +2358,10 @@ CREATE INDEX [IX_JournalLines_TenantId] ON [JournalLines] ([TenantId]);
 GO
 
 
+CREATE INDEX [IX_JournalLines_TenantId_CompanyId] ON [JournalLines] ([TenantId], [CompanyId]);
+GO
+
+
 CREATE INDEX [IX_LabourEntries_EmployeeId] ON [LabourEntries] ([EmployeeId]);
 GO
 
@@ -2177,6 +2375,10 @@ GO
 
 
 CREATE INDEX [IX_LabourEntries_TenantId] ON [LabourEntries] ([TenantId]);
+GO
+
+
+CREATE INDEX [IX_LabourEntries_TenantId_CompanyId] ON [LabourEntries] ([TenantId], [CompanyId]);
 GO
 
 
@@ -2204,6 +2406,10 @@ CREATE INDEX [IX_LeadFollowUps_TenantId] ON [LeadFollowUps] ([TenantId]);
 GO
 
 
+CREATE INDEX [IX_LeadFollowUps_TenantId_CompanyId] ON [LeadFollowUps] ([TenantId], [CompanyId]);
+GO
+
+
 CREATE UNIQUE INDEX [IX_LeadStatuses_Id] ON [LeadStatuses] ([Id]);
 GO
 
@@ -2216,6 +2422,10 @@ CREATE UNIQUE INDEX [IX_LeadStatuses_TenantId_Code] ON [LeadStatuses] ([TenantId
 GO
 
 
+CREATE INDEX [IX_LeadStatuses_TenantId_CompanyId] ON [LeadStatuses] ([TenantId], [CompanyId]);
+GO
+
+
 CREATE UNIQUE INDEX [IX_MoveTypes_Id] ON [MoveTypes] ([Id]);
 GO
 
@@ -2225,6 +2435,10 @@ GO
 
 
 CREATE UNIQUE INDEX [IX_MoveTypes_TenantId_Code] ON [MoveTypes] ([TenantId], [Code]);
+GO
+
+
+CREATE INDEX [IX_MoveTypes_TenantId_CompanyId] ON [MoveTypes] ([TenantId], [CompanyId]);
 GO
 
 
@@ -2241,6 +2455,10 @@ GO
 
 
 CREATE INDEX [IX_PackageHandovers_TenantId] ON [PackageHandovers] ([TenantId]);
+GO
+
+
+CREATE INDEX [IX_PackageHandovers_TenantId_CompanyId] ON [PackageHandovers] ([TenantId], [CompanyId]);
 GO
 
 
@@ -2268,6 +2486,10 @@ CREATE INDEX [IX_PackingConfirmations_TenantId] ON [PackingConfirmations] ([Tena
 GO
 
 
+CREATE INDEX [IX_PackingConfirmations_TenantId_CompanyId] ON [PackingConfirmations] ([TenantId], [CompanyId]);
+GO
+
+
 CREATE UNIQUE INDEX [IX_PackingConfirmations_TenantId_PickupId] ON [PackingConfirmations] ([TenantId], [PickupId]);
 GO
 
@@ -2292,6 +2514,10 @@ CREATE INDEX [IX_PackingJobBoxes_TenantId] ON [PackingJobBoxes] ([TenantId]);
 GO
 
 
+CREATE INDEX [IX_PackingJobBoxes_TenantId_CompanyId] ON [PackingJobBoxes] ([TenantId], [CompanyId]);
+GO
+
+
 CREATE UNIQUE INDEX [IX_PackingJobBoxes_TenantId_TrackingNumber] ON [PackingJobBoxes] ([TenantId], [TrackingNumber]);
 GO
 
@@ -2305,6 +2531,10 @@ GO
 
 
 CREATE INDEX [IX_PackingJobBoxItems_TenantId] ON [PackingJobBoxItems] ([TenantId]);
+GO
+
+
+CREATE INDEX [IX_PackingJobBoxItems_TenantId_CompanyId] ON [PackingJobBoxItems] ([TenantId], [CompanyId]);
 GO
 
 
@@ -2324,6 +2554,10 @@ CREATE INDEX [IX_PackingJobBoxMaterials_TenantId] ON [PackingJobBoxMaterials] ([
 GO
 
 
+CREATE INDEX [IX_PackingJobBoxMaterials_TenantId_CompanyId] ON [PackingJobBoxMaterials] ([TenantId], [CompanyId]);
+GO
+
+
 CREATE INDEX [IX_PackingJobCrew_EmployeeId] ON [PackingJobCrew] ([EmployeeId]);
 GO
 
@@ -2340,6 +2574,10 @@ CREATE INDEX [IX_PackingJobCrew_TenantId] ON [PackingJobCrew] ([TenantId]);
 GO
 
 
+CREATE INDEX [IX_PackingJobCrew_TenantId_CompanyId] ON [PackingJobCrew] ([TenantId], [CompanyId]);
+GO
+
+
 CREATE UNIQUE INDEX [IX_PackingJobLinks_Id] ON [PackingJobLinks] ([Id]);
 GO
 
@@ -2349,6 +2587,10 @@ GO
 
 
 CREATE INDEX [IX_PackingJobLinks_TenantId] ON [PackingJobLinks] ([TenantId]);
+GO
+
+
+CREATE INDEX [IX_PackingJobLinks_TenantId_CompanyId] ON [PackingJobLinks] ([TenantId], [CompanyId]);
 GO
 
 
@@ -2372,6 +2614,10 @@ CREATE INDEX [IX_PackingJobMaterials_TenantId] ON [PackingJobMaterials] ([Tenant
 GO
 
 
+CREATE INDEX [IX_PackingJobMaterials_TenantId_CompanyId] ON [PackingJobMaterials] ([TenantId], [CompanyId]);
+GO
+
+
 CREATE UNIQUE INDEX [IX_PackingJobs_Id] ON [PackingJobs] ([Id]);
 GO
 
@@ -2392,6 +2638,10 @@ CREATE INDEX [IX_PackingJobs_TenantId] ON [PackingJobs] ([TenantId]);
 GO
 
 
+CREATE INDEX [IX_PackingJobs_TenantId_CompanyId] ON [PackingJobs] ([TenantId], [CompanyId]);
+GO
+
+
 CREATE UNIQUE INDEX [IX_PackingJobs_TenantId_JobNumber] ON [PackingJobs] ([TenantId], [JobNumber]);
 GO
 
@@ -2408,6 +2658,10 @@ CREATE INDEX [IX_PackingJobTimeEvents_TenantId] ON [PackingJobTimeEvents] ([Tena
 GO
 
 
+CREATE INDEX [IX_PackingJobTimeEvents_TenantId_CompanyId] ON [PackingJobTimeEvents] ([TenantId], [CompanyId]);
+GO
+
+
 CREATE UNIQUE INDEX [IX_PackingJobTransactions_Id] ON [PackingJobTransactions] ([Id]);
 GO
 
@@ -2417,6 +2671,10 @@ GO
 
 
 CREATE INDEX [IX_PackingJobTransactions_TenantId] ON [PackingJobTransactions] ([TenantId]);
+GO
+
+
+CREATE INDEX [IX_PackingJobTransactions_TenantId_CompanyId] ON [PackingJobTransactions] ([TenantId], [CompanyId]);
 GO
 
 
@@ -2433,6 +2691,10 @@ GO
 
 
 CREATE UNIQUE INDEX [IX_PackingMaterials_TenantId_Code] ON [PackingMaterials] ([TenantId], [Code]);
+GO
+
+
+CREATE INDEX [IX_PackingMaterials_TenantId_CompanyId] ON [PackingMaterials] ([TenantId], [CompanyId]);
 GO
 
 
@@ -2460,6 +2722,10 @@ CREATE INDEX [IX_PickupAssignments_TenantId] ON [PickupAssignments] ([TenantId])
 GO
 
 
+CREATE INDEX [IX_PickupAssignments_TenantId_CompanyId] ON [PickupAssignments] ([TenantId], [CompanyId]);
+GO
+
+
 CREATE UNIQUE INDEX [IX_PickupAttachments_Id] ON [PickupAttachments] ([Id]);
 GO
 
@@ -2472,11 +2738,19 @@ CREATE INDEX [IX_PickupAttachments_TenantId] ON [PickupAttachments] ([TenantId])
 GO
 
 
+CREATE INDEX [IX_PickupAttachments_TenantId_CompanyId] ON [PickupAttachments] ([TenantId], [CompanyId]);
+GO
+
+
 CREATE UNIQUE INDEX [IX_PickupBoxPickEvents_Id] ON [PickupBoxPickEvents] ([Id]);
 GO
 
 
 CREATE INDEX [IX_PickupBoxPickEvents_TenantId] ON [PickupBoxPickEvents] ([TenantId]);
+GO
+
+
+CREATE INDEX [IX_PickupBoxPickEvents_TenantId_CompanyId] ON [PickupBoxPickEvents] ([TenantId], [CompanyId]);
 GO
 
 
@@ -2488,11 +2762,19 @@ CREATE INDEX [IX_PickupBoxPicks_TenantId] ON [PickupBoxPicks] ([TenantId]);
 GO
 
 
+CREATE INDEX [IX_PickupBoxPicks_TenantId_CompanyId] ON [PickupBoxPicks] ([TenantId], [CompanyId]);
+GO
+
+
 CREATE UNIQUE INDEX [IX_PickupCollectionApprovals_Id] ON [PickupCollectionApprovals] ([Id]);
 GO
 
 
 CREATE INDEX [IX_PickupCollectionApprovals_TenantId] ON [PickupCollectionApprovals] ([TenantId]);
+GO
+
+
+CREATE INDEX [IX_PickupCollectionApprovals_TenantId_CompanyId] ON [PickupCollectionApprovals] ([TenantId], [CompanyId]);
 GO
 
 
@@ -2512,6 +2794,10 @@ CREATE INDEX [IX_PickupExpenses_TenantId] ON [PickupExpenses] ([TenantId]);
 GO
 
 
+CREATE INDEX [IX_PickupExpenses_TenantId_CompanyId] ON [PickupExpenses] ([TenantId], [CompanyId]);
+GO
+
+
 CREATE UNIQUE INDEX [IX_PickupMaterialUsages_Id] ON [PickupMaterialUsages] ([Id]);
 GO
 
@@ -2528,6 +2814,10 @@ CREATE INDEX [IX_PickupMaterialUsages_TenantId] ON [PickupMaterialUsages] ([Tena
 GO
 
 
+CREATE INDEX [IX_PickupMaterialUsages_TenantId_CompanyId] ON [PickupMaterialUsages] ([TenantId], [CompanyId]);
+GO
+
+
 CREATE UNIQUE INDEX [IX_PickupPackageItems_Id] ON [PickupPackageItems] ([Id]);
 GO
 
@@ -2537,6 +2827,10 @@ GO
 
 
 CREATE INDEX [IX_PickupPackageItems_TenantId] ON [PickupPackageItems] ([TenantId]);
+GO
+
+
+CREATE INDEX [IX_PickupPackageItems_TenantId_CompanyId] ON [PickupPackageItems] ([TenantId], [CompanyId]);
 GO
 
 
@@ -2556,6 +2850,10 @@ CREATE INDEX [IX_PickupPackages_TenantId] ON [PickupPackages] ([TenantId]);
 GO
 
 
+CREATE INDEX [IX_PickupPackages_TenantId_CompanyId] ON [PickupPackages] ([TenantId], [CompanyId]);
+GO
+
+
 CREATE UNIQUE INDEX [IX_PickupPackages_TenantId_TrackingNumber] ON [PickupPackages] ([TenantId], [TrackingNumber]);
 GO
 
@@ -2565,6 +2863,10 @@ GO
 
 
 CREATE INDEX [IX_PickupPackingJobs_TenantId] ON [PickupPackingJobs] ([TenantId]);
+GO
+
+
+CREATE INDEX [IX_PickupPackingJobs_TenantId_CompanyId] ON [PickupPackingJobs] ([TenantId], [CompanyId]);
 GO
 
 
@@ -2592,6 +2894,10 @@ CREATE INDEX [IX_Pickups_TenantId] ON [Pickups] ([TenantId]);
 GO
 
 
+CREATE INDEX [IX_Pickups_TenantId_CompanyId] ON [Pickups] ([TenantId], [CompanyId]);
+GO
+
+
 CREATE UNIQUE INDEX [IX_Pickups_TenantId_PickupNumber] ON [Pickups] ([TenantId], [PickupNumber]);
 GO
 
@@ -2616,6 +2922,10 @@ CREATE INDEX [IX_PickupSignoffs_TenantId] ON [PickupSignoffs] ([TenantId]);
 GO
 
 
+CREATE INDEX [IX_PickupSignoffs_TenantId_CompanyId] ON [PickupSignoffs] ([TenantId], [CompanyId]);
+GO
+
+
 CREATE UNIQUE INDEX [IX_PickupStatuses_Id] ON [PickupStatuses] ([Id]);
 GO
 
@@ -2625,6 +2935,10 @@ GO
 
 
 CREATE UNIQUE INDEX [IX_PickupStatuses_TenantId_Code] ON [PickupStatuses] ([TenantId], [Code]);
+GO
+
+
+CREATE INDEX [IX_PickupStatuses_TenantId_CompanyId] ON [PickupStatuses] ([TenantId], [CompanyId]);
 GO
 
 
@@ -2640,6 +2954,10 @@ CREATE INDEX [IX_PickupTimeEvents_TenantId] ON [PickupTimeEvents] ([TenantId]);
 GO
 
 
+CREATE INDEX [IX_PickupTimeEvents_TenantId_CompanyId] ON [PickupTimeEvents] ([TenantId], [CompanyId]);
+GO
+
+
 CREATE UNIQUE INDEX [IX_PickupTransactions_Id] ON [PickupTransactions] ([Id]);
 GO
 
@@ -2649,6 +2967,10 @@ GO
 
 
 CREATE INDEX [IX_PickupTransactions_TenantId] ON [PickupTransactions] ([TenantId]);
+GO
+
+
+CREATE INDEX [IX_PickupTransactions_TenantId_CompanyId] ON [PickupTransactions] ([TenantId], [CompanyId]);
 GO
 
 
@@ -2672,6 +2994,10 @@ CREATE INDEX [IX_QuotationItems_TenantId] ON [QuotationItems] ([TenantId]);
 GO
 
 
+CREATE INDEX [IX_QuotationItems_TenantId_CompanyId] ON [QuotationItems] ([TenantId], [CompanyId]);
+GO
+
+
 CREATE INDEX [IX_QuotationLines_ChargeMasterId] ON [QuotationLines] ([ChargeMasterId]);
 GO
 
@@ -2685,6 +3011,10 @@ GO
 
 
 CREATE INDEX [IX_QuotationLines_TenantId] ON [QuotationLines] ([TenantId]);
+GO
+
+
+CREATE INDEX [IX_QuotationLines_TenantId_CompanyId] ON [QuotationLines] ([TenantId], [CompanyId]);
 GO
 
 
@@ -2704,6 +3034,10 @@ CREATE INDEX [IX_QuotationLineTaxes_TenantId] ON [QuotationLineTaxes] ([TenantId
 GO
 
 
+CREATE INDEX [IX_QuotationLineTaxes_TenantId_CompanyId] ON [QuotationLineTaxes] ([TenantId], [CompanyId]);
+GO
+
+
 CREATE UNIQUE INDEX [IX_QuotationRequoteRequests_Id] ON [QuotationRequoteRequests] ([Id]);
 GO
 
@@ -2713,6 +3047,10 @@ GO
 
 
 CREATE INDEX [IX_QuotationRequoteRequests_TenantId] ON [QuotationRequoteRequests] ([TenantId]);
+GO
+
+
+CREATE INDEX [IX_QuotationRequoteRequests_TenantId_CompanyId] ON [QuotationRequoteRequests] ([TenantId], [CompanyId]);
 GO
 
 
@@ -2737,6 +3075,10 @@ GO
 
 
 CREATE INDEX [IX_Quotations_TenantId] ON [Quotations] ([TenantId]);
+GO
+
+
+CREATE INDEX [IX_Quotations_TenantId_CompanyId] ON [Quotations] ([TenantId], [CompanyId]);
 GO
 
 
@@ -2776,6 +3118,10 @@ CREATE INDEX [IX_SalesLeadAttachments_TenantId] ON [SalesLeadAttachments] ([Tena
 GO
 
 
+CREATE INDEX [IX_SalesLeadAttachments_TenantId_CompanyId] ON [SalesLeadAttachments] ([TenantId], [CompanyId]);
+GO
+
+
 CREATE INDEX [IX_SalesLeadAttachments_UploadLinkId] ON [SalesLeadAttachments] ([UploadLinkId]);
 GO
 
@@ -2789,6 +3135,10 @@ GO
 
 
 CREATE INDEX [IX_SalesLeadInventoryItems_TenantId] ON [SalesLeadInventoryItems] ([TenantId]);
+GO
+
+
+CREATE INDEX [IX_SalesLeadInventoryItems_TenantId_CompanyId] ON [SalesLeadInventoryItems] ([TenantId], [CompanyId]);
 GO
 
 
@@ -2812,6 +3162,10 @@ CREATE INDEX [IX_SalesLeads_TenantId] ON [SalesLeads] ([TenantId]);
 GO
 
 
+CREATE INDEX [IX_SalesLeads_TenantId_CompanyId] ON [SalesLeads] ([TenantId], [CompanyId]);
+GO
+
+
 CREATE UNIQUE INDEX [IX_SalesLeads_TenantId_LeadNumber] ON [SalesLeads] ([TenantId], [LeadNumber]);
 GO
 
@@ -2825,6 +3179,10 @@ GO
 
 
 CREATE INDEX [IX_SalesLeadUploadLinks_TenantId] ON [SalesLeadUploadLinks] ([TenantId]);
+GO
+
+
+CREATE INDEX [IX_SalesLeadUploadLinks_TenantId_CompanyId] ON [SalesLeadUploadLinks] ([TenantId], [CompanyId]);
 GO
 
 
@@ -2856,6 +3214,10 @@ CREATE INDEX [IX_ShipmentClaims_TenantId] ON [ShipmentClaims] ([TenantId]);
 GO
 
 
+CREATE INDEX [IX_ShipmentClaims_TenantId_CompanyId] ON [ShipmentClaims] ([TenantId], [CompanyId]);
+GO
+
+
 CREATE UNIQUE INDEX [IX_SurveyAttachments_Id] ON [SurveyAttachments] ([Id]);
 GO
 
@@ -2865,6 +3227,10 @@ GO
 
 
 CREATE INDEX [IX_SurveyAttachments_TenantId] ON [SurveyAttachments] ([TenantId]);
+GO
+
+
+CREATE INDEX [IX_SurveyAttachments_TenantId_CompanyId] ON [SurveyAttachments] ([TenantId], [CompanyId]);
 GO
 
 
@@ -2884,6 +3250,10 @@ CREATE INDEX [IX_SurveyExpenses_TenantId] ON [SurveyExpenses] ([TenantId]);
 GO
 
 
+CREATE INDEX [IX_SurveyExpenses_TenantId_CompanyId] ON [SurveyExpenses] ([TenantId], [CompanyId]);
+GO
+
+
 CREATE UNIQUE INDEX [IX_SurveyExtraMaterials_Id] ON [SurveyExtraMaterials] ([Id]);
 GO
 
@@ -2897,6 +3267,10 @@ GO
 
 
 CREATE INDEX [IX_SurveyExtraMaterials_TenantId] ON [SurveyExtraMaterials] ([TenantId]);
+GO
+
+
+CREATE INDEX [IX_SurveyExtraMaterials_TenantId_CompanyId] ON [SurveyExtraMaterials] ([TenantId], [CompanyId]);
 GO
 
 
@@ -2920,6 +3294,10 @@ CREATE INDEX [IX_SurveyItems_TenantId] ON [SurveyItems] ([TenantId]);
 GO
 
 
+CREATE INDEX [IX_SurveyItems_TenantId_CompanyId] ON [SurveyItems] ([TenantId], [CompanyId]);
+GO
+
+
 CREATE UNIQUE INDEX [IX_SurveyRooms_Id] ON [SurveyRooms] ([Id]);
 GO
 
@@ -2929,6 +3307,10 @@ GO
 
 
 CREATE INDEX [IX_SurveyRooms_TenantId] ON [SurveyRooms] ([TenantId]);
+GO
+
+
+CREATE INDEX [IX_SurveyRooms_TenantId_CompanyId] ON [SurveyRooms] ([TenantId], [CompanyId]);
 GO
 
 
@@ -2956,6 +3338,10 @@ CREATE INDEX [IX_Surveys_TenantId] ON [Surveys] ([TenantId]);
 GO
 
 
+CREATE INDEX [IX_Surveys_TenantId_CompanyId] ON [Surveys] ([TenantId], [CompanyId]);
+GO
+
+
 CREATE UNIQUE INDEX [IX_Surveys_TenantId_SurveyNumber] ON [Surveys] ([TenantId], [SurveyNumber]);
 GO
 
@@ -2972,6 +3358,10 @@ CREATE INDEX [IX_SurveyTimeEvents_TenantId] ON [SurveyTimeEvents] ([TenantId]);
 GO
 
 
+CREATE INDEX [IX_SurveyTimeEvents_TenantId_CompanyId] ON [SurveyTimeEvents] ([TenantId], [CompanyId]);
+GO
+
+
 CREATE UNIQUE INDEX [IX_TaxMasters_Id] ON [TaxMasters] ([Id]);
 GO
 
@@ -2981,6 +3371,10 @@ GO
 
 
 CREATE UNIQUE INDEX [IX_TaxMasters_TenantId_Code] ON [TaxMasters] ([TenantId], [Code]);
+GO
+
+
+CREATE INDEX [IX_TaxMasters_TenantId_CompanyId] ON [TaxMasters] ([TenantId], [CompanyId]);
 GO
 
 
@@ -2997,6 +3391,10 @@ GO
 
 
 CREATE INDEX [IX_Teams_TenantId] ON [Teams] ([TenantId]);
+GO
+
+
+CREATE INDEX [IX_Teams_TenantId_CompanyId] ON [Teams] ([TenantId], [CompanyId]);
 GO
 
 
@@ -3032,6 +3430,10 @@ CREATE INDEX [IX_TransportJobs_TenantId] ON [TransportJobs] ([TenantId]);
 GO
 
 
+CREATE INDEX [IX_TransportJobs_TenantId_CompanyId] ON [TransportJobs] ([TenantId], [CompanyId]);
+GO
+
+
 CREATE UNIQUE INDEX [IX_TransportJobs_TenantId_JobNumber] ON [TransportJobs] ([TenantId], [JobNumber]);
 GO
 
@@ -3045,6 +3447,10 @@ GO
 
 
 CREATE INDEX [IX_TransportTrips_TenantId] ON [TransportTrips] ([TenantId]);
+GO
+
+
+CREATE INDEX [IX_TransportTrips_TenantId_CompanyId] ON [TransportTrips] ([TenantId], [CompanyId]);
 GO
 
 
@@ -3068,6 +3474,10 @@ CREATE INDEX [IX_TripAllocations_TenantId] ON [TripAllocations] ([TenantId]);
 GO
 
 
+CREATE INDEX [IX_TripAllocations_TenantId_CompanyId] ON [TripAllocations] ([TenantId], [CompanyId]);
+GO
+
+
 CREATE UNIQUE INDEX [IX_TripAllocations_TripId_PickupId] ON [TripAllocations] ([TripId], [PickupId]);
 GO
 
@@ -3081,6 +3491,10 @@ GO
 
 
 CREATE UNIQUE INDEX [IX_UserRoles_UserId_RoleId] ON [UserRoles] ([UserId], [RoleId]);
+GO
+
+
+CREATE INDEX [IX_Users_CompanyId] ON [Users] ([CompanyId]);
 GO
 
 
@@ -3108,6 +3522,10 @@ CREATE INDEX [IX_Vehicles_TenantId] ON [Vehicles] ([TenantId]);
 GO
 
 
+CREATE INDEX [IX_Vehicles_TenantId_CompanyId] ON [Vehicles] ([TenantId], [CompanyId]);
+GO
+
+
 CREATE UNIQUE INDEX [IX_Vehicles_TenantId_RegistrationNumber] ON [Vehicles] ([TenantId], [RegistrationNumber]);
 GO
 
@@ -3120,6 +3538,10 @@ CREATE INDEX [IX_WarehouseAttachments_TenantId] ON [WarehouseAttachments] ([Tena
 GO
 
 
+CREATE INDEX [IX_WarehouseAttachments_TenantId_CompanyId] ON [WarehouseAttachments] ([TenantId], [CompanyId]);
+GO
+
+
 CREATE INDEX [IX_WarehouseAttachments_TenantId_ReceiptId] ON [WarehouseAttachments] ([TenantId], [ReceiptId]);
 GO
 
@@ -3129,6 +3551,10 @@ GO
 
 
 CREATE INDEX [IX_WarehouseReceipts_TenantId] ON [WarehouseReceipts] ([TenantId]);
+GO
+
+
+CREATE INDEX [IX_WarehouseReceipts_TenantId_CompanyId] ON [WarehouseReceipts] ([TenantId], [CompanyId]);
 GO
 
 
@@ -3149,6 +3575,10 @@ GO
 
 
 CREATE UNIQUE INDEX [IX_Warehouses_TenantId_Code] ON [Warehouses] ([TenantId], [Code]);
+GO
+
+
+CREATE INDEX [IX_Warehouses_TenantId_CompanyId] ON [Warehouses] ([TenantId], [CompanyId]);
 GO
 
 

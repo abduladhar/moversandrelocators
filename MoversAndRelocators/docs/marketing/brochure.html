@@ -1,0 +1,279 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Crateway — Relocation Operations Platform</title>
+<style>
+  @page { size: A4; margin: 0; }
+  :root {
+    --green: #176b52; --green-dark: #0f3b2d; --ink: #10271f; --text: #33473e; --muted: #6a7d74;
+    --mint: #e8f5ef; --mint-2: #f4faf7; --line: #dbe8e1; --amber: #c27a12; --violet: #6d3f86; --blue: #2f5ea8;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body { font-family: "Segoe UI", "Inter", Arial, sans-serif; color: var(--text); -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .page { width: 210mm; height: 297mm; position: relative; overflow: hidden; page-break-after: always; break-after: page; background: #fff; }
+  .page:last-child { page-break-after: auto; break-after: auto; }
+  h1, h2, h3 { color: var(--ink); margin: 0; }
+  p { margin: 0; line-height: 1.5; }
+  .pad { padding: 18mm 17mm; }
+  .eyebrow { font-size: 9pt; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; color: var(--green); }
+  .icon { width: 22px; height: 22px; stroke: currentColor; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+
+  /* ---------- cover ---------- */
+  .cover { background: radial-gradient(circle at 85% 12%, #2a8a6a 0, transparent 38%), linear-gradient(160deg, #10271f 0%, #0f3b2d 55%, #176b52 100%); color: #e6f3ec; }
+  .cover .brand { display: flex; align-items: center; gap: 12px; font-size: 19pt; font-weight: 800; letter-spacing: -.3px; color: #fff; } .cover .brand svg { border-radius: 12px; box-shadow: 0 6px 18px rgba(0,0,0,.25); }
+  .cover .brand span { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 10px; background: #e0b84a; color: #10271f; font-weight: 800; }
+  .cover .hero { margin-top: 34mm; }
+  .cover .hero .eyebrow { color: #9fd9bf; }
+  .cover h1 { color: #fff; font-size: 40pt; line-height: 1.05; letter-spacing: -.02em; margin: 6mm 0 7mm; font-weight: 800; }
+  .cover .lead { font-size: 13.5pt; color: #cfe7db; max-width: 150mm; }
+  .cover .pills { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12mm; max-width: 170mm; }
+  .cover .pills span { padding: 7px 13px; border: 1px solid rgba(255,255,255,.22); border-radius: 999px; background: rgba(255,255,255,.07); font-size: 9.5pt; color: #eaf6f0; }
+  .cover .panel { position: absolute; left: 17mm; right: 17mm; bottom: 18mm; display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .cover .panel div { padding: 14px 16px; border-radius: 12px; background: rgba(255,255,255,.09); border: 1px solid rgba(255,255,255,.14); }
+  .cover .panel strong { display: block; color: #fff; font-size: 11pt; margin: 6px 0 3px; }
+  .cover .panel p { font-size: 9pt; color: #bfdccd; }
+  .cover .panel .icon { color: #e0b84a; }
+
+  /* ---------- section heads ---------- */
+  .section-head { margin-bottom: 9mm; }
+  .section-head h2 { font-size: 24pt; letter-spacing: -.015em; margin: 3mm 0 3mm; }
+  .section-head p { font-size: 11pt; color: var(--muted); max-width: 165mm; }
+
+  /* ---------- journey ---------- */
+  .journey { display: grid; gap: 0; position: relative; }
+  .step { display: grid; grid-template-columns: 16mm 1fr; gap: 6mm; padding-bottom: 5.2mm; position: relative; }
+  .step:not(:last-child)::after { content: ""; position: absolute; left: 8mm; top: 15mm; bottom: 0; width: 2px; background: var(--line); }
+  .step .num { width: 16mm; height: 16mm; border-radius: 50%; display: grid; place-items: center; background: var(--mint); color: var(--green); border: 2px solid #bfe3d1; }
+  .step h3 { font-size: 12.5pt; margin-top: 1.5mm; }
+  .step p { font-size: 9.8pt; color: var(--text); margin-top: 1mm; }
+  .step .tags { margin-top: 2mm; display: flex; flex-wrap: wrap; gap: 5px; }
+  .step .tags span { font-size: 8pt; padding: 2px 8px; border-radius: 999px; background: var(--mint-2); border: 1px solid var(--line); color: var(--green-dark); }
+
+  /* ---------- feature cards ---------- */
+  .ai-hero { border-radius: 14px; padding: 7mm 7mm 6mm; background: linear-gradient(135deg, #f6f0fb 0%, #fff 70%); border: 1px solid #e7dcf1; margin-bottom: 6mm; display: grid; grid-template-columns: 1.1fr 1fr; gap: 7mm; }
+  .ai-hero .eyebrow { color: var(--violet); }
+  .ai-hero h3 { font-size: 17pt; margin: 2mm 0 3mm; }
+  .ai-hero p { font-size: 10pt; }
+  .ai-hero ul { margin: 3mm 0 0; padding-left: 4.5mm; font-size: 9.6pt; line-height: 1.55; }
+  .mock { border-radius: 10px; background: #fff; border: 1px solid #e3d8ee; box-shadow: 0 6px 18px rgba(80, 40, 110, .08); padding: 10px 12px; font-size: 8.4pt; }
+  .mock .mhead { display: flex; justify-content: space-between; color: var(--muted); font-size: 7.6pt; margin-bottom: 6px; }
+  .mock .tot { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-bottom: 8px; }
+  .mock .tot div { background: var(--mint-2); border: 1px solid var(--line); border-radius: 7px; padding: 5px 7px; }
+  .mock .tot small { display: block; color: var(--muted); font-size: 6.8pt; }
+  .mock .tot b { color: var(--ink); font-size: 9.5pt; white-space: nowrap; }
+  .mock .tot .frag { background: #fff4f2; border-color: #f6cfc8; }
+  .mock .tot .frag b { color: #c0392b; }
+  .mock table { width: 100%; border-collapse: collapse; }
+  .mock td { padding: 4px 3px; border-top: 1px solid #f0edf3; }
+  .mock td:last-child { text-align: right; color: var(--muted); }
+  .mock .tag { font-size: 6.8pt; padding: 1px 6px; border-radius: 999px; background: #fde7e4; color: #c0392b; margin-left: 4px; }
+  .mock .foot { margin-top: 6px; color: var(--muted); font-size: 7.4pt; }
+
+  .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4mm; }
+  .card { border: 1px solid var(--line); border-radius: 12px; padding: 5mm 4.5mm 4.5mm; background: #fff; }
+  .card .ic { width: 11mm; height: 11mm; border-radius: 9px; display: grid; place-items: center; margin-bottom: 3mm; }
+  .card h3 { font-size: 10.5pt; margin-bottom: 1.5mm; }
+  .card p { font-size: 8.7pt; line-height: 1.45; }
+  .ic.g { background: var(--mint); color: var(--green); } .ic.a { background: #fdf3e3; color: var(--amber); }
+  .ic.b { background: #ebf1fd; color: var(--blue); } .ic.v { background: #f6ecf8; color: var(--violet); }
+
+  /* ---------- finance page ---------- */
+  .two { display: grid; grid-template-columns: 1fr 1fr; gap: 7mm; }
+  .list { margin: 0; padding: 0; list-style: none; }
+  .list li { display: grid; grid-template-columns: 6mm 1fr; gap: 2mm; font-size: 9.6pt; padding: 2.2mm 0; border-bottom: 1px dashed var(--line); }
+  .list li:last-child { border-bottom: 0; }
+  .list li b { color: var(--ink); }
+  .check { width: 16px; height: 16px; color: var(--green); stroke: currentColor; fill: none; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; margin-top: 1px; }
+  .reports { margin-top: 5mm; border-radius: 12px; background: var(--mint-2); border: 1px solid var(--line); padding: 5mm 6mm; }
+  .reports h3 { font-size: 11pt; margin-bottom: 2.5mm; }
+  .reports .chips { display: flex; flex-wrap: wrap; gap: 5px; }
+  .reports .chips span { font-size: 8pt; padding: 3px 8px; border-radius: 6px; background: #fff; border: 1px solid var(--line); }
+  .platform { margin-top: 7mm; display: grid; grid-template-columns: repeat(4, 1fr); gap: 4mm; }
+  .platform div { border-radius: 10px; padding: 4.5mm; background: #fff; border: 1px solid var(--line); }
+  .platform b { display: block; color: var(--ink); font-size: 10pt; margin: 2mm 0 1mm; }
+  .platform p { font-size: 8.4pt; color: var(--muted); }
+  .platform .icon { color: var(--green); }
+
+  .cta { position: absolute; left: 0; right: 0; bottom: 0; padding: 11mm 17mm 12mm; background: linear-gradient(135deg, #10271f, #176b52); color: #dff0e7; display: grid; grid-template-columns: 1.3fr 1fr; gap: 8mm; align-items: center; }
+  .cta h2 { color: #fff; font-size: 19pt; margin-bottom: 2mm; }
+  .cta p { font-size: 10pt; color: #c3dfd1; }
+  .cta .contact { border-radius: 12px; background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.18); padding: 5mm 6mm; font-size: 10pt; line-height: 1.8; }
+  .cta .contact a { color: #fff; text-decoration: none; font-weight: 600; }
+  .cta .contact b { color: #fff; display: block; font-size: 11pt; margin-bottom: 1mm; }
+  .pageno { position: absolute; bottom: 8mm; right: 17mm; font-size: 8pt; color: #9aaba3; }
+  .footer-brand { position: absolute; bottom: 8mm; left: 17mm; font-size: 8pt; color: #9aaba3; }
+</style>
+</head>
+<body>
+
+<!-- SVG icon set -->
+<svg width="0" height="0" style="position:absolute">
+  <symbol id="i-lead" viewBox="0 0 24 24"><path d="M4 5h16v11H8l-4 4z"/><path d="M8 9h8M8 12h5"/></symbol>
+  <symbol id="i-survey" viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 8h6M9 12h6M9 16h3"/></symbol>
+  <symbol id="i-quote" viewBox="0 0 24 24"><path d="M6 3h9l3 3v15H6z"/><path d="M9 11h6M9 15h6M14 3v4h4"/></symbol>
+  <symbol id="i-truck" viewBox="0 0 24 24"><path d="M3 6h11v10H3zM14 9h4l3 3v4h-7"/><circle cx="7" cy="18" r="2"/><circle cx="17" cy="18" r="2"/></symbol>
+  <symbol id="i-box" viewBox="0 0 24 24"><path d="M3 7l9-4 9 4v10l-9 4-9-4z"/><path d="M3 7l9 4 9-4M12 11v10"/></symbol>
+  <symbol id="i-warehouse" viewBox="0 0 24 24"><path d="M3 9l9-5 9 5v11H3z"/><path d="M7 20v-7h10v7M7 16h10"/></symbol>
+  <symbol id="i-pin" viewBox="0 0 24 24"><path d="M12 21s-7-6.2-7-11a7 7 0 0114 0c0 4.8-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></symbol>
+  <symbol id="i-invoice" viewBox="0 0 24 24"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6"/></symbol>
+  <symbol id="i-ai" viewBox="0 0 24 24"><rect x="5" y="7" width="14" height="11" rx="3"/><path d="M12 7V4M9 12h.01M15 12h.01M9 15h6"/></symbol>
+  <symbol id="i-link" viewBox="0 0 24 24"><path d="M10 14a4 4 0 005.7 0l3-3a4 4 0 00-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 00-5.7 0l-3 3a4 4 0 005.7 5.7l1-1"/></symbol>
+  <symbol id="i-qr" viewBox="0 0 24 24"><rect x="4" y="4" width="6" height="6"/><rect x="14" y="4" width="6" height="6"/><rect x="4" y="14" width="6" height="6"/><path d="M14 14h2v2h-2zM18 18h2v2h-2zM14 18h2"/></symbol>
+  <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 8v4l3 2"/></symbol>
+  <symbol id="i-camera" viewBox="0 0 24 24"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></symbol>
+  <symbol id="i-team" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><path d="M3 20a6 6 0 0112 0"/><circle cx="17" cy="9" r="2.5"/><path d="M15 20a5 5 0 016-4.8"/></symbol>
+  <symbol id="i-chart" viewBox="0 0 24 24"><path d="M4 20V4M4 20h16"/><path d="M8 16v-5M12 16V8M16 16v-3"/></symbol>
+  <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/><path d="M9 12l2 2 4-4"/></symbol>
+  <symbol id="i-cloud" viewBox="0 0 24 24"><path d="M7 18a5 5 0 01-.6-10A6 6 0 0118 9a4.5 4.5 0 01-1 9z"/></symbol>
+  <symbol id="i-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M4 12h16M12 4c2.5 2.5 2.5 13.5 0 16M12 4c-2.5 2.5-2.5 13.5 0 16"/></symbol>
+  <symbol id="i-print" viewBox="0 0 24 24"><path d="M7 8V3h10v5"/><rect x="4" y="8" width="16" height="8" rx="2"/><path d="M7 14h10v7H7z"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12l4 4 10-10"/></symbol>
+</svg>
+
+<!-- ============ PAGE 1 · COVER ============ -->
+<section class="page cover">
+  <div class="pad">
+    <div class="brand"><svg width="44" height="44" viewBox="0 0 72 72" aria-hidden="true"><defs><linearGradient id="cwb" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#1f8a68"/><stop offset="1" stop-color="#0f4a39"/></linearGradient></defs><rect width="72" height="72" rx="18" fill="url(#cwb)"/><path d="M16 22 L36 13 L56 22 L36 31 Z" fill="none" stroke="#fff" stroke-width="4" stroke-linejoin="round"/><path d="M16 22 V41 L36 50 L56 41 V22 M36 31 V50" fill="none" stroke="#fff" stroke-width="4" stroke-linejoin="round"/><path d="M16 31.5 L36 40.5 L56 31.5" fill="none" stroke="#fff" stroke-width="3" stroke-linejoin="round" opacity=".8"/><path d="M16 61 H55 M49 55 L55 61 L49 67" fill="none" stroke="#e0b84a" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/></svg><b>crateway</b></div>
+    <div class="hero">
+      <div class="eyebrow">Relocation operations platform</div>
+      <h1>Every move.<br>One clear view.</h1>
+      <p class="lead">One system for removal and relocation companies — from the first enquiry and the survey to packing, transport, storage, delivery, invoicing and the books. Built for the office, the crew on site and the customer.</p>
+      <div class="pills">
+        <span>Sales leads &amp; quotations</span><span>AI video inventory</span><span>Surveys</span><span>Pickup &amp; packing</span>
+        <span>Box labels with QR</span><span>Warehouse</span><span>Transport &amp; delivery</span><span>Customer self-service links</span>
+        <span>Invoicing &amp; multi-currency</span><span>26 accounting reports</span>
+      </div>
+    </div>
+  </div>
+  <div class="panel">
+    <div><svg class="icon"><use href="#i-ai"/></svg><strong>See the volume before you quote</strong><p>Film a walk-through; get items by room, fragile pieces, boxes needed and expected CBM.</p></div>
+    <div><svg class="icon"><use href="#i-truck"/></svg><strong>Run every job on one screen</strong><p>Crew, materials, labels, working hours, photos, sign-off and money — per job.</p></div>
+    <div><svg class="icon"><use href="#i-chart"/></svg><strong>Know what each move earns</strong><p>Costs and income flow to the ledger; profitability per pickup, packing, delivery or job.</p></div>
+  </div>
+</section>
+
+<!-- ============ PAGE 2 · JOURNEY ============ -->
+<section class="page">
+  <div class="pad">
+    <div class="section-head">
+      <div class="eyebrow">From enquiry to delivery</div>
+      <h2>The whole move, in one connected flow</h2>
+      <p>Each step picks up the details of the one before — customer, address, inventory and price — so nothing is typed twice and everyone works from the same record.</p>
+    </div>
+    <div class="journey">
+      <div class="step"><div class="num"><svg class="icon"><use href="#i-lead"/></svg></div><div><h3>1 · Sales lead</h3><p>Capture enquiries with move type, origin, destination and dates; assign a salesperson and plan follow-ups. Record a walk-through video on the spot or send the customer an upload link.</p><div class="tags"><span>Follow-up statuses</span><span>Customer upload link</span><span>AI inventory &amp; CBM</span></div></div></div>
+      <div class="step"><div class="num"><svg class="icon"><use href="#i-survey"/></svg></div><div><h3>2 · Survey</h3><p>Room-by-room survey with your household items master, box types and packing materials. Trip clock, travel expenses, photos and a customer review link to confirm what was surveyed.</p><div class="tags"><span>Room inventory</span><span>Volume &amp; boxes</span><span>Customer confirmation</span></div></div></div>
+      <div class="step"><div class="num"><svg class="icon"><use href="#i-quote"/></svg></div><div><h3>3 · Quotation</h3><p>Turn the survey into a priced quotation with your charges and taxes. Share it by link — the customer can accept, reject or ask for a re-quote online.</p><div class="tags"><span>Charge &amp; tax masters</span><span>Online acceptance</span><span>Printable designs</span></div></div></div>
+      <div class="step"><div class="num"><svg class="icon"><use href="#i-box"/></svg></div><div><h3>4 · Pickup &amp; packing</h3><p>Schedule the crew, pack and label every box, track the materials used and record payments and expenses. Customers confirm the date, share their location and approve the packed items from their phone.</p><div class="tags"><span>QR box labels</span><span>Materials &amp; cost</span><span>Working hours</span><span>Signatures</span></div></div></div>
+      <div class="step"><div class="num"><svg class="icon"><use href="#i-warehouse"/></svg></div><div><h3>5 · Warehouse</h3><p>Receive boxes from pickups or the office, store them with photos and documents, and release them for shipment when the customer is ready.</p><div class="tags"><span>Receipts</span><span>Storage records</span><span>Attachments</span></div></div></div>
+      <div class="step"><div class="num"><svg class="icon"><use href="#i-truck"/></svg></div><div><h3>6 · Transport &amp; delivery</h3><p>Plan trips and vehicles, track shipments and package hand-overs, then deliver: crew, delivery notes, collections on the doorstep, and links for the customer to confirm the date and share the location.</p><div class="tags"><span>Trips &amp; fuel</span><span>Shipment tracking</span><span>Delivery notes</span></div></div></div>
+      <div class="step"><div class="num"><svg class="icon"><use href="#i-invoice"/></svg></div><div><h3>7 · Billing &amp; accounts</h3><p>Raise invoices and bills, record receipts and payments in any currency, and let the accountant post everything to the ledger from one queue.</p><div class="tags"><span>Multi-currency</span><span>Posting queue</span><span>Profit per job</span></div></div></div>
+    </div>
+  </div>
+  <div class="footer-brand">Crateway · Relocation operations platform</div><div class="pageno">2</div>
+</section>
+
+<!-- ============ PAGE 3 · FEATURES ============ -->
+<section class="page">
+  <div class="pad">
+    <div class="section-head">
+      <div class="eyebrow">What sets it apart</div>
+      <h2>Less typing in the office. Fewer surprises on the day.</h2>
+    </div>
+
+    <div class="ai-hero">
+      <div>
+        <div class="eyebrow">AI video inventory</div>
+        <h3>Film the home. Get the inventory.</h3>
+        <p>Your salesperson — or the customer — records a walk-through and talks about what they see. The system takes still pictures from the video, transcribes the narration and asks OpenAI for a draft inventory.</p>
+        <ul>
+          <li>Items by room, with quantities</li>
+          <li>Fragile pieces and special handling (crating, dismantling)</li>
+          <li>Boxes needed, using your own box types</li>
+          <li>Expected CBM, using your household items master</li>
+          <li>Stored on the lead, editable, with the AI cost of every run</li>
+        </ul>
+      </div>
+      <div class="mock">
+        <div class="mhead"><span>Expected inventory · Lead LD-…</span><span>AI · reviewed</span></div>
+        <div class="tot"><div><small>Expected volume</small><b>24.6 CBM</b></div><div><small>Boxes</small><b>38</b></div><div class="frag"><small>Fragile</small><b>7</b></div></div>
+        <table>
+          <tr><td>Living room · 3-seat sofa</td><td>2.0 CBM</td></tr>
+          <tr><td>Living room · Television 55"<span class="tag">Fragile</span></td><td>0.4 CBM</td></tr>
+          <tr><td>Kitchen · Refrigerator</td><td>1.2 CBM</td></tr>
+          <tr><td>Study · Book cartons × 12</td><td>0.7 CBM</td></tr>
+          <tr><td>Dining · Glass cabinet<span class="tag">Fragile</span></td><td>1.1 CBM</td></tr>
+        </table>
+        <div class="foot">Illustration only. Figures are an example, not real customer data.</div>
+      </div>
+    </div>
+
+    <div class="grid">
+      <div class="card"><div class="ic g"><svg class="icon"><use href="#i-link"/></svg></div><h3>Customer self-service links</h3><p>Secure links let customers upload photos and videos, accept quotations, confirm the packing date, share their exact GPS location and confirm the packed items — no app, no login.</p></div>
+      <div class="card"><div class="ic a"><svg class="icon"><use href="#i-qr"/></svg></div><h3>Box labels that track</h3><p>Print 4×6 labels with the box number, QR tracking code, room and contents as you pack. See which boxes still need a label and reprint any time.</p></div>
+      <div class="card"><div class="ic b"><svg class="icon"><use href="#i-clock"/></svg></div><h3>Crew time you can trust</h3><p>Start, pause with a reason, resume and complete. Working hours per job and per crew member, trip clocks with distance, photos before and after, and on-site signatures.</p></div>
+      <div class="card"><div class="ic v"><svg class="icon"><use href="#i-camera"/></svg></div><h3>Receipts on every expense</h3><p>Snap a photo of the fuel or parking bill straight from the phone. The accountant sees the receipt next to the expense before posting it.</p></div>
+      <div class="card"><div class="ic g"><svg class="icon"><use href="#i-team"/></svg></div><h3>Crews, teams and schedules</h3><p>Employees, designations, crew roles and teams; assign people to surveys, pickups, packing and deliveries and see who is where.</p></div>
+      <div class="card"><div class="ic a"><svg class="icon"><use href="#i-print"/></svg></div><h3>Your documents, your design</h3><p>Built-in report designer with your logo and address on every quotation, receipt, label, packing list and accounting report.</p></div>
+    </div>
+  </div>
+  <div class="footer-brand">Crateway · Relocation operations platform</div><div class="pageno">3</div>
+</section>
+
+<!-- ============ PAGE 4 · FINANCE & PLATFORM ============ -->
+<section class="page">
+  <div class="pad">
+    <div class="section-head">
+      <div class="eyebrow">Finance built in</div>
+      <h2>From the doorstep to the balance sheet</h2>
+      <p>Money collected and spent in the field lands in the accountant's posting queue. Nothing is posted twice, every posting can be reversed with an audit trail, and each move's profit is one click away.</p>
+    </div>
+    <div class="two">
+      <ul class="list">
+        <li><svg class="check"><use href="#i-check"/></svg><span><b>Invoices, bills, receipts and payment vouchers</b> per pickup, packing, delivery, warehouse or job</span></li>
+        <li><svg class="check"><use href="#i-check"/></svg><span><b>Credit and debit memos</b> with automatic reversal postings</span></li>
+        <li><svg class="check"><use href="#i-check"/></svg><span><b>Multi-currency</b> with exchange-rate snapshots and a fixed accounting base currency</span></li>
+        <li><svg class="check"><use href="#i-check"/></svg><span><b>Accountant posting queue</b> for field receipts and expenses, with receipts attached</span></li>
+      </ul>
+      <ul class="list">
+        <li><svg class="check"><use href="#i-check"/></svg><span><b>Packing material cost</b> posted automatically when a job is completed</span></li>
+        <li><svg class="check"><use href="#i-check"/></svg><span><b>Labour, transport and vendor costs</b> allocated to each move</span></li>
+        <li><svg class="check"><use href="#i-check"/></svg><span><b>Profitability</b> by pickup, packing, delivery, warehouse receipt or job</span></li>
+        <li><svg class="check"><use href="#i-check"/></svg><span><b>Customer and vendor statements</b>, ageing and outstanding balances</span></li>
+      </ul>
+    </div>
+    <div class="reports">
+      <h3>26 accounting reports, ready to print or export</h3>
+      <div class="chips">
+        <span>Trial balance</span><span>Profit &amp; loss</span><span>Balance sheet</span><span>Cash flow</span><span>General ledger</span><span>Journal register</span><span>Cash &amp; bank book</span>
+        <span>Receivable ageing</span><span>Payable ageing</span><span>Invoice register</span><span>Bill register</span><span>Receipt register</span><span>Customer advances</span>
+        <span>Expense &amp; revenue analysis</span><span>Currency exposure</span><span>Tax summary</span><span>Posting &amp; reversal audit</span><span>…and more</span>
+      </div>
+    </div>
+
+    <div class="platform">
+      <div><svg class="icon"><use href="#i-globe"/></svg><b>Multi-company</b><p>Several companies under one account: shared customers and masters; separate books, numbering, letterhead and reports.</p></div>
+      <div><svg class="icon"><use href="#i-shield"/></svg><b>Roles &amp; audit</b><p>Role-based permissions and a full activity log of who changed what.</p></div>
+      <div><svg class="icon"><use href="#i-cloud"/></svg><b>Cloud ready</b><p>Web app on any device; files kept privately in your own Amazon S3 bucket.</p></div>
+      <div><svg class="icon"><use href="#i-pin"/></svg><b>Your rules</b><p>Your statuses, charges, taxes, box types, items and document designs.</p></div>
+    </div>
+  </div>
+
+  <div class="cta">
+    <div>
+      <h2>See it with your own jobs</h2>
+      <p>We'll set up a company for you with your box types, charges and a sample move, so your team can try it end to end.</p>
+    </div>
+    <div class="contact">
+      <b>Book a demo</b>
+      Contact: <span>Abdul Adhar</span><br>
+      Phone / WhatsApp: <a href="https://wa.me/919447667920">+91 94476 67920</a><br>
+      Email: <a href="mailto:abduladhar@eduquete.in">abduladhar@eduquete.in</a>
+    </div>
+  </div>
+</section>
+
+</body>
+</html>

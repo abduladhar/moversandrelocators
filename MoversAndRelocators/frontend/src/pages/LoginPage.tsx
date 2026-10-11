@@ -3,6 +3,8 @@ import { Alert, Button, Card, Form, Input, Typography, message } from 'antd'
 import { KeyOutlined, LockOutlined, MailOutlined, SafetyCertificateOutlined, UserOutlined } from '@ant-design/icons'
 import { authApi, setupApi } from '../api'
 import type { AuthSession } from '../types'
+import { BrandMark } from '../components/BrandMark'
+import { lastCompany, rememberCompany } from '../session'
 
 type SetupStatus = { needsSetup: boolean; enabled: boolean; requiresKey: boolean }
 type SetupValues = { fullName: string; email: string; password: string; confirm: string; setupKey?: string }
@@ -16,7 +18,7 @@ export function LoginPage({ onLogin }: { onLogin: (session: AuthSession) => void
   useEffect(() => { void loadStatus() }, [])
   const submit = async (values: { email: string; password: string }) => {
     setBusy(true); setError('')
-    try { onLogin(await authApi.login(values.email, values.password)) }
+    try { const session = await authApi.login(values.email, values.password, lastCompany()); if (session.canSwitchCompany) rememberCompany(session.companyId); onLogin(session) }
     catch (reason) { setError(reason instanceof Error ? reason.message : 'Unable to sign in.') }
     finally { setBusy(false) }
   }
@@ -34,7 +36,7 @@ export function LoginPage({ onLogin }: { onLogin: (session: AuthSession) => void
   const showSetup = (Boolean(setup?.needsSetup) && !signInInstead) || createAdmin
 
   return <div className="login-page">
-    <section className="login-story"><div className="brand"><span>M</span>Movers</div><div><Typography.Text className="story-label">RELOCATION OPERATIONS</Typography.Text><Typography.Title>Every move.<br />One clear view.</Typography.Title><Typography.Paragraph>Securely manage teams, warehouses, transportation and financials across every tenant.</Typography.Paragraph></div><div className="security-note"><SafetyCertificateOutlined /><div><strong>Tenant-safe by design</strong><small>Role-based access and a complete activity record protect every operation.</small></div></div></section>
+    <section className="login-story"><div className="brand"><BrandMark size={40} /><b>crateway</b></div><div><Typography.Text className="story-label">RELOCATION OPERATIONS</Typography.Text><Typography.Title>Every move.<br />One clear view.</Typography.Title><Typography.Paragraph>Securely manage teams, warehouses, transportation and financials across every tenant.</Typography.Paragraph></div><div className="security-note"><SafetyCertificateOutlined /><div><strong>Tenant-safe by design</strong><small>Role-based access and a complete activity record protect every operation.</small></div></div></section>
     <main className="login-main">
       {showSetup ? <Card className="login-card" variant="borderless">
         <Typography.Text className="eyebrow">{setup?.needsSetup ? 'FIRST-TIME SETUP' : 'PLATFORM ADMINISTRATION'}</Typography.Text>

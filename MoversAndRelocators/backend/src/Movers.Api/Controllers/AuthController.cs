@@ -16,7 +16,7 @@ public sealed class AuthController(IAuthenticationService authenticationService,
     public async Task<ActionResult> Login(LoginRequest request, CancellationToken cancellationToken)
     {
         var authenticated = await authenticationService.AuthenticateAsync(
-            request.Email, request.Password, cancellationToken);
+            request.Email, request.Password, cancellationToken, request.CompanyId);
         if (authenticated is null) return Unauthorized(new { error = "invalid_credentials", message = "Invalid email or password." });
         return Ok(ToResponse(authenticated));
     }
@@ -29,6 +29,17 @@ public sealed class AuthController(IAuthenticationService authenticationService,
         return authenticated is null ? NotFound() : Ok(ToResponse(authenticated));
     }
 
+    /// <summary>Switches a tenant user (or a system administrator inside a tenant) to another company; returns a new token.</summary>
+    [Authorize]
+    [HttpPost("select-company")]
+    public async Task<ActionResult> SelectCompany(SelectCompanyRequest request, CancellationToken cancellationToken)
+    {
+        if (!Guid.TryParse(User.FindFirstValue("acting_tenant_id") ?? User.FindFirstValue("tenant_id"), out var tenantId))
+            return BadRequest(new { message = "Open a tenant first." });
+        var authenticated = await authenticationService.SelectCompanyAsync(tenantId, request.CompanyId, cancellationToken);
+        return authenticated is null ? NotFound(new { message = "That company is not available to you." }) : Ok(ToResponse(authenticated));
+    }
+
     [Authorize]
     [HttpGet("me")]
     public ActionResult Me() => Ok(new
@@ -39,7 +50,9 @@ public sealed class AuthController(IAuthenticationService authenticationService,
         roles = User.FindAll(ClaimTypes.Role).Select(x => x.Value),
         permissions = User.FindAll("permission").Select(x => x.Value),
         tenantId = User.FindFirstValue("acting_tenant_id") ?? User.FindFirstValue("tenant_id"),
-        tenantName = User.FindFirstValue("acting_tenant_name")
+        tenantName = User.FindFirstValue("acting_tenant_name"),
+        companyId = User.FindFirstValue("company_id"),
+        companyName = User.FindFirstValue("company_name")
     });
 
     private object ToResponse(AuthenticationResult authentication)
@@ -51,7 +64,11 @@ public sealed class AuthController(IAuthenticationService authenticationService,
             token.ExpiresAtUtc,
             user = authentication.User,
             tenantId = authentication.ActingTenantId,
-            tenantName = authentication.ActingTenantName
+            tenantName = authentication.ActingTenantName,
+            companyId = authentication.Company?.Id,
+            companyName = authentication.Company?.Name,
+            companies = authentication.Companies,
+            canSwitchCompany = authentication.CanSwitchCompany
         };
     }
 }

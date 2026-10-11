@@ -1,4 +1,5 @@
 import { RowActions } from '../components/RowActions'
+import { useCompanyScopes } from '../companyScope'
 import { useEffect, useMemo, useState } from 'react'
 import { Button, Card, Checkbox, Form, Input, InputNumber, Modal, Popconfirm, Select, Space, Tag, message } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
@@ -14,6 +15,7 @@ import { useInfiniteRows } from '../hooks/useInfiniteRows'
 type TaxInput = Omit<TaxMaster, 'id' | 'serialNo' | 'isActive' | 'createdAtUtc' | 'updatedAtUtc'>
 
 export function TaxMastersPage() {
+  const scopes = useCompanyScopes('tax')
   const [items, setItems] = useState<TaxMaster[]>([]), [query, setQuery] = useState(''), [kind, setKind] = useState<string>(), [open, setOpen] = useState(false), [editing, setEditing] = useState<TaxMaster | null>(null), [saving, setSaving] = useState(false)
   const [form] = Form.useForm<TaxInput>()
   const selectedKind = Form.useWatch('kind', form)
@@ -28,6 +30,7 @@ export function TaxMastersPage() {
     { title: 'Type', dataIndex: 'kind', render: value => <Tag color={value === 'CESS' ? 'orange' : 'blue'}>{value}</Tag> },
     { title: 'Calculation', render: (_, x) => x.calculationBasis === 'QUANTITY' ? `${x.rate} per unit` : `${x.rate}% of ${x.calculationBasis === 'TAX_AMOUNT' ? 'tax amount' : 'taxable amount'}` },
     { title: 'Default', dataIndex: 'isDefault', render: value => value ? <Tag color="green">Auto selected</Tag> : 'Optional' },
+    ...scopes.column<TaxMaster>(x => x.id),
     { title: 'Status', dataIndex: 'isActive', render: value => <StatusTag active={value} /> },
     { title: 'Actions', align: 'right', render: (_, x) => <RowActions><Space wrap><Button size="small" icon={<EditOutlined />} onClick={() => show(x)}>Edit</Button><Popconfirm title={`${x.isActive ? 'Deactivate' : 'Activate'} this tax?`} onConfirm={async () => { await quotationsApi.setTaxStatus(x.id, !x.isActive); await load() }}><Button size="small">{x.isActive ? 'Deactivate' : 'Activate'}</Button></Popconfirm></Space></RowActions> },
   ]

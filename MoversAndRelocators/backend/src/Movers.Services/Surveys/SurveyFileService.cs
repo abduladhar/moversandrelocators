@@ -21,7 +21,7 @@ public interface ISurveyFileService
 
 /// <summary>Survey photos, videos and documents. Customers see and add only their own uploads; staff see all.</summary>
 public sealed class SurveyFileService(ISurveyRepository repository, ITenantContext tenantContext, IUserContext user,
-    ISecretProtector protector, IAwsObjectStorage storage, TimeProvider clock) : ISurveyFileService
+    ISecretProtector protector, IAwsObjectStorage storage, TimeProvider clock, Movers.Services.Tenants.ICompanyScope? companies = null) : ISurveyFileService
 {
     public async Task<IReadOnlyList<SurveyAttachmentModel>?> ListAsync(Guid surveyId, CancellationToken t) =>
         await repository.GetSurveyAsync(surveyId, false, t) is null ? null : (await repository.ListAttachmentsAsync(surveyId, t)).Select(Map).ToList();
@@ -52,19 +52,19 @@ public sealed class SurveyFileService(ISurveyRepository repository, ITenantConte
 
     public async Task<IReadOnlyList<SurveyAttachmentModel>?> ListPublicAsync(string token, CancellationToken t)
     {
-        var r = await SurveyLinkTokens.ResolveAsync(repository, tenantContext, clock, token, t);
+        var r = await SurveyLinkTokens.ResolveAsync(repository, tenantContext, clock, token, t, companies);
         return r is null ? null : (await repository.ListAttachmentsAsync(r.Survey.Id, t)).Where(x => x.Source == SurveyAttachmentSources.Customer).Select(Map).ToList();
     }
 
     public async Task<PresignedUploadModel?> CreatePublicUploadAsync(string token, UploadRequestModel request, CancellationToken t)
     {
-        var r = await SurveyLinkTokens.ResolveAsync(repository, tenantContext, clock, token, t);
+        var r = await SurveyLinkTokens.ResolveAsync(repository, tenantContext, clock, token, t, companies);
         return r is null ? null : await CreateUpload(r.Survey.Id, SurveyAttachmentSources.Customer, r.Survey.CustomerName, request, t);
     }
 
     public async Task<SurveyAttachmentModel?> CompletePublicUploadAsync(string token, Guid attachmentId, CancellationToken t)
     {
-        var r = await SurveyLinkTokens.ResolveAsync(repository, tenantContext, clock, token, t);
+        var r = await SurveyLinkTokens.ResolveAsync(repository, tenantContext, clock, token, t, companies);
         return r is null ? null : await Complete(r.Survey.Id, attachmentId, SurveyAttachmentSources.Customer, t);
     }
 

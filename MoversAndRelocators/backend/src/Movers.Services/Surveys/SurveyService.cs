@@ -4,7 +4,7 @@ using Movers.Services.Tenancy;
 
 namespace Movers.Services.Surveys;
 
-public sealed class SurveyService(ISurveyRepository repository, ITenantContext tenantContext, TimeProvider timeProvider, Movers.Services.Numbering.IRecordNumbers numbers) : ISurveyService
+public sealed class SurveyService(ISurveyRepository repository, ITenantContext tenantContext, TimeProvider timeProvider, Movers.Services.Numbering.IRecordNumbers numbers, Movers.Services.Tenants.ICompanyScope? companies = null) : ISurveyService
 {
     public async Task<IReadOnlyList<HouseholdItemModel>> ListItemsAsync(CancellationToken t) => (await repository.ListItemsAsync(t)).Select(Map).ToList();
     public async Task<HouseholdItemModel> CreateItemAsync(SaveHouseholdItemCommand c, CancellationToken t) { ValidateItem(c); await UniqueItem(c.Code, null, t); var x = new HouseholdItem(tenantContext.TenantId, c.Code, c.Name, c.VolumeCbm, c.Description); repository.AddItem(x); await repository.SaveChangesAsync(t); return Map(x); }
@@ -88,7 +88,7 @@ public sealed class SurveyService(ISurveyRepository repository, ITenantContext t
 
     private async Task<(Survey Survey, string TenantName)?> Resolve(string token, CancellationToken t)
     {
-        var r = await SurveyLinkTokens.ResolveAsync(repository, tenantContext, timeProvider, token, t); return r is null ? null : (r.Survey, r.Tenant.Name);
+        var r = await SurveyLinkTokens.ResolveAsync(repository, tenantContext, timeProvider, token, t, companies); return r is null ? null : (r.Survey, tenantContext.Company?.Name ?? r.Tenant.Name);
     }
 
     public async Task<IReadOnlyList<PublicCatalogItemModel>?> GetPublicCatalogAsync(string token, CancellationToken t)

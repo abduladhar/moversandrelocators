@@ -11,12 +11,14 @@ internal static class SurveyLinkTokens
     public static string Hash(string value) => Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(value)));
 
     /// <summary>Resolves an unexpired link and scopes the request to the survey's tenant.</summary>
-    public static async Task<PublicSurveyResolution?> ResolveAsync(ISurveyRepository repository, ITenantContext tenantContext, TimeProvider clock, string token, CancellationToken t)
+    public static async Task<PublicSurveyResolution?> ResolveAsync(ISurveyRepository repository, ITenantContext tenantContext, TimeProvider clock, string token, CancellationToken t, Movers.Services.Tenants.ICompanyScope? companies = null)
     {
         if (string.IsNullOrWhiteSpace(token)) return null;
         var r = await repository.ResolvePublicAsync(Hash(token), t);
         if (r is null || r.Survey.ConfirmationExpiresAtUtc < clock.GetUtcNow()) return null;
         if (!tenantContext.IsResolved) tenantContext.SetTenant(r.Tenant);
-        return tenantContext.TenantId == r.Tenant.Id ? r : null;
+        if (tenantContext.TenantId != r.Tenant.Id) return null;
+        if (companies is not null) await companies.UseCompanyOfAsync(r.Survey, t);
+        return r;
     }
 }

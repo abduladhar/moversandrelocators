@@ -5,7 +5,7 @@ namespace Movers.Services.Billing;
 public sealed partial class BillingService {
  public async Task<Guid> CreateMappedCharge(NewMappedCharge c,CancellationToken ct) {
   c=c with{IncomeAccount=c.IncomeAccount??"4300",ExpenseAccount=c.ExpenseAccount??"5600"};
-  var code=await numbers.Next("CHM",ct);
+  var code=await numbers.NextShared("CHM",ct);
   return await unit.Transaction(async()=>{
    var accounts=await Accounts(ct);
    if(c.DefaultRate<0||c.DefaultRate>1000000000||decimal.Round(c.DefaultRate,4)!=c.DefaultRate)throw new InvalidOperationException("Enter a valid default amount.");

@@ -1,6 +1,6 @@
 import type { AuditLog, PickupAttachment, PickupWork, Warehouse, SurveyExpenseInput, CatalogItem, CustomerChangesInput, SurveyAttachment, AuthSession, AwsConfiguration, AwsConfigurationInput, BoxType, ChargeMaster, TaxMaster, Designation, DesignationInput, Employee, EmployeeHierarchyNode, EmployeeInput, FollowUpInput, FollowUpStatus, HouseholdItem, LeadAttachment, LeadFollowUp, LeadStatus, LeadUploadLink, MoveType, MyTask, OpenAiConfiguration, OpenAiConfigurationInput, PackingMaterial, Permission, PresignedUpload, PublicQuotation, PublicSurvey, PublicUploadInfo, Quotation, QuotationDetail, QuotationInput, QuotationItemInput, QuotationLineInput, Role, SalesLead, SalesLeadInput, Survey, SurveyDetail, SurveyDetailsInput, SurveyInput, Tenant, TenantInput, User } from './types'
 import { apiUrl } from './apiBase'
-import type { Pickup, PickupDetail, PickupStatus, PublicPickup, Vehicle } from './types'
+import type { Pickup, PickupDetail, PickupStatus, PublicPickup, Vehicle, Company, CompanyInput, CompanyOption } from './types'
 
 const jsonHeaders = { 'Content-Type': 'application/json' }
 let accessToken = localStorage.getItem('movers_token') ?? ''
@@ -34,10 +34,23 @@ let lastBillingReport = ''
 export const lastBillingReportUrl = () => lastBillingReport
 
 export const authApi = {
-  login: (email: string, password: string) =>
-    request<AuthSession>('/api/auth/login', { method: 'POST', headers: jsonHeaders, body: JSON.stringify({ email, password }) }),
+  /** companyId: the company to open (the last one used); ignored for company users. */
+  login: (email: string, password: string, companyId?: string | null) =>
+    request<AuthSession>('/api/auth/login', { method: 'POST', headers: jsonHeaders, body: JSON.stringify({ email, password, companyId: companyId || null }) }),
+  /** Tenant users and system administrators: work in another company of the tenant (returns a new session). */
+  selectCompany: (companyId: string) =>
+    request<AuthSession>('/api/auth/select-company', { method: 'POST', body: JSON.stringify({ companyId }) }),
   selectTenant: (tenantId: string) =>
     request<AuthSession>('/api/auth/select-tenant', { method: 'POST', headers: jsonHeaders, body: JSON.stringify({ tenantId }) }),
+}
+
+/** Companies inside the tenant: separate jobs, documents, books and letterhead; shared masters. */
+export const companiesApi = {
+  list: () => request<Company[]>('/api/companies'),
+  create: (input: CompanyInput) => request<Company>('/api/companies', { method: 'POST', body: JSON.stringify(input) }),
+  update: (id: string, input: CompanyInput) => request<Company>(`/api/companies/${id}`, { method: 'PUT', body: JSON.stringify(input) }),
+  setStatus: (id: string, isActive: boolean) => request<Company>(`/api/companies/${id}/status`, { method: 'PATCH', body: JSON.stringify({ isActive }) }),
+  setDefault: (id: string) => request<Company>(`/api/companies/${id}/default`, { method: 'POST' }),
 }
 
 /** First-time setup: creates the first system administrator while none exists, and signs them in. */
@@ -52,7 +65,8 @@ export const tenantsApi = {
   /** Users of a tenant, managed from the platform without entering the tenant. */
   users: (tenantId: string) => request<User[]>(`/api/platform/tenants/${tenantId}/users`),
   roles: (tenantId: string) => request<Role[]>(`/api/platform/tenants/${tenantId}/roles`),
-  createUser: (tenantId: string, input: { fullName: string; email: string; password: string; roleId: string }) => request<User>(`/api/platform/tenants/${tenantId}/users`, { method: 'POST', body: JSON.stringify(input) }),
+  companies: (tenantId: string) => request<CompanyOption[]>(`/api/platform/tenants/${tenantId}/companies`),
+  createUser: (tenantId: string, input: { fullName: string; email: string; password: string; roleId: string; companyId?: string | null }) => request<User>(`/api/platform/tenants/${tenantId}/users`, { method: 'POST', body: JSON.stringify(input) }),
   setUserStatus: (tenantId: string, userId: string, isActive: boolean) => request<User>(`/api/platform/tenants/${tenantId}/users/${userId}/status`, { method: 'PATCH', body: JSON.stringify({ isActive }) }),
   create: (input: TenantInput) => request<Tenant>('/api/platform/tenants', { method: 'POST', body: JSON.stringify(input) }),
   update: (id: string, input: TenantInput) => request<Tenant>(`/api/platform/tenants/${id}`, { method: 'PUT', body: JSON.stringify(input) }),
@@ -61,8 +75,11 @@ export const tenantsApi = {
 
 export const securityApi = {
   users: () => request<User[]>('/api/security/users'),
-  createUser: (input: { fullName: string; email: string; password: string; roleId: string; employeeId: string }) =>
+  createUser: (input: { fullName: string; email: string; password: string; roleId: string; employeeId: string; companyId?: string | null }) =>
     request<User>('/api/security/users', { method: 'POST', body: JSON.stringify(input) }),
+  /** null: the user becomes a tenant user who can switch companies. */
+  setUserCompany: (id: string, companyId: string | null) =>
+    request<User>(`/api/security/users/${id}/company`, { method: 'PATCH', body: JSON.stringify({ companyId }) }),
   setUserStatus: (id: string, isActive: boolean) =>
     request<User>(`/api/security/users/${id}/status`, { method: 'PATCH', body: JSON.stringify({ isActive }) }),
   setUserEmployee: (id: string, employeeId: string) =>

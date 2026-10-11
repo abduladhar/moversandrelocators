@@ -49,7 +49,7 @@ public sealed class EmployeeService(IEmployeeRepository repository, ITenantConte
 
     public async Task<EmployeeModel> CreateEmployeeAsync(SaveEmployeeCommand command, CancellationToken cancellationToken)
     {
-        command = command with { EmployeeNumber = await numbers.Next("EMP", cancellationToken) };
+        command = command with { EmployeeNumber = await numbers.NextShared("EMP", cancellationToken) };
         await ValidateEmployeeAsync(null, command, cancellationToken);
         var employee = new Employee(tenantContext.TenantId, command.EmployeeNumber, command.FirstName, command.LastName,
             command.WorkEmail, command.Phone, command.JoiningDate, command.DesignationId, command.ReportsToEmployeeId);

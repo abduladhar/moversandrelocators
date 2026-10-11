@@ -1,5 +1,6 @@
 import { DataGrid as Table } from '../components/DataGrid'
 import { RowActions } from '../components/RowActions'
+import { useCompanyScopes } from '../companyScope'
 import { useEffect, useMemo, useState } from 'react'
 import { Button, Card, Form, Input, InputNumber, Modal, Popconfirm, Select, Space, Tag, message } from 'antd'
 import { ArrowLeftOutlined, EditOutlined, PlusOutlined } from '@ant-design/icons'
@@ -26,6 +27,7 @@ export function SurveyMastersPage({ initialTab }: { initialTab?: MasterKind } = 
   useEffect(() => { void load() }, [])
   useEffect(() => { if (initialTab) setSelectedKind(initialTab) }, [initialTab])
   const tab = selectedKind ?? 'items'
+  const scopes = useCompanyScopes(tab === 'items' ? 'household-item' : tab === 'materials' ? 'packing-material' : 'box-type')
   const rows = useMemo(() => (tab === 'items' ? items : tab === 'materials' ? materials : boxes).filter(x => `${x.code} ${x.name} ${x.description ?? ''}`.toLowerCase().includes(query.toLowerCase())), [tab, items, materials, boxes, query])
   const show = (record?: HouseholdItem | PackingMaterial | BoxType) => {
     setEditing(record ?? null)
@@ -50,6 +52,7 @@ export function SurveyMastersPage({ initialTab }: { initialTab?: MasterKind } = 
     ...(tab === 'items' ? [{ title: 'Volume', dataIndex: 'volumeCbm', sorter: (a: any, b: any) => a.volumeCbm - b.volumeCbm, render: (x: number) => <Tag color="blue">{x.toFixed(3)} CBM</Tag> }] : []),
     ...(tab === 'materials' ? [{ title: 'Current cost', key: 'cost', sorter: (a: any, b: any) => a.currentUnitCost - b.currentUnitCost, render: (_: unknown, x: any) => `${x.currentUnitCost.toFixed(2)} / ${x.unit}` }] : []),
     ...(tab === 'box-types' ? [{ title: 'Capacity', dataIndex: 'capacityCbm', sorter: (a: any, b: any) => a.capacityCbm - b.capacityCbm, render: (x: number) => `${x.toFixed(3)} CBM` }, { title: 'Build cost', dataIndex: 'buildCost', render: (x: number) => x.toFixed(2) }] : []),
+    ...scopes.column<any>(x => x.id),
     { title: 'Status', dataIndex: 'isActive', width: 100, filters: [{ text: 'Active', value: true }, { text: 'Inactive', value: false }], onFilter: (value: any, x: any) => x.isActive === value, render: (x: boolean) => <StatusTag active={x} /> },
     { title: 'Actions', key: 'actions', width: 210, align: 'right' as const, render: (_: unknown, x: any) => <RowActions><Space><Button size="small" icon={<EditOutlined />} onClick={() => show(x)}>Edit</Button><Popconfirm title={`${x.isActive ? 'Deactivate' : 'Activate'} this record?`} onConfirm={() => void toggle(x)}><Button size="small">{x.isActive ? 'Deactivate' : 'Activate'}</Button></Popconfirm></Space></RowActions> },
   ]

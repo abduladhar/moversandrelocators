@@ -1,4 +1,5 @@
 import { RowActions } from '../components/RowActions'
+import { useCompanyScopes } from '../companyScope'
 import { useEffect, useMemo, useState } from 'react'
 import { Button, Card, Checkbox, ColorPicker, Form, Input, InputNumber, Modal, Popconfirm, Select, Space, Tag, message } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
@@ -17,6 +18,7 @@ type StatusRow = { serialNo: number; id: string; code: string; name: string; dis
 
 export function SalesStatusMastersPage({ initialMode = 'Lead statuses' }: { initialMode?: 'Lead statuses' | 'Follow-up statuses' | 'Move types' } = {}) {
   const mode = initialMode
+  const scopes = useCompanyScopes(mode === 'Lead statuses' ? 'lead-status' : mode === 'Follow-up statuses' ? 'follow-up-status' : 'move-type')
   const [leadRows, setLeadRows] = useState<LeadStatus[]>([]), [followRows, setFollowRows] = useState<FollowUpStatus[]>([]), [moveRows, setMoveRows] = useState<MoveType[]>([])
   const [query, setQuery] = useState(''), [active, setActive] = useState<boolean | undefined>(), [sortField, setSortField] = useState<keyof StatusRow>('displayOrder'), [direction, setDirection] = useState<SortDirection>('asc')
   const [open, setOpen] = useState(false), [editing, setEditing] = useState<StatusRow | null>(null), [saving, setSaving] = useState(false)
@@ -34,6 +36,7 @@ export function SalesStatusMastersPage({ initialMode = 'Lead statuses' }: { init
     { title: 'Order', dataIndex: 'displayOrder', width: 90 },
     ...(mode === 'Move types' ? [] : [{ title: 'Colour', dataIndex: 'color', width: 110, render: (value: string | null) => <Tag color={value || 'default'}>{value || 'Default'}</Tag> }, { title: mode === 'Lead statuses' ? 'Closed' : 'Completed', dataIndex: 'terminal', width: 110, render: (value: boolean) => value ? <Tag color="green">Yes</Tag> : <Tag>No</Tag> }]),
     { title: 'Active', dataIndex: 'isActive', width: 100, render: value => <StatusTag active={value} /> },
+    ...scopes.column<StatusRow>(x => x.id),
     { title: 'Actions', key: 'actions', width: 200, align: 'right', render: (_, x) => <RowActions><Space><Button size="small" icon={<EditOutlined />} onClick={() => showForm(x)}>Edit</Button><Popconfirm title={`${x.isActive ? 'Deactivate' : 'Activate'} this status?`} onConfirm={() => setStatus(x)}><Button size="small">{x.isActive ? 'Deactivate' : 'Activate'}</Button></Popconfirm></Space></RowActions> }
   ]
   const description = mode === 'Lead statuses'
