@@ -1,0 +1,12 @@
+{
+  "movement": { "DRAFT": "Borrador", "PACKED": "Embalado", "LOADING": "En carga", "WAREHOUSE": "En almacén", "IN_TRANSIT": "En transporte", "ARRIVED": "Llegado a destino", "DELIVERED": "Entregado", "CANCELLED": "Cancelado" },
+  "delivery": { "PLANNED": "Planificada", "OUT_FOR_DELIVERY": "En reparto", "COMPLETED": "Completada", "CANCELLED": "Cancelada" },
+  "deliveryItem": { "LOADED": "Cargado", "DELIVERED": "Entregado", "RETURNED": "No entregado" },
+  "party": {
+    "customer": "Cliente", "vendor": "Proveedor",
+    "currencyLoading": "Cargando los datos de la moneda.",
+    "noCustomerMaster": "No hay ficha de cliente vinculada.", "noVendorMaster": "No hay ficha de proveedor vinculada.",
+    "noBaseAmount": "No hay importe base guardado para la conversión.", "noTransactionDate": "No hay fecha de transacción para la conversión.",
+    "noRate": "No hay tipo de cambio de {currency} válido el {date}."
+  }
+}

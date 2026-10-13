@@ -1,0 +1,99 @@
+{
+  "kind": {
+    "PACKING": "Paketleme",
+    "PICKUP": "Toplama",
+    "BOTH": "Paketleme ve toplama"
+  },
+  "page": {
+    "eyebrow": "OPERASYONLAR",
+    "title": "Ekip",
+    "description": "Paketleme ve toplama yapan ekipler, zaman içinde ekiplerde kimlerin bulunduğu ve her ekip ile kişinin kayıtlı işleri.",
+    "loadFailed": "Ekip yüklenemedi",
+    "actionFailed": "İşlem başarısız oldu",
+    "alertTitle": "Birini taşımak geçmiş işlerini taşımaz",
+    "alertDescription": "Ekip atandığında ekip bilgisi her paketleme işine ve toplamaya kaydedilir. Bir üyeyi başka bir ekibe taşımak veya bir ekibin adını değiştirmek, daha önce yapılmış işlerin sorumlusunu asla değiştirmez.",
+    "tabTeams": "Ekipler ve üyeler",
+    "tabPerformance": "Performans"
+  },
+  "demo": {
+    "allExist": "Tüm demo çalışanlar zaten mevcut.",
+    "created": "Demo çalışanlar oluşturuldu",
+    "add": "Demo çalışan ekle",
+    "createAll": "Demo çalışanları ve ekipleri oluştur"
+  },
+  "teams": {
+    "title": "Ekipler ({count})",
+    "hideInactive": "Pasifleri gizle",
+    "showInactive": "Pasifleri göster",
+    "new": "Yeni ekip",
+    "empty": "Henüz ekip yok",
+    "team": "Ekip",
+    "supervisedBy": "{code} · sorumlu: {name}",
+    "noSupervisor": "{code} · sorumlu yok",
+    "does": "Görevi",
+    "members": "Üyeler",
+    "deactivate": "Pasifleştir",
+    "reactivate": "Yeniden etkinleştir",
+    "deactivated": "Ekip pasifleştirildi",
+    "reactivated": "Ekip yeniden etkinleştirildi",
+    "off": "Kapalı",
+    "on": "Açık"
+  },
+  "members": {
+    "title": "{team} · üyeler",
+    "add": "Üye ekle",
+    "empty": "Şu anda bu ekipte kimse yok",
+    "member": "Üye",
+    "role": "Rol",
+    "since": "Ekibe katılma",
+    "move": "Başka ekibe taşı",
+    "removeTitle": "{name}, {team} ekibinden çıkarılsın mı?",
+    "removeDescription": "Daha önce atanmış işler hem kişinin hem de bu ekibin kaydında kalır.",
+    "removed": "Üye çıkarıldı",
+    "previous": "Önceden bu ekipte olanlar ({count})",
+    "until": "Bitiş",
+    "why": "Neden"
+  },
+  "performance": {
+    "byTeam": "Ekibe göre",
+    "noTeamWork": "Henüz bir ekibe kayıtlı iş yok",
+    "packingJobs": "Paketleme işleri",
+    "pickups": "Toplamalar",
+    "boxesPacked": "Paketlenen koliler",
+    "boxesPicked": "Toplanan koliler",
+    "peopleInvolved": "Katılan kişiler",
+    "inTeamNow": "Şu an ekipte: {count}",
+    "lastWorked": "Son çalışma",
+    "byEmployee": "Çalışana göre",
+    "noEmployeeWork": "Henüz bir çalışana kayıtlı iş yok",
+    "workedUnder": "Çalıştığı ekip",
+    "noTeam": "Ekip kaydedilmedi"
+  },
+  "teamModal": {
+    "editTitle": "Düzenle: {name}",
+    "saved": "Ekip kaydedildi",
+    "created": "Ekip oluşturuldu",
+    "code": "Kısa kod",
+    "codeRequired": "Ekibe bir kod verin",
+    "codePlaceholder": "PACK-A",
+    "nameRequired": "Ekibe bir ad verin",
+    "namePlaceholder": "Paketleme ekibi A",
+    "kind": "Görevi",
+    "supervisor": "Sorumlu"
+  },
+  "memberModal": {
+    "title": "Üye ekle · {team}",
+    "added": "Üye eklendi",
+    "employeeRequired": "Bir çalışan seçin"
+  },
+  "moveModal": {
+    "title": "Taşı: {name}",
+    "ok": "Taşı",
+    "moved": "Üye taşındı",
+    "explanation": "Kişinin önceki ekipteki ({team}) dönemi kapanır ve seçtiğiniz ekipte yeni bir dönem başlar. Daha önce atandığı paketleme işleri ve toplamalar hem kişinin hem de {team} ekibinin kaydında kalır.",
+    "to": "Taşınacak ekip",
+    "toRequired": "Yeni ekibi seçin",
+    "newRole": "Yeni ekipteki rolü",
+    "reasonPlaceholder": "İzin yerine geçme, kalıcı transfer…"
+  }
+}

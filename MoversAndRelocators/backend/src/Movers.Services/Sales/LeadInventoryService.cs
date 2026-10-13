@@ -127,16 +127,9 @@ public sealed class LeadInventoryService(ILeadInventoryRepository repository, IS
         string? Picture(int number) => pictureKeys is not null && number >= 1 && number <= pictureKeys.Count ? pictureKeys[number - 1] : null;
         var masters = (await surveys.ListItemsAsync(ct)).Where(x => x.IsActive).ToList();
         var boxTypes = await packing.ActiveBoxTypes(ct);
-        static string Norm(string x) => new string(x.ToLowerInvariant().Where(char.IsLetterOrDigit).ToArray());
-        decimal ItemCbm(ExtractedMoveItem item)
-        {
-            var name = Norm(item.Name);
-            var master = masters.FirstOrDefault(m => Norm(m.Name) == name)
-                // A more specific item name may contain the master name ("Television 55 inch" → Television), not the reverse:
-                // a plain "Sofa" must not take the volume of "Large sofa".
-                ?? masters.Where(m => Norm(m.Name).Length >= 4 && name.Contains(Norm(m.Name))).OrderByDescending(m => m.Name.Length).FirstOrDefault();
-            return master?.VolumeCbm ?? Math.Clamp(item.VolumeCbm, 0m, 50m);
-        }
+        static string Norm(string x) => HouseholdItemMatching.Normalise(x);
+        // The master's volume when the name is one we know, otherwise the AI's own estimate, kept within reason.
+        decimal ItemCbm(ExtractedMoveItem item) => HouseholdItemMatching.Find(masters, item.Name)?.VolumeCbm ?? Math.Clamp(item.VolumeCbm, 0m, 50m);
         decimal BoxCbm(string boxType) =>
             boxTypes.FirstOrDefault(b => Norm(boxType).StartsWith(Norm(b.Name), StringComparison.Ordinal))?.CapacityCbm ?? 0m;
 

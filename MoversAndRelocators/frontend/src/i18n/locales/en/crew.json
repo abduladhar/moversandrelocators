@@ -1,0 +1,99 @@
+{
+  "kind": {
+    "PACKING": "Packing",
+    "PICKUP": "Pickup",
+    "BOTH": "Packing & pickup"
+  },
+  "page": {
+    "eyebrow": "OPERATIONS",
+    "title": "Crew",
+    "description": "Teams that pack and pick up, who is in them over time, and what each team and person is on record for.",
+    "loadFailed": "Could not load crew",
+    "actionFailed": "That did not work",
+    "alertTitle": "Moving someone does not move their past work",
+    "alertDescription": "The team is recorded on each packing job and pickup when the crew is assigned. Moving a member to another team, or renaming a team, never changes who was responsible for work already done.",
+    "tabTeams": "Teams & members",
+    "tabPerformance": "Performance"
+  },
+  "demo": {
+    "allExist": "Every demo employee already exists.",
+    "created": "Demo employees created",
+    "add": "Add demo employees",
+    "createAll": "Create demo employees and teams"
+  },
+  "teams": {
+    "title": "Teams ({count})",
+    "hideInactive": "Hide inactive",
+    "showInactive": "Show inactive",
+    "new": "New team",
+    "empty": "No teams yet",
+    "team": "Team",
+    "supervisedBy": "{code} · supervised by {name}",
+    "noSupervisor": "{code} · no supervisor",
+    "does": "Does",
+    "members": "Members",
+    "deactivate": "Deactivate",
+    "reactivate": "Reactivate",
+    "deactivated": "Team deactivated",
+    "reactivated": "Team reactivated",
+    "off": "Off",
+    "on": "On"
+  },
+  "members": {
+    "title": "{team} · members",
+    "add": "Add member",
+    "empty": "Nobody in this team right now",
+    "member": "Member",
+    "role": "Role",
+    "since": "In team since",
+    "move": "Move to another team",
+    "removeTitle": "Remove {name} from {team}?",
+    "removeDescription": "Work already assigned stays on their record and on this team's.",
+    "removed": "Member removed",
+    "previous": "Previously in this team ({count})",
+    "until": "Until",
+    "why": "Why"
+  },
+  "performance": {
+    "byTeam": "By team",
+    "noTeamWork": "No work recorded against a team yet",
+    "packingJobs": "Packing jobs",
+    "pickups": "Pickups",
+    "boxesPacked": "Boxes packed",
+    "boxesPicked": "Boxes picked",
+    "peopleInvolved": "People involved",
+    "inTeamNow": "{count} in team now",
+    "lastWorked": "Last worked",
+    "byEmployee": "By employee",
+    "noEmployeeWork": "No work recorded against an employee yet",
+    "workedUnder": "Worked under",
+    "noTeam": "No team recorded"
+  },
+  "teamModal": {
+    "editTitle": "Edit {name}",
+    "saved": "Team saved",
+    "created": "Team created",
+    "code": "Short code",
+    "codeRequired": "Give the team a code",
+    "codePlaceholder": "PACK-A",
+    "nameRequired": "Name the team",
+    "namePlaceholder": "Packing crew A",
+    "kind": "What it does",
+    "supervisor": "Supervisor"
+  },
+  "memberModal": {
+    "title": "Add a member to {team}",
+    "added": "Member added",
+    "employeeRequired": "Choose an employee"
+  },
+  "moveModal": {
+    "title": "Move {name}",
+    "ok": "Move",
+    "moved": "Member moved",
+    "explanation": "Their spell in {team} is closed and a new one opens in the team you choose. Packing jobs and pickups they have already been assigned stay on their record, and on {team}'s.",
+    "to": "Move to",
+    "toRequired": "Choose the new team",
+    "newRole": "Role in the new team",
+    "reasonPlaceholder": "Cover for leave, permanent transfer…"
+  }
+}

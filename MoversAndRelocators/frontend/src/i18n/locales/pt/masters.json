@@ -1,0 +1,116 @@
+{
+  "contactPerson": "Pessoa de contato",
+  "defaultCurrency": "Moeda padrão",
+  "invalidEmail": "Informe um endereço de e-mail válido",
+  "nameRequired": "Informe um nome (até 120 caracteres)",
+  "taxReference": "Inscrição fiscal",
+  "records_one": "{count} registro",
+  "records_other": "{count} registros",
+  "data": {
+    "title": "Cadastros",
+    "description": "Selecione um bloco para gerenciar os dados de configuração da sua empresa.",
+    "search": "Pesquisar cadastros",
+    "back": "Voltar para cadastros",
+    "noMatch": "Nenhum cadastro corresponde à sua pesquisa.",
+    "noPermission": "Você não tem permissão para gerenciar cadastros.",
+    "groups": {
+      "currencies": "Moedas",
+      "contacts": "Clientes e fornecedores",
+      "pickupPayment": "Configuração de coleta e pagamento",
+      "people": "Pessoas",
+      "sales": "Vendas",
+      "surveyPacking": "Vistoria e embalagem",
+      "pickupTransport": "Coleta e transporte",
+      "quotationFinance": "Orçamento e finanças"
+    },
+    "tiles": {
+      "currencies": "Moeda",
+      "exchange-rates": "Taxas de câmbio",
+      "customers": "Cliente",
+      "vendors": "Fornecedor",
+      "crew-roles": "Funções da equipe",
+      "payment-methods": "Forma de pagamento",
+      "payment-purposes": "Finalidade do pagamento",
+      "expense-categories": "Categoria de despesa",
+      "message-templates": "Modelos de mensagem",
+      "designations": "Cargo do funcionário",
+      "lead-statuses": "Status do lead",
+      "follow-up-statuses": "Status de acompanhamento",
+      "move-types": "Tipo de mudança",
+      "household-items": "Itens domésticos",
+      "box-types": "Tipos de caixa",
+      "packing-materials": "Materiais de embalagem",
+      "pickup-statuses": "Status de coleta",
+      "vehicles": "Veículos",
+      "warehouses": "Armazéns",
+      "charges": "Cadastro de cobranças",
+      "taxes": "Configuração de impostos"
+    }
+  },
+  "business": {
+    "eyebrow": "CADASTROS",
+    "saved": "Cadastro salvo",
+    "saveFailed": "Não foi possível salvar",
+    "templateDescription": "O texto enviado com cada link para o cliente. Os marcadores são preenchidos quando a mensagem é enviada; as telas que as enviam estão listadas por código.",
+    "contactDescription": "Mantenha os dados de contato dos clientes e fornecedores da sua empresa.",
+    "choiceDescription": "Configure as opções disponíveis nas operações de coleta. Registros inativos permanecem no histórico.",
+    "addRecord": "Adicionar registro",
+    "message": "Mensagem",
+    "messageRequired": "Informe a mensagem (até 2000 caracteres)",
+    "vendorType": "Tipo de fornecedor",
+    "vendorTypeOptional": "Tipo de fornecedor (opcional)",
+    "vendorTypePlaceholder": "Selecione ou informe um tipo de fornecedor",
+    "agent": "Agente",
+    "agentHelp": "Ative para disponibilizar este fornecedor como agente de origem ou de destino. Opcional.",
+    "autoCode": "O código é atribuído automaticamente ao salvar",
+    "currencyHelp": "Deixe em branco para usar o padrão da localidade em um novo registro.",
+    "placeholdersHelp": "Marcadores preenchidos quando a mensagem é enviada: {placeholders}. Mantenha {link} — sem ele o cliente não tem nada para abrir. Um marcador que esta tela não consegue preencher fica como foi escrito.",
+    "availableIn": "Disponível em",
+    "availableInHelp": "Todas as empresas: todas as empresas do grupo podem usar. Somente a empresa: oculto para as outras empresas.",
+    "allCompanies": "Todas as empresas",
+    "companyOnly": "Somente {company}",
+    "thisCompanyOnly": "Somente esta empresa",
+    "vendorTypes": {
+      "transporter": "Transportadora",
+      "shippingLine": "Companhia de navegação",
+      "airline": "Companhia aérea",
+      "freightForwarder": "Agente de cargas",
+      "customsBroker": "Despachante aduaneiro",
+      "warehouseProvider": "Fornecedor de armazém",
+      "packingSupplier": "Fornecedor de embalagens",
+      "other": "Outro"
+    },
+    "kinds": {
+      "crewRole": { "title": "Funções da equipe", "add": "Adicionar função", "edit": "Editar função" },
+      "paymentMethod": { "title": "Formas de pagamento", "add": "Adicionar forma de pagamento", "edit": "Editar forma de pagamento" },
+      "paymentPurpose": { "title": "Finalidades de pagamento", "add": "Adicionar finalidade de pagamento", "edit": "Editar finalidade de pagamento" },
+      "expenseCategory": { "title": "Categorias de despesa", "add": "Adicionar categoria de despesa", "edit": "Editar categoria de despesa" },
+      "customer": { "title": "Clientes", "add": "Adicionar cliente", "edit": "Editar cliente" },
+      "vendor": { "title": "Fornecedores", "add": "Adicionar fornecedor", "edit": "Editar fornecedor" },
+      "messageTemplate": { "title": "Modelos de mensagem", "add": "Adicionar modelo de mensagem", "edit": "Editar modelo de mensagem" }
+    }
+  },
+  "createCustomer": {
+    "title": "Criar cliente",
+    "created": "Cliente {code} criado",
+    "saveAndReturn": "Salvar cliente e voltar",
+    "intro": "Revise os dados do cliente. Sua página atual continuará aberta quando você terminar.",
+    "autoCode": "O código do cliente é atribuído automaticamente ao salvar",
+    "name": "Nome do cliente"
+  },
+  "picker": {
+    "loadFailed": "Não foi possível carregar os registros do cadastro",
+    "customer": {
+      "label": "Selecionar do cadastro de clientes",
+      "help": "Selecione um cliente salvo para preencher os dados abaixo.",
+      "placeholder": "Pesquisar nome, código ou telefone do cliente",
+      "empty": "Nenhum cliente ativo. Adicione registros em Cadastros."
+    },
+    "vendor": {
+      "label": "Selecionar do cadastro de fornecedores",
+      "help": "Selecione um fornecedor salvo para preencher os dados abaixo.",
+      "placeholder": "Pesquisar nome, código ou telefone do fornecedor",
+      "empty": "Nenhum fornecedor ativo. Adicione registros em Cadastros."
+    }
+  }
+}

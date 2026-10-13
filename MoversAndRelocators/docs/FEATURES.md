@@ -536,3 +536,13 @@ Acceptance: master-rate edits do not alter existing document values; partial set
 
 ## FIN-CURRENCY-002 — Configurable system accounting currency
 Settings > System currency configures the workspace accounting base independently of the transaction default. Rates, base reporting and currency precision follow that setting. Existing USD history remains unchanged. Base changes are locked after financial records exist; rate schedules are separated by base. Requires billing.accounts. This supersedes the earlier fixed-USD requirement; see MULTI_CURRENCY.md.
+
+## Languages (English, Arabic, Turkish, Spanish, French, Portuguese)
+
+Staff screens and customer link pages can be shown in English, العربية (right-to-left), Türkçe, Español, Français or Português (Brazil). The language picker is in the workspace header, on the login page and at the top of every customer page; the choice is remembered on the device, and the browser language is used the first time. Ant Design's own texts (date pickers, tables) and date formats follow the language.
+
+**Server messages are sent as codes.** Every error response that carries a message has the shape `{ code, params, message }` — for example `{ "code": "BOX_ALREADY_STORED_DELIVERED_REFRESH_LIST", "params": { "trackingNumber": "PKG-0042" }, "message": "Box PKG-0042 is already stored or delivered. Refresh the list." }`. The client shows `server.<code>` in the user's language with the params filled in; `message` is the English fallback. Model validation errors use `VALIDATION_FAILED` with `params.fields`; responses without a body (403, 404…) are worded by status on the client. Success messages are the client's own and are translated there.
+
+The catalog (`backend/src/Movers.Api/Localization/server-messages.json`, ~680 messages) is built from the messages in the code by `node tools/i18n/extract-server-messages.mjs`, which keeps existing codes stable; `MessageCodeFilter` tags responses with it. A test fails when a new message has no code. After adding or changing a server message: run the extractor, then translate the new keys in `frontend/src/i18n/locales/*/server.json`. `node tools/i18n/check-locales.mjs` reports missing translations and placeholder mismatches. Developer guide: `frontend/src/i18n/README.md`.
+
+Not translated: data users enter (item names, notes, master data), customer message templates (tenant data in Business masters), and printed report templates designed in the report designer.

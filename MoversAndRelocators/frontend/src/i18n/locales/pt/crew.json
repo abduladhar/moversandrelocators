@@ -1,0 +1,99 @@
+{
+  "kind": {
+    "PACKING": "Embalagem",
+    "PICKUP": "Coleta",
+    "BOTH": "Embalagem e coleta"
+  },
+  "page": {
+    "eyebrow": "OPERAÇÕES",
+    "title": "Equipes",
+    "description": "Equipes que embalam e coletam, quem fez parte delas ao longo do tempo e o histórico de trabalho de cada equipe e pessoa.",
+    "loadFailed": "Não foi possível carregar as equipes",
+    "actionFailed": "Não deu certo",
+    "alertTitle": "Mover alguém não move o trabalho já feito",
+    "alertDescription": "A equipe é registrada em cada serviço de embalagem e coleta no momento em que é atribuída. Mover um membro para outra equipe, ou renomear uma equipe, nunca altera quem foi responsável pelo trabalho já realizado.",
+    "tabTeams": "Equipes e membros",
+    "tabPerformance": "Desempenho"
+  },
+  "demo": {
+    "allExist": "Todos os funcionários de demonstração já existem.",
+    "created": "Funcionários de demonstração criados",
+    "add": "Adicionar funcionários de demonstração",
+    "createAll": "Criar funcionários e equipes de demonstração"
+  },
+  "teams": {
+    "title": "Equipes ({count})",
+    "hideInactive": "Ocultar inativas",
+    "showInactive": "Mostrar inativas",
+    "new": "Nova equipe",
+    "empty": "Nenhuma equipe ainda",
+    "team": "Equipe",
+    "supervisedBy": "{code} · supervisionada por {name}",
+    "noSupervisor": "{code} · sem supervisor",
+    "does": "Atua em",
+    "members": "Membros",
+    "deactivate": "Desativar",
+    "reactivate": "Reativar",
+    "deactivated": "Equipe desativada",
+    "reactivated": "Equipe reativada",
+    "off": "Inativa",
+    "on": "Ativa"
+  },
+  "members": {
+    "title": "{team} · membros",
+    "add": "Adicionar membro",
+    "empty": "Ninguém nesta equipe no momento",
+    "member": "Membro",
+    "role": "Função",
+    "since": "Na equipe desde",
+    "move": "Mover para outra equipe",
+    "removeTitle": "Remover {name} de {team}?",
+    "removeDescription": "O trabalho já atribuído permanece no histórico da pessoa e no desta equipe.",
+    "removed": "Membro removido",
+    "previous": "Já fizeram parte desta equipe ({count})",
+    "until": "Até",
+    "why": "Motivo"
+  },
+  "performance": {
+    "byTeam": "Por equipe",
+    "noTeamWork": "Nenhum trabalho registrado para uma equipe ainda",
+    "packingJobs": "Serviços de embalagem",
+    "pickups": "Coletas",
+    "boxesPacked": "Caixas embaladas",
+    "boxesPicked": "Caixas coletadas",
+    "peopleInvolved": "Pessoas envolvidas",
+    "inTeamNow": "{count} na equipe agora",
+    "lastWorked": "Último trabalho",
+    "byEmployee": "Por funcionário",
+    "noEmployeeWork": "Nenhum trabalho registrado para um funcionário ainda",
+    "workedUnder": "Trabalhou em",
+    "noTeam": "Nenhuma equipe registrada"
+  },
+  "teamModal": {
+    "editTitle": "Editar {name}",
+    "saved": "Equipe salva",
+    "created": "Equipe criada",
+    "code": "Código curto",
+    "codeRequired": "Dê um código à equipe",
+    "codePlaceholder": "PACK-A",
+    "nameRequired": "Dê um nome à equipe",
+    "namePlaceholder": "Equipe de embalagem A",
+    "kind": "O que faz",
+    "supervisor": "Supervisor"
+  },
+  "memberModal": {
+    "title": "Adicionar membro a {team}",
+    "added": "Membro adicionado",
+    "employeeRequired": "Escolha um funcionário"
+  },
+  "moveModal": {
+    "title": "Mover {name}",
+    "ok": "Mover",
+    "moved": "Membro movido",
+    "explanation": "O período em {team} é encerrado e um novo começa na equipe escolhida. Serviços de embalagem e coletas já atribuídos permanecem no histórico da pessoa e no de {team}.",
+    "to": "Mover para",
+    "toRequired": "Escolha a nova equipe",
+    "newRole": "Função na nova equipe",
+    "reasonPlaceholder": "Cobertura de férias, transferência definitiva…"
+  }
+}

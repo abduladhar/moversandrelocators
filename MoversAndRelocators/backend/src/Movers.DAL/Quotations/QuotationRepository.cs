@@ -40,6 +40,7 @@ public sealed class QuotationRepository(MoversDbContext db) : IQuotationReposito
     public async Task<IReadOnlyList<SurveyItem>> ListSurveyItemsForUpdateAsync(Guid id, CancellationToken t) => await db.SurveyItems.Where(x => x.SurveyId == id).ToListAsync(t);
     public void RemoveSurveyItems(IEnumerable<SurveyItem> items) => db.SurveyItems.RemoveRange(items);
     public async Task<IReadOnlyList<HouseholdItem>> ListHouseholdItemsAsync(CancellationToken t) => await db.HouseholdItems.AsNoTracking().ToListAsync(t);
+    public void AddHouseholdItem(HouseholdItem x) => db.HouseholdItems.Add(x);
     public async Task<IReadOnlyList<SalesLeadInventoryItem>> ListLeadInventoryAsync(Guid leadId, CancellationToken t) => await db.Set<SalesLeadInventoryItem>().AsNoTracking().Where(x => x.SalesLeadId == leadId).OrderBy(x => x.SerialNo).ToListAsync(t);
     public Task<SalesLead?> GetLeadAsync(Guid id, CancellationToken t) => db.SalesLeads.AsNoTracking().SingleOrDefaultAsync(x => x.Id == id, t);
     public async Task<IReadOnlyList<SalesLead>> ListLeadsAsync(CancellationToken t) => await db.SalesLeads.AsNoTracking().ToListAsync(t);

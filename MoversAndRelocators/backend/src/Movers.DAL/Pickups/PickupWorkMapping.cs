@@ -30,6 +30,9 @@ public static class PickupWorkMapping
         var attachment = modelBuilder.Entity<PickupAttachment>();
         attachment.ToTable("PickupAttachments"); attachment.Property(x => x.Stage).HasMaxLength(20).IsRequired(); attachment.Property(x => x.RoomName).HasMaxLength(120); attachment.Property(x => x.UploadedBy).HasMaxLength(254).IsRequired();
         attachment.Property(x => x.OriginalFileName).HasMaxLength(255).IsRequired(); attachment.Property(x => x.ContentType).HasMaxLength(150).IsRequired(); attachment.Property(x => x.S3ObjectKey).HasMaxLength(700).IsRequired();
+        // Same length as script 026 (NVARCHAR(20)); without it a model-built SQL Server database gets nvarchar(max), which
+        // the box index (PickupCollectionSchema) cannot use.
+        attachment.Property(x => x.BoxSource).HasMaxLength(20);
         attachment.HasIndex(x => new { x.PickupId, x.SerialNo }); TenantAndPickup(attachment, x => x.PickupId);
 
         var signoff = modelBuilder.Entity<PickupSignoff>();

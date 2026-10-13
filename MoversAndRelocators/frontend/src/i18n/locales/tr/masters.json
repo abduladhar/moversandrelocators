@@ -1,0 +1,116 @@
+{
+  "contactPerson": "İlgili kişi",
+  "defaultCurrency": "Varsayılan para birimi",
+  "invalidEmail": "Geçerli bir e-posta adresi girin",
+  "nameRequired": "Bir ad girin (en fazla 120 karakter)",
+  "taxReference": "Vergi numarası",
+  "records_one": "{count} kayıt",
+  "records_other": "{count} kayıt",
+  "data": {
+    "title": "Ana veriler",
+    "description": "Şirketinizin kurulum verilerini yönetmek için bir kutucuk seçin.",
+    "search": "Ana verilerde ara",
+    "back": "Ana verilere dön",
+    "noMatch": "Aramanızla eşleşen ana veri yok.",
+    "noPermission": "Ana verileri yönetme yetkiniz yok.",
+    "groups": {
+      "currencies": "Para birimleri",
+      "contacts": "Müşteriler ve tedarikçiler",
+      "pickupPayment": "Teslim alma ve ödeme ayarları",
+      "people": "Kişiler",
+      "sales": "Satış",
+      "surveyPacking": "Keşif ve paketleme",
+      "pickupTransport": "Teslim alma ve nakliye",
+      "quotationFinance": "Teklif ve finans"
+    },
+    "tiles": {
+      "currencies": "Para birimi",
+      "exchange-rates": "Döviz kurları",
+      "customers": "Müşteri",
+      "vendors": "Tedarikçi",
+      "crew-roles": "Ekip rolleri",
+      "payment-methods": "Ödeme yöntemi",
+      "payment-purposes": "Ödeme amacı",
+      "expense-categories": "Masraf kategorisi",
+      "message-templates": "Mesaj şablonları",
+      "designations": "Çalışan unvanı",
+      "lead-statuses": "Aday durumu",
+      "follow-up-statuses": "Takip durumu",
+      "move-types": "Taşınma türü",
+      "household-items": "Ev eşyaları",
+      "box-types": "Koli türleri",
+      "packing-materials": "Paketleme malzemeleri",
+      "pickup-statuses": "Teslim alma durumu",
+      "vehicles": "Araçlar",
+      "warehouses": "Depolar",
+      "charges": "Ücret kalemi ana listesi",
+      "taxes": "Vergi yapılandırması"
+    }
+  },
+  "business": {
+    "eyebrow": "ANA VERİLER",
+    "saved": "Ana veri kaydedildi",
+    "saveFailed": "Kaydedilemedi",
+    "templateDescription": "Her müşteri bağlantısıyla gönderilen metin. Yer tutucular mesaj gönderilirken doldurulur; bunları gönderen ekranlar kodlarıyla listelenir.",
+    "contactDescription": "Şirketinizin müşterilerinin ve tedarikçilerinin iletişim bilgilerini yönetin.",
+    "choiceDescription": "Teslim alma işlemlerinde kullanılabilecek seçenekleri yapılandırın. Pasif kayıtlar geçmiş kayıtlarda kalır.",
+    "addRecord": "Kayıt ekle",
+    "message": "Mesaj",
+    "messageRequired": "Mesajı girin (en fazla 2000 karakter)",
+    "vendorType": "Tedarikçi türü",
+    "vendorTypeOptional": "Tedarikçi türü (isteğe bağlı)",
+    "vendorTypePlaceholder": "Bir tedarikçi türü seçin veya girin",
+    "agent": "Acente",
+    "agentHelp": "Bu tedarikçiyi çıkış veya varış acentesi olarak kullanılabilir yapmak için etkinleştirin. İsteğe bağlı.",
+    "autoCode": "Kod kayıtta otomatik atanır",
+    "currencyHelp": "Yeni bir kayıtta konumun varsayılanını kullanmak için boş bırakın.",
+    "placeholdersHelp": "Mesaj gönderilirken doldurulan yer tutucular: {placeholders}. {link} yer tutucusunu silmeyin — o olmadan müşterinin açacağı bir şey olmaz. Bu ekranın dolduramadığı bir yer tutucu yazıldığı gibi kalır.",
+    "availableIn": "Kullanılabildiği yer",
+    "availableInHelp": "Tüm şirketler: grubun her şirketi kullanabilir. Yalnızca şirket: diğer şirketlerden gizlenir.",
+    "allCompanies": "Tüm şirketler",
+    "companyOnly": "Yalnızca {company}",
+    "thisCompanyOnly": "Yalnızca bu şirket",
+    "vendorTypes": {
+      "transporter": "Nakliyeci",
+      "shippingLine": "Denizyolu şirketi",
+      "airline": "Havayolu",
+      "freightForwarder": "Taşıma işleri organizatörü",
+      "customsBroker": "Gümrük müşaviri",
+      "warehouseProvider": "Depo sağlayıcısı",
+      "packingSupplier": "Paketleme tedarikçisi",
+      "other": "Diğer"
+    },
+    "kinds": {
+      "crewRole": { "title": "Ekip rolleri", "add": "Ekip rolü ekle", "edit": "Ekip rolünü düzenle" },
+      "paymentMethod": { "title": "Ödeme yöntemleri", "add": "Ödeme yöntemi ekle", "edit": "Ödeme yöntemini düzenle" },
+      "paymentPurpose": { "title": "Ödeme amaçları", "add": "Ödeme amacı ekle", "edit": "Ödeme amacını düzenle" },
+      "expenseCategory": { "title": "Masraf kategorileri", "add": "Masraf kategorisi ekle", "edit": "Masraf kategorisini düzenle" },
+      "customer": { "title": "Müşteriler", "add": "Müşteri ekle", "edit": "Müşteriyi düzenle" },
+      "vendor": { "title": "Tedarikçiler", "add": "Tedarikçi ekle", "edit": "Tedarikçiyi düzenle" },
+      "messageTemplate": { "title": "Mesaj şablonları", "add": "Mesaj şablonu ekle", "edit": "Mesaj şablonunu düzenle" }
+    }
+  },
+  "createCustomer": {
+    "title": "Müşteri oluştur",
+    "created": "Müşteri oluşturuldu: {code}",
+    "saveAndReturn": "Müşteriyi kaydet ve dön",
+    "intro": "Müşteri bilgilerini gözden geçirin. İşlemi bitirdiğinizde mevcut sayfanız açık kalacak.",
+    "autoCode": "Müşteri kodu kayıtta otomatik atanır",
+    "name": "Müşteri adı"
+  },
+  "picker": {
+    "loadFailed": "Ana kayıtlar yüklenemedi",
+    "customer": {
+      "label": "Müşteri ana listesinden seç",
+      "help": "Aşağıdaki bilgileri doldurmak için kayıtlı bir müşteri seçin.",
+      "placeholder": "Müşteri adı, kodu veya telefonu ara",
+      "empty": "Aktif müşteri yok. Ana veriler bölümünden kayıt ekleyin."
+    },
+    "vendor": {
+      "label": "Tedarikçi ana listesinden seç",
+      "help": "Aşağıdaki bilgileri doldurmak için kayıtlı bir tedarikçi seçin.",
+      "placeholder": "Tedarikçi adı, kodu veya telefonu ara",
+      "empty": "Aktif tedarikçi yok. Ana veriler bölümünden kayıt ekleyin."
+    }
+  }
+}

@@ -1,0 +1,116 @@
+{
+  "contactPerson": "Contact person",
+  "defaultCurrency": "Default currency",
+  "invalidEmail": "Enter a valid email address",
+  "nameRequired": "Enter a name (up to 120 characters)",
+  "taxReference": "Tax reference",
+  "records_one": "{count} record",
+  "records_other": "{count} records",
+  "data": {
+    "title": "Master data",
+    "description": "Select a tile to manage your company’s setup data.",
+    "search": "Search master data",
+    "back": "Back to master data",
+    "noMatch": "No master data matches your search.",
+    "noPermission": "You do not have permission to manage master data.",
+    "groups": {
+      "currencies": "Currencies",
+      "contacts": "Customers & vendors",
+      "pickupPayment": "Pickup & payment setup",
+      "people": "People",
+      "sales": "Sales",
+      "surveyPacking": "Survey & packing",
+      "pickupTransport": "Pickup & transport",
+      "quotationFinance": "Quotation & finance"
+    },
+    "tiles": {
+      "currencies": "Currency",
+      "exchange-rates": "Currency Exchange Rates",
+      "customers": "Customer",
+      "vendors": "Vendor",
+      "crew-roles": "Crew roles",
+      "payment-methods": "Payment method",
+      "payment-purposes": "Payment for",
+      "expense-categories": "Expense category",
+      "message-templates": "Message templates",
+      "designations": "Employee designation",
+      "lead-statuses": "Lead status",
+      "follow-up-statuses": "Follow-up status",
+      "move-types": "Move type",
+      "household-items": "Household items",
+      "box-types": "Box types",
+      "packing-materials": "Packing materials",
+      "pickup-statuses": "Pickup status",
+      "vehicles": "Vehicles",
+      "warehouses": "Warehouses",
+      "charges": "Charge master",
+      "taxes": "Tax configuration"
+    }
+  },
+  "business": {
+    "eyebrow": "MASTER DATA",
+    "saved": "Master saved",
+    "saveFailed": "Unable to save",
+    "templateDescription": "The wording sent with each customer link. Placeholders are filled in when the message is sent; the screens that send them are listed by code.",
+    "contactDescription": "Maintain contact details for your company’s customers and suppliers.",
+    "choiceDescription": "Configure the choices available during pickup operations. Inactive entries remain in historical records.",
+    "addRecord": "Add record",
+    "message": "Message",
+    "messageRequired": "Enter the message (up to 2000 characters)",
+    "vendorType": "Vendor type",
+    "vendorTypeOptional": "Vendor type (optional)",
+    "vendorTypePlaceholder": "Select or enter a vendor type",
+    "agent": "Agent",
+    "agentHelp": "Enable to make this vendor available as an origin or destination agent. Optional.",
+    "autoCode": "Code is assigned automatically on save",
+    "currencyHelp": "Leave empty to use the location default for a new record.",
+    "placeholdersHelp": "Placeholders filled in when the message is sent: {placeholders}. Keep {link} — without it the customer has nothing to open. A placeholder this screen cannot fill is left as written.",
+    "availableIn": "Available in",
+    "availableInHelp": "All companies: every company of the group can use it. Company only: hidden from the other companies.",
+    "allCompanies": "All companies",
+    "companyOnly": "{company} only",
+    "thisCompanyOnly": "This company only",
+    "vendorTypes": {
+      "transporter": "Transporter",
+      "shippingLine": "Shipping line",
+      "airline": "Airline",
+      "freightForwarder": "Freight forwarder",
+      "customsBroker": "Customs broker",
+      "warehouseProvider": "Warehouse provider",
+      "packingSupplier": "Packing supplier",
+      "other": "Other"
+    },
+    "kinds": {
+      "crewRole": { "title": "Crew roles", "add": "Add crew role", "edit": "Edit crew role" },
+      "paymentMethod": { "title": "Payment methods", "add": "Add payment method", "edit": "Edit payment method" },
+      "paymentPurpose": { "title": "Payment purposes", "add": "Add payment purpose", "edit": "Edit payment purpose" },
+      "expenseCategory": { "title": "Expense categories", "add": "Add expense category", "edit": "Edit expense category" },
+      "customer": { "title": "Customers", "add": "Add customer", "edit": "Edit customer" },
+      "vendor": { "title": "Vendors", "add": "Add vendor", "edit": "Edit vendor" },
+      "messageTemplate": { "title": "Message templates", "add": "Add message template", "edit": "Edit message template" }
+    }
+  },
+  "createCustomer": {
+    "title": "Create customer",
+    "created": "Customer {code} created",
+    "saveAndReturn": "Save customer and return",
+    "intro": "Review the customer details. Your current page will remain open when you finish.",
+    "autoCode": "Customer code is assigned automatically on save",
+    "name": "Customer name"
+  },
+  "picker": {
+    "loadFailed": "Unable to load master records",
+    "customer": {
+      "label": "Select from customer master",
+      "help": "Select a saved customer to fill the details below.",
+      "placeholder": "Search customer name, code or phone",
+      "empty": "No active customers. Add records in Master data."
+    },
+    "vendor": {
+      "label": "Select from vendor master",
+      "help": "Select a saved vendor to fill the details below.",
+      "placeholder": "Search vendor name, code or phone",
+      "empty": "No active vendors. Add records in Master data."
+    }
+  }
+}

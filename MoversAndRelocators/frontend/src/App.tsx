@@ -1,6 +1,9 @@
 import { RefreshButton } from './components/RefreshButton'
 import { useState } from 'react'
 import { ConfigProvider } from 'antd'
+import { I18nProvider, useT } from './i18n'
+import { antdLocales } from './i18n/antd'
+import { LanguageSwitcher } from './i18n/LanguageSwitcher'
 import type { AuthSession } from './types'
 import { readSession, saveSession } from './session'
 import { LoginPage } from './pages/LoginPage'
@@ -16,6 +19,11 @@ import { PoweredBy } from './components/BrandMark'
 import { CustomerDeliveryDatePage, CustomerDeliveryLocationPage } from './pages/CustomerDeliveryLinkPages'
 
 export default function App() {
+  return <I18nProvider><Routes /></I18nProvider>
+}
+
+function Routes() {
+  const { language, dir, t } = useT()
   // Hosts may add a trailing slash to customer links (e.g. Amplify's 301 to /upload/<token>/), so ignore it.
   const path = window.location.pathname.replace(/\/+$/, '')
   const packingToken = path.match(/^\/packing\/([^/]+)$/)?.[1]
@@ -30,8 +38,8 @@ export default function App() {
   const deliveryToken = deliveryLinkToken && decodeURIComponent(deliveryLinkToken)
   const [session, setSession] = useState<AuthSession | null>(readSession)
   const updateSession = (next: AuthSession | null) => { saveSession(next); setSession(next) }
-  return <ConfigProvider theme={{ token: { colorPrimary: '#176b52', colorInfo: '#176b52', borderRadius: 8, fontFamily: "Inter, 'Segoe UI', sans-serif" }, components: { Layout: { siderBg: '#10271f' }, Menu: { darkItemBg: '#10271f', darkItemSelectedBg: '#245441' }, Table: { headerBg: '#f7f9f8' } } }}>
-    {(packingToken || uploadToken || inventoryToken || surveyToken || quotationToken || pickupToken || packingJobToken || deliveryToken) && <div className="public-refresh-bar"><RefreshButton onRefresh={() => window.location.reload()} confirmText="Reload the latest customer page? Unsaved entries and files that have not been uploaded will be cleared." /></div>}
+  return <ConfigProvider locale={antdLocales[language]} direction={dir} theme={{ token: { colorPrimary: '#176b52', colorInfo: '#176b52', borderRadius: 8, fontFamily: "Inter, 'Segoe UI', sans-serif" }, components: { Layout: { siderBg: '#10271f' }, Menu: { darkItemBg: '#10271f', darkItemSelectedBg: '#245441' }, Table: { headerBg: '#f7f9f8' } } }}>
+    {(packingToken || uploadToken || inventoryToken || surveyToken || quotationToken || pickupToken || packingJobToken || deliveryToken) && <div className="public-refresh-bar"><RefreshButton onRefresh={() => window.location.reload()} confirmText={t('common.publicReloadConfirm')} /><LanguageSwitcher compact /></div>}
     {packingToken ? <CustomerPackingPage token={decodeURIComponent(packingToken)} /> : uploadToken ? <CustomerUploadPage token={decodeURIComponent(uploadToken)} /> : inventoryToken ? <CustomerLeadInventoryPage token={decodeURIComponent(inventoryToken)} /> : surveyToken ? <CustomerSurveyPage token={decodeURIComponent(surveyToken)} /> : quotationToken ? <CustomerQuotationPage token={decodeURIComponent(quotationToken)} /> : pickupToken ? <CustomerPickupPage token={decodeURIComponent(pickupToken)} /> : packingJobToken ? (packingLink === 'date' ? <CustomerPackingDatePage token={packingJobToken} /> : packingLink === 'location' ? <CustomerPackingLocationPage token={packingJobToken} /> : <CustomerPackingItemsPage token={packingJobToken} />) : deliveryToken ? (deliveryLink === 'date' ? <CustomerDeliveryDatePage token={deliveryToken} /> : <CustomerDeliveryLocationPage token={deliveryToken} />) : session ? <WorkspaceLayout session={session} onSession={updateSession} /> : <LoginPage onLogin={updateSession} />}
     {(packingToken || uploadToken || inventoryToken || surveyToken || quotationToken || pickupToken || packingJobToken || deliveryToken) && <PoweredBy />}
   </ConfigProvider>

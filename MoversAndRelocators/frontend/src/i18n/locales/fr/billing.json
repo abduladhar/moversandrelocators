@@ -1,0 +1,144 @@
+{
+  "pages": {
+    "creditMemos": "Avoirs", "debitMemos": "Notes de débit", "invoices": "Factures", "bills": "Factures fournisseurs", "charges": "Prestations à facturer",
+    "cash": "Encaissements clients et dépenses payées", "vouchers": "Reçus d’encaissement et bons de paiement", "currencyReport": "Rapport des devises", "currencies": "Devises",
+    "exchangeRates": "Taux de change", "mappings": "Affectation comptable des prestations", "accounts": "Plan comptable"
+  },
+  "docTypes": { "INVOICE": "Facture", "BILL": "Facture fournisseur", "RECEIPT": "Reçu d’encaissement", "PAYMENT": "Bon de paiement", "CREDIT_MEMO": "Avoir", "DEBIT_MEMO": "Note de débit" },
+  "accountTypes": { "Asset": "Actif", "Liability": "Passif", "Equity": "Capitaux propres", "Revenue": "Produit", "Expense": "Charge" },
+  "panel": {
+    "title": "Facturation",
+    "invoicesIntro": "Créez les factures clients, suivez les soldes et enregistrez les encaissements.",
+    "billsIntro": "Créez les factures fournisseurs, suivez les soldes et enregistrez les paiements.",
+    "postingAlertTitle": "Enregistrez, vérifiez, puis comptabilisez",
+    "postingAlertDescription": "Les brouillons ne génèrent pas d’écritures comptables. Utilisez le menu de la ligne pour comptabiliser un document vérifié. Les factures et factures fournisseurs doivent être comptabilisées avant l’affectation des paiements.",
+    "searchLabel": "Rechercher dans la facturation", "searchPlaceholder": "Rechercher un numéro, un tiers ou une référence",
+    "receivePayment": "Enregistrer un encaissement", "makeVendorPayments": "Payer les fournisseurs", "newInvoice": "Nouvelle facture", "newBill": "Nouvelle facture fournisseur", "billingMenu": "Menu facturation"
+  },
+  "errors": {
+    "load": "Impossible de charger la facturation", "save": "Impossible d’enregistrer", "selectSource": "Sélectionnez un enregistrement d’origine",
+    "paymentGroups": "Saisissez une affectation, un montant de paiement et une référence pour chaque groupe de pièces",
+    "documentGone": "Le document n’est plus disponible. Actualisez la facturation.", "preview": "Impossible d’ouvrir l’aperçu avant impression"
+  },
+  "columns": {
+    "number": "Numéro", "source": "Origine", "party": "Client / fournisseur", "partyShort": "Tiers", "account": "Compte", "baseAmount": "Montant en devise de base",
+    "vendor": "Fournisseur", "dueDate": "Date d’échéance", "reference": "Référence", "memoAdjustment": "Ajustement par avoir/note", "paidAmount": "Montant payé", "balance": "Solde",
+    "accounting": "Comptabilité", "voucher": "Pièce", "cashBank": "Trésorerie / banque", "document": "Document", "originalDocument": "Document d’origine",
+    "allocateDocumentCurrency": "Affecter en devise du document", "paymentAmountIn": "Montant du paiement ({currency})", "allocateAmount": "Montant à affecter",
+    "charge": "Prestation", "reason": "Motif", "receipts": "Justificatifs", "postingVoucher": "Pièce comptable"
+  },
+  "status": {
+    "posted": "Comptabilisé", "draft": "Brouillon", "voided": "Annulé", "paid": "Payé", "partPaid": "Partiellement payé", "unpaid": "Impayé", "cancelled": "Annulé",
+    "converted": "Facturé", "unconverted": "Non facturé", "cancelledReversed": "Annulé / contrepassé", "pending": "En attente"
+  },
+  "actions": { "postToAccounting": "Comptabiliser", "viewPrint": "Afficher / imprimer", "void": "Annuler", "cancelDraft": "Annuler le brouillon", "reverseVoucher": "Contrepasser la pièce" },
+  "charges": {
+    "help": "Saisissez les prestations, puis sélectionnez-les pour créer une facture ou une facture fournisseur. Les produits et charges d’enlèvement existants restent disponibles séparément ; évitez d’enregistrer deux fois le même coût.",
+    "add": "Ajouter des prestations", "convert_one": "Convertir la sélection en facture / facture fournisseur ({count})", "convert_other": "Convertir la sélection en facture / facture fournisseur ({count})",
+    "incompatible": "Avant la conversion, sélectionnez uniquement des prestations d’un même client/fournisseur, type et devise.",
+    "customerCharge": "Prestation client", "vendorCharge": "Prestation fournisseur", "cancelConfirm": "Annuler cette prestation non comptabilisée ?", "cancel": "Annuler la prestation"
+  },
+  "modal": {
+    "addCharges": "Ajouter des prestations client / fournisseur", "convertCharges": "Convertir les prestations en facture / facture fournisseur", "receivePayment": "Enregistrer un encaissement client",
+    "payBills": "Payer les factures fournisseurs", "reverseDocument": "Contrepasser un document financier", "createInvoice": "Créer la facture", "createBill": "Créer la facture fournisseur",
+    "issueDocument": "Émettre le document", "saveDraftVouchers": "Enregistrer les pièces en brouillon"
+  },
+  "chargeForm": {
+    "source": "Enlèvement, dossier ou bon de réception d’entrepôt", "sourcePlaceholder": "Sélectionnez un enlèvement, un dossier ou un bon de réception d’entrepôt",
+    "directionIncome": "Prestations client — Facture", "directionExpense": "Prestations fournisseur — Facture fournisseur", "addAtLeastOne": "Ajoutez au moins une prestation",
+    "chargeTitle": "Prestation {number}", "addAnother": "Ajouter une autre prestation",
+    "accountsHint": "Les comptes proviennent du référentiel des prestations. Demandez au comptable d’affecter toute prestation manquante."
+  },
+  "issue": {
+    "summary_one": "{count} prestation sélectionnée · {amount}", "summary_other": "{count} prestations sélectionnées · {amount}",
+    "description": "Les produits deviennent une facture en brouillon ; les charges, une facture fournisseur en brouillon. Utilisez Comptabiliser après avoir vérifié le document.",
+    "documentDate": "Date du document", "reference": "Référence client / fournisseur"
+  },
+  "pay": {
+    "receiptHelp": "Affectez un encaissement à plusieurs factures d’un même client.",
+    "paymentHelp": "Sélectionnez des factures de plusieurs fournisseurs. Chaque fournisseur reçoit son propre bon de paiement et sa propre référence.",
+    "description": "Les montants affectés sont exprimés dans la devise du document. Pour les documents en devise étrangère, saisissez le montant payé dans la devise de paiement sélectionnée. Les montants peuvent être partiels. Enregistrez la pièce, puis utilisez Comptabiliser pour mettre à jour le grand livre et les soldes payés.",
+    "paymentDate": "Date de paiement", "cashBankAccount": "Compte de trésorerie / banque", "allocateAria": "Affecter {number}",
+    "voucherReference": "Numéro de référence de la pièce (obligatoire)", "voucherReferenceAria": "Référence de la pièce pour {name}"
+  },
+  "accounts": { "add": "Ajouter un compte", "code": "Numéro de compte", "name": "Intitulé du compte", "type": "Type de compte" },
+  "void": {
+    "postedWarning": "Une écriture de contrepassation sera comptabilisée. La contrepassation d’un paiement rétablit les soldes dus ; celle d’un document libère les prestations.",
+    "draftWarning": "Ce brouillon sera annulé sans créer d’écriture comptable. Les prestations d’une facture ou facture fournisseur annulée redeviennent disponibles.",
+    "reversalDate": "Date de contrepassation"
+  },
+  "preview": { "title": "Aperçu avant impression", "titleWithNumber": "{number} · Aperçu avant impression", "document": "Document" },
+  "print": {
+    "titles": { "INVOICE": "Facture", "BILL": "Facture fournisseur", "RECEIPT": "Reçu d’encaissement", "PAYMENT": "Bon de paiement" },
+    "tagline": "Services de déménagement et de relocation", "draft": "BROUILLON — NON COMPTABILISÉ", "voided": "ANNULÉ / CONTREPASSÉ — {reason}",
+    "billTo": "Facturé à", "supplier": "Fournisseur", "receivedFrom": "Reçu de", "paidTo": "Payé à", "invoiceOrBill": "Facture / facture fournisseur",
+    "sourceReference": "Référence d’origine", "qty": "Qté", "amountPerItem": "Prix unitaire", "amountIn": "Montant ({currency})",
+    "documentTotal": "Total du document", "paymentTotal": "Total du paiement", "balanceDue": "Solde dû"
+  },
+  "dualAmount": {
+    "tooltip": "Équivalent dans la devise actuelle de la fiche {party} ; taux de change en vigueur le {date}.",
+    "tooltipNoDate": "Équivalent dans la devise actuelle de la fiche {party} ; taux de change en vigueur à la date de la transaction."
+  },
+  "queue": {
+    "title": "Factures, factures fournisseurs, avoirs, notes et pièces en attente de comptabilisation", "alertTitle": "Vérifiez les brouillons avant de comptabiliser",
+    "alertDescription": "Les factures débitent les créances clients et créditent les produits. Les factures fournisseurs débitent les charges et créditent les dettes fournisseurs. Les encaissements débitent la trésorerie/banque et créditent les créances ; les paiements fournisseurs débitent les dettes et créditent la trésorerie/banque.",
+    "refresh": "Actualiser les documents", "pending_one": "{count} en attente", "pending_other": "{count} en attente",
+    "loadError": "Impossible de charger les brouillons", "posted": "Comptabilisé", "postError": "Échec de la comptabilisation"
+  },
+  "mappings": {
+    "refresh": "Actualiser les affectations", "addChargeMaster": "Ajouter une prestation de référence", "customerChargeAccount": "Compte des prestations client",
+    "vendorChargeAccount": "Compte des prestations fournisseur", "defaultAmount": "Montant par défaut", "mapAccounts": "Affecter les comptes",
+    "mappingTitle": "Affectation comptable · {name}", "newChargeMaster": "Nouvelle prestation de référence", "chargeName": "Nom de la prestation", "unit": "Unité",
+    "revenueAccount": "Prestation client → Compte de produits", "expenseAccount": "Prestation fournisseur → Compte de charges",
+    "help": "Les utilisateurs choisissent une prestation ; son compte affecté s’applique automatiquement. Les prestations déjà saisies conservent leur compte d’origine.",
+    "saved": "Affectation de la prestation enregistrée"
+  },
+  "newDocument": {
+    "customerInvoice": "FACTURE CLIENT", "vendorBill": "FACTURE FOURNISSEUR",
+    "invoiceIntro": "Choisissez un client et ajoutez les prestations que vous facturez.", "billIntro": "Choisissez un fournisseur et ajoutez les prestations à payer.",
+    "numberAssigned": "Le numéro du document est attribué à l’enregistrement.", "details": "Informations du document",
+    "selectCustomer": "Sélectionnez un client", "selectVendor": "Sélectionnez un fournisseur", "customerPlaceholder": "Sélectionner un client", "vendorPlaceholder": "Sélectionner un fournisseur",
+    "invoiceDate": "Date de facture", "billDate": "Date de facture fournisseur", "dueDateError": "La date d’échéance doit être égale ou postérieure à la date du document",
+    "customerReference": "Référence client (facultatif)", "supplierReference": "Référence fournisseur (facultatif)",
+    "referencePlaceholder": "Référence ou numéro de bon de commande", "relatedOperation": "Opération liée (facultatif)",
+    "relatedOperationHelp": "Laissez vide pour une facture ou facture fournisseur directe.", "noLinkedOperation": "Aucune opération liée",
+    "currencySection": "Devise et taux de change", "charges": "Prestations", "amountsIn": "Montants en {currency}",
+    "chargeHelp": "Sélectionnez une prestation pour renseigner son libellé et son montant par défaut. Saisissez le montant si aucun prix n’est configuré.",
+    "noCharges": "Aucune prestation active n’est configurée pour ce document. Ajoutez-en une dans Facturation → Affectation comptable des prestations, ou activez son affectation de compte.",
+    "totalIn": "Total ({currency})", "selectCharge": "Sélectionnez une prestation", "chargePlaceholder": "Sélectionner une prestation",
+    "descriptionAria": "Libellé de la prestation {number}", "descriptionPlaceholder": "Description du service", "quantityAria": "Quantité de la prestation {number}",
+    "enterPrice": "Saisissez le prix unitaire", "positivePrice": "Saisissez un prix positif", "priceAria": "Prix unitaire de la prestation {number}",
+    "removeAria": "Supprimer la prestation {number}", "addCharge": "Ajouter une prestation", "notes": "Notes (facultatif)",
+    "invoiceNotesPlaceholder": "Informations complémentaires pour votre client", "billNotesPlaceholder": "Informations complémentaires sur cette facture fournisseur",
+    "invoiceTotal": "Total de la facture", "billTotal": "Total de la facture fournisseur",
+    "chargeCount_one": "{count} prestation · {currency}", "chargeCount_other": "{count} prestations · {currency}"
+  },
+  "cash": {
+    "receiptsTitle": "Justificatifs · {number}", "loadError": "Impossible de charger la file de comptabilisation", "exactAllocation": "Affectez exactement le montant encaissé/payé.",
+    "receiptsAttached_one": "Justificatif joint", "receiptsAttached_other": "{count} justificatifs joints",
+    "postedToLedger": "Comptabilisé au grand livre", "captured": "Enregistré pour vérification par le comptable", "queueTitle": "File de comptabilisation du comptable",
+    "queueDescription": "Les paiements saisis ne sont pas des écritures comptables. Vérifiez le tiers, le compte de trésorerie/banque et les affectations avant de comptabiliser. Les encaissements d’enlèvement et les dépenses payées par l’équipe apparaissent ici automatiquement.",
+    "refresh": "Actualiser la file", "capture": "Saisir un montant encaissé / payé", "pendingPosting": "En attente de comptabilisation", "allRecords": "Tous les enregistrements",
+    "searchPlaceholder": "Rechercher une origine, une référence ou un tiers", "customerReceipt": "Encaissement client", "expensePaid": "Dépense payée",
+    "reviewPost": "Vérifier et comptabiliser", "reviewPostTitle": "Vérifier et comptabiliser · {number}", "captureTitle": "Saisir un encaissement client / une dépense payée",
+    "postToLedger": "Comptabiliser au grand livre", "saveForPosting": "Enregistrer pour comptabilisation", "noReceipt": "Aucun justificatif joint.", "paymentType": "Type de paiement",
+    "customerReceiptOption": "Encaissement client (paiement reçu)", "source": "Enlèvement / Dossier / Bon de réception d’entrepôt", "vendorPayee": "Fournisseur / bénéficiaire",
+    "postingDate": "Date de comptabilisation", "receivedPaidDate": "Date d’encaissement / de paiement", "referenceNumber": "Numéro de référence", "receiptOptional": "Justificatif (facultatif)",
+    "receiptHelp": "Photo de la facture ou du bordereau de paiement ; téléversée à l’enregistrement.", "allocateInvoices": "Affecter aux factures",
+    "allocateBills": "Affecter aux factures fournisseurs existantes", "expenseCharge": "Prestation de charge", "allocateExactly": "Affectez exactement {currency} {amount}.",
+    "receiptToAdvances": "Comptabilisé en acomptes clients (2100). Ne solde aucune facture.",
+    "expenseToAccount": "Comptabilisé au compte de charges de la prestation sélectionnée. Utilisez l’affectation à une facture fournisseur ci-dessus si la dépense a déjà une facture."
+  },
+  "memos": {
+    "creditMemo": "Avoir", "debitMemo": "Note de débit", "newCredit": "Nouvel avoir", "newDebit": "Nouvelle note de débit", "loadError": "Impossible de charger les avoirs et notes",
+    "creditHelp": "Réduire une facture client ou une facture fournisseur", "debitHelp": "Augmenter une facture client ou une facture fournisseur",
+    "description": "Sélectionnez un document comptabilisé et sa prestation d’origine. Enregistrez en brouillon, vérifiez, puis comptabilisez. La devise du document d’origine et la conversion enregistrée sont utilisées.",
+    "reverse": "Contrepasser", "saveDraft": "Enregistrer le brouillon", "postedDocument": "Facture / facture fournisseur comptabilisée",
+    "reducesReceivable": "Réduit la créance client en {currency}", "reducesPayable": "Réduit la dette fournisseur en {currency}",
+    "increasesReceivable": "Augmente la créance client en {currency}", "increasesPayable": "Augmente la dette fournisseur en {currency}",
+    "currentOutstanding": "Solde dû actuel : {amount}", "originalCharge": "Prestation d’origine", "memoDate": "Date",
+    "amountIn": "Montant ({currency})", "amountInDocumentCurrency": "Montant (devise du document)", "cancelDraftMemo": "Annuler le brouillon",
+    "preview": "Aperçu", "printVoided": "ANNULÉ / CONTREPASSÉ", "printPosted": "COMPTABILISÉ", "printDate": "Date : {date}",
+    "printOriginal": "Document d’origine : {number} · {type}"
+  }
+}

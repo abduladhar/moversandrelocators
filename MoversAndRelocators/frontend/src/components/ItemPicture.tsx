@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Modal } from 'antd'
+import { useT } from '../i18n'
 
 /** Where an item is in its picture: thousandths (0–1000) of the picture's width and height, from the top-left corner. */
 export type PictureMark = { x: number; y: number; width: number; height: number }
@@ -9,6 +10,7 @@ export type PictureMark = { x: number; y: number; width: number; height: number 
  * zooms into that area and the enlarged view outlines it on the whole frame (the mark is the AI's estimate).
  */
 export function ItemPicture({ src, mark, alt, size = 44 }: { src: string; mark?: PictureMark | null; alt: string; size?: number }) {
+  const { t } = useT()
   const [open, setOpen] = useState(false), [crop, setCrop] = useState<React.CSSProperties>()
   // Square crop around the marked item (with some margin), scaled to the thumbnail; without a mark the picture is just cover-fitted.
   const loaded = (img: HTMLImageElement) => {
@@ -22,7 +24,7 @@ export function ItemPicture({ src, mark, alt, size = 44 }: { src: string; mark?:
   }
   const pct = (v: number) => v / 10 + '%'
   return <>
-    <button type="button" className="item-picture" style={{ width: size, height: size }} title={mark ? 'Show where this item is in the picture' : 'Show the picture'} onClick={() => setOpen(true)}>
+    <button type="button" className="item-picture" style={{ width: size, height: size }} title={mark ? t('sales.itemPicture.showMark') : t('sales.itemPicture.show')} onClick={() => setOpen(true)}>
       <img src={src} alt={alt} onLoad={e => loaded(e.currentTarget)} style={crop ?? { width: '100%', height: '100%', objectFit: 'cover' }} />
     </button>
     <Modal centered width={900} open={open} onCancel={() => setOpen(false)} footer={null} title={alt}>
@@ -30,7 +32,7 @@ export function ItemPicture({ src, mark, alt, size = 44 }: { src: string; mark?:
         <img src={src} alt={alt} />
         {mark && <span className="item-picture-mark" style={{ left: pct(mark.x), top: pct(mark.y), width: pct(mark.width), height: pct(mark.height) }}><b>{alt}</b></span>}
       </div>
-      {mark && <p className="item-picture-hint">The outline is the AI's estimate of where this item is.</p>}
+      {mark && <p className="item-picture-hint">{t('sales.itemPicture.markHint')}</p>}
     </Modal>
   </>
 }

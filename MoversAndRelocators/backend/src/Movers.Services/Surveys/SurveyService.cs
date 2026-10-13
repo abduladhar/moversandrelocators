@@ -137,6 +137,68 @@ public sealed class SurveyService(ISurveyRepository repository, ITenantContext t
     {
         var x = await repository.GetSurveyAsync(id, true, t); if (x is null) return null; x.ClearCustomerChanges(); await repository.SaveChangesAsync(t); return await LoadDetail(id, t);
     }
+    /// <summary>
+    /// Brings the sales lead's expected inventory into the survey. It adds, never replaces: a surveyor's own rooms
+    /// and items stay exactly as they are, a line whose household item is already in that room is left alone rather
+    /// than doubled, and anything the customer marked as not needed on the shared inventory never arrives.
+    /// </summary>
+    public async Task<LeadInventoryIntoSurveyModel?> ImportLeadInventoryAsync(Guid id, CancellationToken t)
+    {
+        var survey = await repository.GetSurveyAsync(id, false, t); if (survey is null) return null;
+        if (survey.SalesLeadId is not { } leadId) throw new InvalidOperationException("This survey is not linked to a sales lead.");
+        var inventory = await repository.ListLeadInventoryAsync(leadId, t);
+        if (inventory.Count == 0) throw new InvalidOperationException("This sales lead has no expected inventory yet.");
+
+        var dropped = inventory.Count(x => x.CustomerStatus == Movers.Domain.Sales.LeadInventoryCustomerStatuses.NotNeeded);
+        var wanted = inventory.Where(x => x.CustomerStatus != Movers.Domain.Sales.LeadInventoryCustomerStatuses.NotNeeded).ToList();
+        var boxes = wanted.Count(x => x.Kind == Movers.Domain.Sales.LeadInventoryKinds.Box);
+        var allMasters = await repository.ListItemsAsync(t);
+        var masters = allMasters.Where(x => x.IsActive).ToList();
+
+        var rooms = (await repository.ListRoomsAsync(id, t)).OrderBy(x => x.DisplayOrder).ToList();
+        var lines = await repository.ListSurveyItemsAsync(id, t);
+        // Rebuilt in memory, then written through the same replace the inventory editor uses.
+        var draft = rooms.Select(r => (Name: r.Name, Order: r.DisplayOrder,
+            Items: lines.Where(l => l.RoomId == r.Id).Select(l => (l.HouseholdItemId, l.Quantity, Volume: l.VolumePerUnitCbm, l.Notes)).ToList())).ToList();
+        var order = draft.Count == 0 ? 0 : draft.Max(x => x.Order);
+        // What the survey had before this import: bringing the same lead in again must not double it.
+        var before = draft.SelectMany(r => r.Items.Select(i => (Room: r.Name.ToLowerInvariant(), i.HouseholdItemId))).ToHashSet();
+
+        int added = 0, alreadyThere = 0; var unmatched = new List<string>(); var createdMasters = new List<string>();
+        var source = $"the sales lead inventory (survey {survey.SurveyNumber})";
+        foreach (var item in wanted.Where(x => x.Kind == Movers.Domain.Sales.LeadInventoryKinds.Item))
+        {
+            // Names not in the master data become new household items (with the line's volume) instead of being left out.
+            var master = HouseholdItemMatching.FindOrCreate(masters, allMasters, item.Name, item.UnitCbm, tenantContext.TenantId, source,
+                x => { repository.AddItem(x); createdMasters.Add(x.Name); });
+            var volume = item.UnitCbm > 0 ? item.UnitCbm : master?.VolumeCbm ?? 0;
+            if (master is null || volume <= 0) { if (!unmatched.Contains(item.Name)) unmatched.Add(item.Name); continue; }
+
+            var roomName = string.IsNullOrWhiteSpace(item.Room) ? "Unspecified" : item.Room.Trim();
+            var room = draft.FirstOrDefault(x => string.Equals(x.Name, roomName, StringComparison.OrdinalIgnoreCase));
+            if (room.Items is null) { room = (roomName, ++order, []); draft.Add(room); }
+            if (before.Contains((roomName.ToLowerInvariant(), master.Id))) { alreadyThere++; continue; }
+
+            // Every lead line becomes its own survey line, even when several match the same master ("Dining chair" and
+            // "Office chair" -> Chair); the lead's own name is kept in the notes when it differs from the master's.
+            var note = string.Join(" · ", new[] { HouseholdItemMatching.Normalise(item.Name) == HouseholdItemMatching.Normalise(master.Name) ? null : item.Name.Trim(),
+                item.Fragile ? "Fragile" : null, item.Handling, item.Notes, item.CustomerNote }.Where(x => !string.IsNullOrWhiteSpace(x)));
+            room.Items.Add((master.Id, item.Quantity, volume, note.Length > 0 ? note[..Math.Min(note.Length, 500)] : null));
+            added++;
+        }
+        if (added == 0) throw new InvalidOperationException(unmatched.Count > 0
+            ? "None of the inventory lines could be brought in: they have no volume. Enter the CBM per unit on the lead inventory first."
+            : alreadyThere > 0 ? "Everything on the lead inventory is already in this survey."
+            : "There is nothing on the lead inventory to bring in.");
+
+        repository.RemoveSurveyItems(lines); repository.RemoveRooms(rooms);
+        var created = draft.Select(r => new SurveyRoom(tenantContext.TenantId, id, r.Name, r.Order)).ToList();
+        repository.AddRooms(created);
+        repository.AddSurveyItems(draft.Zip(created).SelectMany(pair => pair.First.Items.Select(i => new SurveyItem(tenantContext.TenantId, id, pair.Second.Id, i.HouseholdItemId, i.Quantity, i.Volume, i.Notes))));
+        await repository.SaveChangesAsync(t);
+        return new(await LoadDetail(id, t) ?? throw new InvalidOperationException("Survey was not found."), added, alreadyThere, dropped, boxes, unmatched, createdMasters);
+    }
+
     private static CustomerChangeRequestModel? ReadChanges(Survey x) => string.IsNullOrWhiteSpace(x.CustomerChangeRequestJson) ? null : JsonSerializer.Deserialize<CustomerChangeRequestModel>(x.CustomerChangeRequestJson);
     private static string? Clean(string? value) => string.IsNullOrWhiteSpace(value) ? null : value.Trim();
     private async Task<SurveyDetailModel?> LoadDetail(Guid id, CancellationToken t)

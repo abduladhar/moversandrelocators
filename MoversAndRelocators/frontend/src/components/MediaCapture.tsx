@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Button, Card, Empty, List, Progress, Space, Tag, Typography, message } from 'antd'
 import { AudioOutlined, CameraOutlined, CloudUploadOutlined, DeleteOutlined, FileOutlined, FolderOpenOutlined, PauseCircleOutlined, VideoCameraOutlined } from '@ant-design/icons'
 import { uploadAccept } from './AttachmentList'
+import { formatNumber, useT } from '../i18n'
 
 type CaptureKind = 'audio' | 'video' | 'photo' | null
 const maxBytes = 500 * 1024 * 1024
@@ -17,7 +18,8 @@ type Props = {
 }
 
 /** Customer media capture: record audio/video, take photos or browse files, review the queue, then upload. */
-export function MediaCapture({ uploadFile, beforeUpload, disabled, note = 'Files are stored privately for your move coordinator. Maximum 500 MB per file. Camera and microphone access require HTTPS or localhost.' }: Props) {
+export function MediaCapture({ uploadFile, beforeUpload, disabled, note }: Props) {
+  const { t } = useT()
   const [files, setFiles] = useState<File[]>([]), [uploading, setUploading] = useState(false), [progress, setProgress] = useState(0)
   const [captureKind, setCaptureKind] = useState<CaptureKind>(null), [recording, setRecording] = useState(false), [seconds, setSeconds] = useState(0)
   const browseInput = useRef<HTMLInputElement>(null), video = useRef<HTMLVideoElement>(null), recorder = useRef<MediaRecorder | null>(null)
@@ -33,7 +35,7 @@ export function MediaCapture({ uploadFile, beforeUpload, disabled, note = 'Files
   useEffect(() => { if (video.current && stream.current && captureKind !== 'audio') video.current.srcObject = stream.current }, [captureKind, recording])
 
   const chooseCapture = async (kind: Exclude<CaptureKind, null>) => {
-    if (!navigator.mediaDevices?.getUserMedia || (kind !== 'photo' && typeof MediaRecorder === 'undefined')) { message.error('Recording is not supported by this browser. Use Browse files instead.'); return }
+    if (!navigator.mediaDevices?.getUserMedia || (kind !== 'photo' && typeof MediaRecorder === 'undefined')) { message.error(t('sales.media.notSupported')); return }
     if (recording) return
     stopMedia(); setCaptureKind(kind); setSeconds(0)
     try {
@@ -41,13 +43,13 @@ export function MediaCapture({ uploadFile, beforeUpload, disabled, note = 'Files
       if (kind !== 'audio' && video.current) video.current.srcObject = stream.current
     } catch {
       setCaptureKind(null)
-      message.error(`Allow ${kind === 'audio' ? 'microphone' : 'camera and microphone'} access to record.`)
+      message.error(kind === 'audio' ? t('sales.media.allowMicrophone') : t('sales.media.allowCamera'))
     }
   }
 
   const takePhoto = () => {
     const camera = video.current
-    if (!camera?.videoWidth) { message.info('Wait for the camera preview.'); return }
+    if (!camera?.videoWidth) { message.info(t('sales.media.waitForCamera')); return }
     const canvas = document.createElement('canvas')
     canvas.width = camera.videoWidth; canvas.height = camera.videoHeight
     canvas.getContext('2d')?.drawImage(camera, 0, 0)
@@ -82,7 +84,7 @@ export function MediaCapture({ uploadFile, beforeUpload, disabled, note = 'Files
   const addFiles = (list: FileList | null) => {
     if (!list) return
     const selected = Array.from(list), valid = selected.filter(file => file.size > 0 && file.size <= maxBytes)
-    if (valid.length !== selected.length) message.error('Each file must be between 1 byte and 500 MB.')
+    if (valid.length !== selected.length) message.error(t('sales.media.fileSize'))
     setFiles(current => [...current, ...valid])
   }
 
@@ -98,42 +100,42 @@ export function MediaCapture({ uploadFile, beforeUpload, disabled, note = 'Files
         setProgress(Math.round(((i + 1) / files.length) * 100))
       }
       setFiles([])
-      message.success('Files uploaded successfully')
+      message.success(t('sales.media.uploaded'))
     } catch (reason) {
-      message.error(reason instanceof Error ? reason.message : 'Upload failed.')
+      message.error(reason instanceof Error ? reason.message : t('sales.media.uploadFailed'))
     } finally { setUploading(false) }
   }
 
   return <div className="media-capture">
     <fieldset disabled={disabled || uploading || recording} className="capture-actions" style={{ border: 0, padding: 0 }}>
-      <button type="button" onClick={() => void chooseCapture('audio')}><AudioOutlined /><strong>Audio</strong><small>Record voice</small></button>
-      <button type="button" onClick={() => void chooseCapture('video')}><VideoCameraOutlined /><strong>Video</strong><small>Record rooms</small></button>
-      <button type="button" onClick={() => void chooseCapture('photo')}><CameraOutlined /><strong>Image</strong><small>Take photos</small></button>
-      <button type="button" onClick={() => browseInput.current?.click()}><FolderOpenOutlined /><strong>Browse files</strong><small>Documents and media</small></button>
+      <button type="button" onClick={() => void chooseCapture('audio')}><AudioOutlined /><strong>{t('sales.media.audio')}</strong><small>{t('sales.media.recordVoice')}</small></button>
+      <button type="button" onClick={() => void chooseCapture('video')}><VideoCameraOutlined /><strong>{t('sales.media.video')}</strong><small>{t('sales.media.recordRooms')}</small></button>
+      <button type="button" onClick={() => void chooseCapture('photo')}><CameraOutlined /><strong>{t('sales.media.image')}</strong><small>{t('sales.media.takePhotos')}</small></button>
+      <button type="button" onClick={() => browseInput.current?.click()}><FolderOpenOutlined /><strong>{t('sales.media.browse')}</strong><small>{t('sales.media.documentsAndMedia')}</small></button>
     </fieldset>
     <input ref={browseInput} hidden type="file" accept={uploadAccept} multiple onChange={event => { addFiles(event.target.files); event.target.value = '' }} />
 
     {captureKind && <Card size="small" className="recorder-panel">
-      {captureKind !== 'audio' ? <video ref={video} autoPlay muted playsInline aria-label="Camera preview" /> : <div className={`audio-pulse ${recording ? 'is-recording' : ''}`}><AudioOutlined /></div>}
+      {captureKind !== 'audio' ? <video ref={video} autoPlay muted playsInline aria-label={t('sales.media.cameraPreview')} /> : <div className={`audio-pulse ${recording ? 'is-recording' : ''}`}><AudioOutlined /></div>}
       <Space wrap>
-        <Tag color={recording ? 'red' : 'blue'}>{recording ? `Recording ${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}` : 'Ready'}</Tag>
-        {captureKind === 'photo' && <Button type="primary" icon={<CameraOutlined />} onClick={takePhoto}>Take photo</Button>}
-        {!recording && captureKind !== 'photo' && <Button type="primary" danger icon={captureKind === 'audio' ? <AudioOutlined /> : <VideoCameraOutlined />} onClick={startRecording}>Start recording</Button>}
-        {recording && <Button danger icon={<PauseCircleOutlined />} onClick={stopRecording}>Stop and add</Button>}
-        <Button onClick={closeRecorder}>{recording ? 'Stop and close' : 'Close'}</Button>
+        <Tag color={recording ? 'red' : 'blue'}>{recording ? t('sales.media.recording', { time: `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}` }) : t('sales.media.ready')}</Tag>
+        {captureKind === 'photo' && <Button type="primary" icon={<CameraOutlined />} onClick={takePhoto}>{t('sales.media.takePhoto')}</Button>}
+        {!recording && captureKind !== 'photo' && <Button type="primary" danger icon={captureKind === 'audio' ? <AudioOutlined /> : <VideoCameraOutlined />} onClick={startRecording}>{t('sales.media.startRecording')}</Button>}
+        {recording && <Button danger icon={<PauseCircleOutlined />} onClick={stopRecording}>{t('sales.media.stopAndAdd')}</Button>}
+        <Button onClick={closeRecorder}>{recording ? t('sales.media.stopAndClose') : t('common.close')}</Button>
       </Space>
     </Card>}
 
-    {files.length ? <List size="small" header={`${files.length} file${files.length > 1 ? 's' : ''} ready`} dataSource={files} renderItem={(file, index) =>
-      <List.Item actions={[<Button aria-label={`Remove ${file.name}`} key="remove" disabled={uploading} type="text" danger icon={<DeleteOutlined />} onClick={() => setFiles(current => current.filter((_, itemIndex) => itemIndex !== index))} />]}>
-        <List.Item.Meta avatar={<FileOutlined />} title={file.name} description={`${(file.size / 1048576).toFixed(1)} MB · ${file.type || 'File'}`} />
+    {files.length ? <List size="small" header={t('sales.media.filesReady', { count: files.length })} dataSource={files} renderItem={(file, index) =>
+      <List.Item actions={[<Button aria-label={t('sales.media.removeFile', { file: file.name })} key="remove" disabled={uploading} type="text" danger icon={<DeleteOutlined />} onClick={() => setFiles(current => current.filter((_, itemIndex) => itemIndex !== index))} />]}>
+        <List.Item.Meta avatar={<FileOutlined />} title={file.name} description={`${t('sales.sizeMb', { value: formatNumber(file.size / 1048576, { minimumFractionDigits: 1, maximumFractionDigits: 1 }) })} · ${file.type || t('sales.file')}`} />
       </List.Item>} />
-      : !captureKind && <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="Choose one of the options above" />}
+      : !captureKind && <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description={t('sales.media.chooseOption')} />}
 
     {uploading && <Progress percent={progress} />}
     <Button block size="large" type="primary" icon={<CloudUploadOutlined />} loading={uploading} disabled={disabled || !files.length || Boolean(captureKind)} onClick={() => void upload()}>
-      Upload {files.length || ''} file{files.length === 1 ? '' : 's'}
+      {files.length ? t('sales.media.uploadFiles', { count: files.length }) : t('sales.media.uploadNone')}
     </Button>
-    <Typography.Text className="upload-privacy" type="secondary">{note}</Typography.Text>
+    <Typography.Text className="upload-privacy" type="secondary">{note ?? t('sales.media.defaultNote')}</Typography.Text>
   </div>
 }

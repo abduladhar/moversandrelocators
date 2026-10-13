@@ -1,12 +1,14 @@
 import { useId } from 'react'
+import { useT } from '../i18n'
 
 /** Product name shown in the app (sign-in, sidebar, browser tab). */
 export const PRODUCT_NAME = 'Crateway'
 
 /** Small "Powered by Crateway" line for customer-facing link pages (uploads, quotations, confirmations). */
 export function PoweredBy() {
+  const { t } = useT()
   // Pinned to the bottom of the screen; the spacer keeps it from covering the last buttons of the page.
-  return <><div className="powered-by-space" aria-hidden="true" /><div className="powered-by" aria-label={'Powered by ' + PRODUCT_NAME}><span>Powered by</span><BrandMark size={18} /><b>crateway</b></div></>
+  return <><div className="powered-by-space" aria-hidden="true" /><div className="powered-by" aria-label={t('shell.brand.poweredByLabel', { product: PRODUCT_NAME })}><span>{t('shell.brand.poweredBy')}</span><BrandMark size={18} /><b>crateway</b></div></>
 }
 
 /** Crateway mark: a slatted crate above a forward arrow, the "way" (same artwork as public/crateway-mark.svg). */

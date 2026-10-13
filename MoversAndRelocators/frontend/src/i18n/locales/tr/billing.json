@@ -1,0 +1,144 @@
+{
+  "pages": {
+    "creditMemos": "Alacak dekontları", "debitMemos": "Borç dekontları", "invoices": "Faturalar", "bills": "Tedarikçi faturaları", "charges": "Fatura ve tedarikçi faturası kalemleri",
+    "cash": "Müşteri tahsilatları ve ödenen giderler", "vouchers": "Tahsilat makbuzları ve tediye fişleri", "currencyReport": "Döviz raporu", "currencies": "Para birimleri",
+    "exchangeRates": "Döviz kurları", "mappings": "Hizmet kalemi hesap eşleştirmeleri", "accounts": "Hesap planı"
+  },
+  "docTypes": { "INVOICE": "Fatura", "BILL": "Tedarikçi faturası", "RECEIPT": "Tahsilat makbuzu", "PAYMENT": "Tediye fişi", "CREDIT_MEMO": "Alacak dekontu", "DEBIT_MEMO": "Borç dekontu" },
+  "accountTypes": { "Asset": "Varlık", "Liability": "Yabancı kaynak", "Equity": "Özkaynak", "Revenue": "Gelir", "Expense": "Gider" },
+  "panel": {
+    "title": "Faturalama",
+    "invoicesIntro": "Müşteri faturaları oluşturun, bakiyeleri izleyin ve tahsilat alın.",
+    "billsIntro": "Tedarikçi faturaları oluşturun, bakiyeleri izleyin ve ödemeleri kaydedin.",
+    "postingAlertTitle": "Kaydedin, inceleyin, ardından muhasebeye kayda alın",
+    "postingAlertDescription": "Taslaklar yevmiye kaydı oluşturmaz. İncelenen bir belgeyi kayda almak için satır menüsünü kullanın. Ödeme dağıtılmadan önce faturalar ve tedarikçi faturaları kayda alınmalıdır.",
+    "searchLabel": "Faturalamada ara", "searchPlaceholder": "Numara, cari veya referans ara",
+    "receivePayment": "Tahsilat al", "makeVendorPayments": "Tedarikçi ödemesi yap", "newInvoice": "Yeni fatura", "newBill": "Yeni tedarikçi faturası", "billingMenu": "Faturalama menüsü"
+  },
+  "errors": {
+    "load": "Faturalama verileri yüklenemedi", "save": "Kaydedilemedi", "selectSource": "Bir kaynak kayıt seçin",
+    "paymentGroups": "Her fiş grubu için dağıtım tutarı, ödeme tutarı ve referans girin",
+    "documentGone": "Belge artık mevcut değil. Faturalamayı yenileyin.", "preview": "Baskı önizlemesi açılamadı"
+  },
+  "columns": {
+    "number": "Numara", "source": "Kaynak", "party": "Müşteri / tedarikçi", "partyShort": "Cari", "account": "Hesap", "baseAmount": "Ana para birimi tutarı",
+    "vendor": "Tedarikçi", "dueDate": "Vade tarihi", "reference": "Referans", "memoAdjustment": "Dekont düzeltmesi", "paidAmount": "Ödenen tutar", "balance": "Bakiye",
+    "accounting": "Muhasebe", "voucher": "Fiş", "cashBank": "Kasa / banka", "document": "Belge", "originalDocument": "Orijinal belge",
+    "allocateDocumentCurrency": "Belge para biriminde dağıt", "paymentAmountIn": "Ödeme tutarı ({currency})", "allocateAmount": "Dağıtılacak tutar",
+    "charge": "Hizmet kalemi", "reason": "Neden", "receipts": "Fişler", "postingVoucher": "Kayıt fişi"
+  },
+  "status": {
+    "posted": "Kayda alındı", "draft": "Taslak", "voided": "İptal edildi", "paid": "Ödendi", "partPaid": "Kısmen ödendi", "unpaid": "Ödenmedi", "cancelled": "İptal edildi",
+    "converted": "Dönüştürüldü", "unconverted": "Dönüştürülmedi", "cancelledReversed": "İptal edildi / ters kayıt yapıldı", "pending": "Beklemede"
+  },
+  "actions": { "postToAccounting": "Muhasebeye kayda al", "viewPrint": "Görüntüle / yazdır", "void": "İptal et", "cancelDraft": "Taslağı iptal et", "reverseVoucher": "Fişi ters kayıtla iptal et" },
+  "charges": {
+    "help": "Kalemleri girin, ardından fatura veya tedarikçi faturası oluşturmak için seçin. Mevcut toplama gelir ve gider kayıtları ayrıca kullanılabilir; aynı maliyeti iki kez kaydetmekten kaçının.",
+    "add": "Kalem ekle", "convert_one": "Seçileni faturaya / tedarikçi faturasına dönüştür ({count})", "convert_other": "Seçilenleri faturaya / tedarikçi faturasına dönüştür ({count})",
+    "incompatible": "Dönüştürmeden önce yalnızca tek bir müşteri/tedarikçi, tür ve para birimine ait kalemleri seçin.",
+    "customerCharge": "Müşteri kalemi", "vendorCharge": "Tedarikçi kalemi", "cancelConfirm": "Kayda alınmamış bu kalem iptal edilsin mi?", "cancel": "Kalemi iptal et"
+  },
+  "modal": {
+    "addCharges": "Müşteri / tedarikçi kalemleri ekle", "convertCharges": "Kalemleri faturaya / tedarikçi faturasına dönüştür", "receivePayment": "Müşteriden tahsilat al",
+    "payBills": "Tedarikçi faturalarını öde", "reverseDocument": "Mali belgeyi ters kayıtla iptal et", "createInvoice": "Fatura oluştur", "createBill": "Tedarikçi faturası oluştur",
+    "issueDocument": "Belgeyi düzenle", "saveDraftVouchers": "Taslak fişleri kaydet"
+  },
+  "chargeForm": {
+    "source": "Toplama, iş veya depo giriş fişi", "sourcePlaceholder": "Bir toplama, iş veya depo giriş fişi seçin",
+    "directionIncome": "Müşteri kalemleri — Fatura", "directionExpense": "Tedarikçi kalemleri — Tedarikçi faturası", "addAtLeastOne": "En az bir kalem ekleyin",
+    "chargeTitle": "Kalem {number}", "addAnother": "Başka kalem ekle",
+    "accountsHint": "Hesaplar hizmet kalemi kartından gelir. Eşleştirilmemiş kalemler için muhasebeciye başvurun."
+  },
+  "issue": {
+    "summary_one": "{count} seçili kalem · {amount}", "summary_other": "{count} seçili kalem · {amount}",
+    "description": "Gelir taslak faturaya, gider taslak tedarikçi faturasına dönüşür. Belgeyi inceledikten sonra Muhasebeye kayda al seçeneğini kullanın.",
+    "documentDate": "Belge tarihi", "reference": "Müşteri / tedarikçi referansı"
+  },
+  "pay": {
+    "receiptHelp": "Tek bir tahsilatı aynı müşterinin faturalarına dağıtın.",
+    "paymentHelp": "Farklı tedarikçilerin faturalarını seçin. Her tedarikçi için ayrı tediye fişi ve referans oluşturulur.",
+    "description": "Dağıtım tutarları belge para birimindedir. Döviz cinsinden belgeler için seçilen ödeme para biriminde ödenen tutarı girin. Tutarlar kısmi olabilir. Fişi kaydedin, ardından defteri ve ödenen bakiyeleri güncellemek için Muhasebeye kayda al seçeneğini kullanın.",
+    "paymentDate": "Ödeme tarihi", "cashBankAccount": "Kasa / banka hesabı", "allocateAria": "{number} için dağıt",
+    "voucherReference": "Fiş referans numarası (zorunlu)", "voucherReferenceAria": "{name} için fiş referansı"
+  },
+  "accounts": { "add": "Hesap ekle", "code": "Hesap kodu", "name": "Hesap adı", "type": "Hesap türü" },
+  "void": {
+    "postedWarning": "Deftere ters kayıt yapılacaktır. Ödeme ters kayıtları açık bakiyeleri geri yükler; belge ters kayıtları kalemleri serbest bırakır.",
+    "draftWarning": "Bu taslak, yevmiye kaydı oluşturulmadan iptal edilecektir. İptal edilen fatura veya tedarikçi faturasındaki kalemler yeniden kullanılabilir olur.",
+    "reversalDate": "Ters kayıt tarihi"
+  },
+  "preview": { "title": "Baskı önizlemesi", "titleWithNumber": "{number} · Baskı önizlemesi", "document": "Belge" },
+  "print": {
+    "titles": { "INVOICE": "Fatura", "BILL": "Tedarikçi faturası", "RECEIPT": "Tahsilat makbuzu", "PAYMENT": "Tediye fişi" },
+    "tagline": "Nakliye ve taşınma hizmetleri", "draft": "TASLAK — MUHASEBEYE KAYDA ALINMADI", "voided": "İPTAL / TERS KAYIT — {reason}",
+    "billTo": "Fatura edilen", "supplier": "Tedarikçi", "receivedFrom": "Tahsil edilen", "paidTo": "Ödenen", "invoiceOrBill": "Fatura / tedarikçi faturası",
+    "sourceReference": "Kaynak referansı", "qty": "Miktar", "amountPerItem": "Birim fiyat", "amountIn": "Tutar ({currency})",
+    "documentTotal": "Belge toplamı", "paymentTotal": "Ödeme toplamı", "balanceDue": "Ödenecek bakiye"
+  },
+  "dualAmount": {
+    "tooltip": "Güncel {party} kartı para birimindeki karşılığı; {date} tarihinde geçerli kur.",
+    "tooltipNoDate": "Güncel {party} kartı para birimindeki karşılığı; işlem tarihinde geçerli kur."
+  },
+  "queue": {
+    "title": "Kayda alınmayı bekleyen faturalar, tedarikçi faturaları, dekontlar ve fişler", "alertTitle": "Kayda almadan önce taslakları inceleyin",
+    "alertDescription": "Faturalar alacakları borçlandırır, gelirleri alacaklandırır. Tedarikçi faturaları giderleri borçlandırır, borçları alacaklandırır. Tahsilatlar kasa/bankayı borçlandırır, alacakları alacaklandırır; tedarikçi ödemeleri borçları borçlandırır, kasa/bankayı alacaklandırır.",
+    "refresh": "Belgeleri yenile", "pending_one": "{count} bekleyen", "pending_other": "{count} bekleyen",
+    "loadError": "Taslaklar yüklenemedi", "posted": "Muhasebeye kayda alındı", "postError": "Kayda alma başarısız oldu"
+  },
+  "mappings": {
+    "refresh": "Eşleştirmeleri yenile", "addChargeMaster": "Hizmet kalemi kartı ekle", "customerChargeAccount": "Müşteri kalemi hesabı",
+    "vendorChargeAccount": "Tedarikçi kalemi hesabı", "defaultAmount": "Varsayılan tutar", "mapAccounts": "Hesapları eşleştir",
+    "mappingTitle": "Hesap eşleştirmesi · {name}", "newChargeMaster": "Yeni hizmet kalemi kartı", "chargeName": "Kalem adı", "unit": "Birim",
+    "revenueAccount": "Müşteri kalemi → Gelir hesabı", "expenseAccount": "Tedarikçi kalemi → Gider hesabı",
+    "help": "Kullanıcılar bir kalem seçer; eşleştirilen hesap otomatik uygulanır. Daha önce girilmiş kalemler orijinal hesaplarını korur.",
+    "saved": "Hizmet kalemi eşleştirmesi kaydedildi"
+  },
+  "newDocument": {
+    "customerInvoice": "MÜŞTERİ FATURASI", "vendorBill": "TEDARİKÇİ FATURASI",
+    "invoiceIntro": "Bir müşteri seçin ve faturalandırdığınız hizmetleri ekleyin.", "billIntro": "Bir tedarikçi seçin ve ödemeniz gereken kalemleri ekleyin.",
+    "numberAssigned": "Belge numarası kaydedildiğinde verilir.", "details": "Belge bilgileri",
+    "selectCustomer": "Bir müşteri seçin", "selectVendor": "Bir tedarikçi seçin", "customerPlaceholder": "Müşteri seçin", "vendorPlaceholder": "Tedarikçi seçin",
+    "invoiceDate": "Fatura tarihi", "billDate": "Tedarikçi faturası tarihi", "dueDateError": "Vade tarihi belge tarihiyle aynı veya sonra olmalıdır",
+    "customerReference": "Müşteri referansı (isteğe bağlı)", "supplierReference": "Tedarikçi referansı (isteğe bağlı)",
+    "referencePlaceholder": "Referans veya satın alma siparişi numarası", "relatedOperation": "İlgili operasyon (isteğe bağlı)",
+    "relatedOperationHelp": "Doğrudan fatura veya tedarikçi faturası için boş bırakın.", "noLinkedOperation": "Bağlı operasyon yok",
+    "currencySection": "Para birimi ve kur", "charges": "Kalemler", "amountsIn": "Tutarlar {currency} cinsinden",
+    "chargeHelp": "Açıklamasını ve varsayılan tutarını doldurmak için bir kalem seçin. Fiyat tanımlı değilse tutarı girin.",
+    "noCharges": "Bu belge için tanımlı aktif kalem yok. Faturalama → Hizmet kalemi hesap eşleştirmeleri altından bir kalem ekleyin veya hesap eşleştirmesini etkinleştirin.",
+    "totalIn": "Toplam ({currency})", "selectCharge": "Bir kalem seçin", "chargePlaceholder": "Kalem seçin",
+    "descriptionAria": "{number}. kalemin açıklaması", "descriptionPlaceholder": "Hizmet açıklaması", "quantityAria": "{number}. kalemin miktarı",
+    "enterPrice": "Birim fiyatı girin", "positivePrice": "Pozitif bir fiyat girin", "priceAria": "{number}. kalemin birim fiyatı",
+    "removeAria": "{number}. kalemi kaldır", "addCharge": "Kalem ekle", "notes": "Notlar (isteğe bağlı)",
+    "invoiceNotesPlaceholder": "Müşteriniz için ek bilgiler", "billNotesPlaceholder": "Bu tedarikçi faturası hakkında ek bilgiler",
+    "invoiceTotal": "Fatura toplamı", "billTotal": "Tedarikçi faturası toplamı",
+    "chargeCount_one": "{count} kalem · {currency}", "chargeCount_other": "{count} kalem · {currency}"
+  },
+  "cash": {
+    "receiptsTitle": "Fişler · {number}", "loadError": "Kayıt kuyruğu yüklenemedi", "exactAllocation": "Tahsil edilen/ödenen tutarın tamamını tam olarak dağıtın.",
+    "receiptsAttached_one": "Fiş eklendi", "receiptsAttached_other": "{count} fiş eklendi",
+    "postedToLedger": "Deftere kayda alındı", "captured": "Muhasebeci incelemesi için kaydedildi", "queueTitle": "Muhasebeci kayıt kuyruğu",
+    "queueDescription": "Girilen ödemeler defter kaydı değildir. Kayda almadan önce cariyi, kasa/banka hesabını ve dağıtımları inceleyin. Mevcut toplama tahsilatları ve ödenen ekip giderleri burada otomatik görünür.",
+    "refresh": "Kuyruğu yenile", "capture": "Tahsil edilen / ödenen tutarı gir", "pendingPosting": "Kayda alınmayı bekleyen", "allRecords": "Tüm kayıtlar",
+    "searchPlaceholder": "Kaynak, referans veya cari ara", "customerReceipt": "Müşteri tahsilatı", "expensePaid": "Ödenen gider",
+    "reviewPost": "İncele ve kayda al", "reviewPostTitle": "İncele ve kayda al · {number}", "captureTitle": "Müşteri tahsilatı / ödenen gider gir",
+    "postToLedger": "Deftere kayda al", "saveForPosting": "Kayda almak üzere kaydet", "noReceipt": "Ekli fiş yok.", "paymentType": "Ödeme türü",
+    "customerReceiptOption": "Müşteri tahsilatı (alınan ödeme)", "source": "Toplama / İş / Depo giriş fişi", "vendorPayee": "Tedarikçi / alacaklı",
+    "postingDate": "Kayıt tarihi", "receivedPaidDate": "Tahsil / ödeme tarihi", "referenceNumber": "Referans numarası", "receiptOptional": "Fiş (isteğe bağlı)",
+    "receiptHelp": "Faturanın veya ödeme dekontunun fotoğrafı; kaydettiğinizde yüklenir.", "allocateInvoices": "Faturalara dağıt",
+    "allocateBills": "Mevcut tedarikçi faturalarına dağıt", "expenseCharge": "Gider kalemi", "allocateExactly": "Tam olarak {currency} {amount} dağıtın.",
+    "receiptToAdvances": "Müşteri avanslarına (2100) kaydedilir. Hiçbir faturayı kapatmaz.",
+    "expenseToAccount": "Seçilen kalemin gider hesabına kaydedilir. Giderin tedarikçi faturası varsa yukarıdaki fatura dağıtımını kullanın."
+  },
+  "memos": {
+    "creditMemo": "Alacak dekontu", "debitMemo": "Borç dekontu", "newCredit": "Yeni alacak dekontu", "newDebit": "Yeni borç dekontu", "loadError": "Dekontlar yüklenemedi",
+    "creditHelp": "Müşteri faturasını veya tedarikçi faturasını azaltın", "debitHelp": "Müşteri faturasını veya tedarikçi faturasını artırın",
+    "description": "Kayda alınmış bir belge ve orijinal kalemini seçin. Taslak olarak kaydedin, inceleyin, ardından muhasebeye kayda alın. Orijinal belgenin para birimi ve kaydedilen kur kullanılır.",
+    "reverse": "Dekontu ters kayıtla iptal et", "saveDraft": "Taslağı kaydet", "postedDocument": "Kayda alınmış fatura / tedarikçi faturası",
+    "reducesReceivable": "Müşteri alacağını {currency} cinsinden azaltır", "reducesPayable": "Tedarikçi borcunu {currency} cinsinden azaltır",
+    "increasesReceivable": "Müşteri alacağını {currency} cinsinden artırır", "increasesPayable": "Tedarikçi borcunu {currency} cinsinden artırır",
+    "currentOutstanding": "Güncel açık bakiye: {amount}", "originalCharge": "Orijinal kalem", "memoDate": "Dekont tarihi",
+    "amountIn": "Tutar ({currency})", "amountInDocumentCurrency": "Tutar (belge para birimi)", "cancelDraftMemo": "Taslak dekontu iptal et",
+    "preview": "Dekont önizlemesi", "printVoided": "İPTAL / TERS KAYIT", "printPosted": "KAYDA ALINDI", "printDate": "Tarih: {date}",
+    "printOriginal": "Orijinal belge: {number} · {type}"
+  }
+}

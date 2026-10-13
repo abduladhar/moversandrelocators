@@ -1,0 +1,12 @@
+{
+  "movement": { "DRAFT": "Taslak", "PACKED": "Paketlendi", "LOADING": "Yükleniyor", "WAREHOUSE": "Depoda", "IN_TRANSIT": "Taşınıyor", "ARRIVED": "Varış noktasına ulaştı", "DELIVERED": "Teslim edildi", "CANCELLED": "İptal edildi" },
+  "delivery": { "PLANNED": "Planlandı", "OUT_FOR_DELIVERY": "Teslimata çıktı", "COMPLETED": "Tamamlandı", "CANCELLED": "İptal edildi" },
+  "deliveryItem": { "LOADED": "Yüklendi", "DELIVERED": "Teslim edildi", "RETURNED": "Teslim edilmedi" },
+  "party": {
+    "customer": "Müşteri", "vendor": "Tedarikçi",
+    "currencyLoading": "Para birimi bilgileri yükleniyor.",
+    "noCustomerMaster": "Bağlı müşteri kaydı yok.", "noVendorMaster": "Bağlı tedarikçi kaydı yok.",
+    "noBaseAmount": "Dönüştürme için kayıtlı temel tutar yok.", "noTransactionDate": "Dönüştürme için işlem tarihi yok.",
+    "noRate": "{date} tarihinde geçerli {currency} döviz kuru yok."
+  }
+}

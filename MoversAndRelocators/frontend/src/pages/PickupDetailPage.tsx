@@ -18,6 +18,7 @@ import { PickupPaymentsTab } from '../components/pickup/PickupPaymentsTab'
 import { PickupStorageTab } from '../components/pickup/PickupStorageTab'
 import { PickupSignoffTab } from '../components/pickup/PickupSignoffTab'
 import { BoxLabels, PaymentReceipt, PrintPreview } from '../components/pickup/PrintDocuments'
+import { useT } from '../i18n'
 
 type Masters = { employees: Employee[]; statuses: PickupStatus[]; vehicles: Vehicle[]; boxTypes: BoxType[]; materials: PackingMaterial[]; warehouses: Warehouse[] }
 type Props = { pickupId: string; companyName: string; userName: string; onBack: () => void; onChanged: () => void; initialTab?: string }
@@ -27,10 +28,10 @@ export function PickupDetailPage({ pickupId, companyName, userName, onBack, onCh
   const [detail, setDetail] = useState<PickupDetail>(), [work, setWork] = useState<PickupWork>(), [masters, setMasters] = useState<Masters>()
   const [tab, setTab] = useState(initialTab), [labels, setLabels] = useState<PickupPackage[] | null>(null), [receipt, setReceipt] = useState<PickupDetail['transactions'][number] | null>(null)
 
-  const canBill = useBilling(), { data: currencyData } = useCurrencies()
+  const canBill = useBilling(), { data: currencyData } = useCurrencies(), { t } = useT()
   const load = () => Promise.all([pickupsApi.get(pickupId), pickupsApi.work(pickupId), employeesApi.employees(), pickupsApi.statuses(), pickupsApi.vehicles(), surveysApi.boxTypes(), surveysApi.materials(), pickupsApi.warehouses()])
       .then(([d, w, employees, statuses, vehicles, boxTypes, materials, warehouses]) => { setDetail(d); setWork(w); setMasters({ employees, statuses, vehicles, boxTypes, materials, warehouses }) })
-      .catch(e => message.error(e instanceof Error ? e.message : 'Unable to load the pickup'))
+      .catch(e => message.error(e instanceof Error ? e.message : t('pickups.detail.loadFailed')))
   useEffect(() => { void load() }, [pickupId])
 
   if (!detail || !work || !masters) return <Card loading />
@@ -52,21 +53,21 @@ export function PickupDetailPage({ pickupId, companyName, userName, onBack, onCh
   const status = masters.statuses.find(s => s.id === p.statusId)
   const crewSigned = work.signoffs.some(s => s.party === 'EMPLOYEE')
   const kpis = [
-    { key: 'rooms', icon: <InboxOutlined />, label: 'Boxes packed', value: detail.packages.length },
-    { key: 'units', icon: <UnorderedListOutlined />, label: 'Items packed', value: expected ? `${packedUnits} / ${expected}` : packedUnits },
-    { key: 'volume', icon: <ShoppingOutlined />, label: 'Material cost', value: money(detail.materials.reduce((s, m) => s + m.totalCost, 0)) },
-    { key: 'cost', icon: <DollarOutlined />, label: 'Receipts', value: String(detail.transactions.filter(x=>x.type==='INCOME').length) },
+    { key: 'rooms', icon: <InboxOutlined />, label: t('pickups.detail.boxesPacked'), value: detail.packages.length },
+    { key: 'units', icon: <UnorderedListOutlined />, label: t('pickups.detail.itemsPacked'), value: expected ? `${packedUnits} / ${expected}` : packedUnits },
+    { key: 'volume', icon: <ShoppingOutlined />, label: t('pickups.detail.materialCost'), value: money(detail.materials.reduce((s, m) => s + m.totalCost, 0)) },
+    { key: 'cost', icon: <DollarOutlined />, label: t('pickups.detail.receipts'), value: String(detail.transactions.filter(x=>x.type==='INCOME').length) },
   ]
   const facts = [
-    { key: 'source', icon: <LinkOutlined />, label: 'Created from', value: p.quotationNumber ? `Quotation ${p.quotationNumber}` : p.leadNumber ? `Sales lead ${p.leadNumber}` : 'Direct pickup' },
-    { key: 'schedule', icon: <CalendarOutlined />, label: 'Pickup time', value: when(p.scheduledAtUtc) },
-    { key: 'vehicle', icon: <CarOutlined />, label: 'Vehicle', value: p.vehicleNumber ?? <Tag>Not assigned</Tag> },
-    { key: 'crew', icon: <TeamOutlined />, label: 'Crew', value: detail.assignments.length ? `${detail.assignments.length} assigned` : <Tag>Not assigned</Tag> },
-    { key: 'signoff', icon: <CheckCircleOutlined />, label: 'Sign-off', value: <Tag color={crewSigned ? 'green' : 'default'}>Crew {crewSigned ? '✓' : '—'}</Tag> },
+    { key: 'source', icon: <LinkOutlined />, label: t('pickups.detail.createdFrom'), value: p.quotationNumber ? t('pickups.quotationNumber', { number: p.quotationNumber }) : p.leadNumber ? t('pickups.salesLeadNumber', { number: p.leadNumber }) : t('pickups.directPickup') },
+    { key: 'schedule', icon: <CalendarOutlined />, label: t('pickups.detail.pickupTime'), value: when(p.scheduledAtUtc) },
+    { key: 'vehicle', icon: <CarOutlined />, label: t('pickups.vehicle'), value: p.vehicleNumber ?? <Tag>{t('pickups.notAssigned')}</Tag> },
+    { key: 'crew', icon: <TeamOutlined />, label: t('pickups.crew'), value: detail.assignments.length ? t('pickups.detail.crewAssigned', { count: detail.assignments.length }) : <Tag>{t('pickups.notAssigned')}</Tag> },
+    { key: 'signoff', icon: <CheckCircleOutlined />, label: t('pickups.signoffTab'), value: <Tag color={crewSigned ? 'green' : 'default'}>{t('pickups.crew')} {crewSigned ? '✓' : '—'}</Tag> },
   ]
 
   return <div className="survey-workspace pickup-workspace">
-    <div className="survey-workspace-header"><div className="survey-heading"><Button icon={<ArrowLeftOutlined />} aria-label="Back to pickups" onClick={onBack} /><div><Typography.Text className="eyebrow">PICKUP WORKSPACE</Typography.Text><Typography.Title level={2}>{p.pickupNumber}<span className="survey-heading-customer">{p.customerName}</span></Typography.Title></div></div>
+    <div className="survey-workspace-header"><div className="survey-heading"><Button icon={<ArrowLeftOutlined />} aria-label={t('pickups.detail.back')} onClick={onBack} /><div><Typography.Text className="eyebrow">{t('pickups.detail.eyebrow')}</Typography.Text><Typography.Title level={2}>{p.pickupNumber}<span className="survey-heading-customer">{p.customerName}</span></Typography.Title></div></div>
       <div className="survey-heading-actions"><Tag className="survey-status-tag" color={status?.color ?? 'blue'}>{status?.name ?? p.statusName}</Tag></div></div>
 
     <div className="survey-kpi-row">{kpis.map(k => <div key={k.key} className={`survey-kpi survey-kpi-${k.key}`}><span className="survey-kpi-icon">{k.icon}</span><div><small>{k.label}</small><strong>{k.value}</strong></div></div>)}</div>
@@ -76,22 +77,22 @@ export function PickupDetailPage({ pickupId, companyName, userName, onBack, onCh
       onStart={at => trip(pickupsApi.startTrip(p.id, at))} onPause={(reason, at) => trip(pickupsApi.pauseTrip(p.id, reason, at))} onResume={at => trip(pickupsApi.resumeTrip(p.id, at))}
       onComplete={x => trip(pickupsApi.completeTrip(p.id, { at: x.at, distanceKm: x.distanceKm }))} onEdit={x => trip(pickupsApi.updateDistance(p.id, x.distanceKm))} />
 
-    <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 12 }}><RefreshButton onRefresh={load} confirmText="Reload the latest pickup and packing data. Save any open form before refreshing." /></div><ReportPrintButton type="PACKING_LIST" title={detail.pickup.pickupNumber+' packing list'} id={detail.pickup.id}/><Tabs className="pickup-tabs" activeKey={tab} onChange={setTab} items={[
-      ...(canBill ? [{ key: 'billing', label: 'Invoicing & billing', children: <BillingPanel sourceKind='PICKUP' sourceId={pickupId} companyName={companyName} /> }] : []),
-      { key: 'plan', label: 'Plan & crew', children: <PickupPlanTab detail={detail} employees={masters.employees} statuses={masters.statuses} vehicles={masters.vehicles} onDetail={updateDetail} saveCrew={assignments => saveDetails({ assignments })} /> },
-      { key: 'packing', label: `Packing (${detail.packages.length})`, children: <PickupPackingTab detail={detail} work={work} boxTypes={masters.boxTypes} materials={masters.materials} savePacking={(packages, materials) => saveDetails({ packages, materials })} onPrintLabels={setLabels} onLoadFromPacking={() => setTab('collection')} /> },
-      { key: 'collection', label: 'Collection', children: <PickupCollectionTab pickupId={pickupId} warehouses={masters.warehouses}
+    <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 12 }}><RefreshButton onRefresh={load} confirmText={t('pickups.detail.refreshConfirm')} /></div><ReportPrintButton type="PACKING_LIST" title={t('pickups.detail.packingListTitle', { number: detail.pickup.pickupNumber })} id={detail.pickup.id}/><Tabs className="pickup-tabs" activeKey={tab} onChange={setTab} items={[
+      ...(canBill ? [{ key: 'billing', label: t('pickups.detail.tabBilling'), children: <BillingPanel sourceKind='PICKUP' sourceId={pickupId} companyName={companyName} /> }] : []),
+      { key: 'plan', label: t('pickups.detail.tabPlan'), children: <PickupPlanTab detail={detail} employees={masters.employees} statuses={masters.statuses} vehicles={masters.vehicles} onDetail={updateDetail} saveCrew={assignments => saveDetails({ assignments })} /> },
+      { key: 'packing', label: t('pickups.detail.tabPacking', { count: detail.packages.length }), children: <PickupPackingTab detail={detail} work={work} boxTypes={masters.boxTypes} materials={masters.materials} savePacking={(packages, materials) => saveDetails({ packages, materials })} onPrintLabels={setLabels} onLoadFromPacking={() => setTab('collection')} /> },
+      { key: 'collection', label: t('pickups.detail.tabCollection'), children: <PickupCollectionTab pickupId={pickupId} warehouses={masters.warehouses}
         boxTypes={masters.boxTypes} packingKey={detail.packages.map(p => p.trackingNumber).join('|')} /> },
-      { key: 'photos', label: `Photos (${work.attachments.length})`, children: <PickupPhotosTab detail={detail} work={work} onWork={updateWork} /> },
-      { key: 'payments', label: 'Customer receipts & expenses paid', children: <PickupPaymentsTab detail={detail} work={work} employees={masters.employees} currency={currency} onDetail={updateDetail} onWork={updateWork} onReceipt={setReceipt} /> },
-      { key: 'storage', label: 'Warehouse', children: <PickupStorageTab detail={detail} work={work} warehouses={masters.warehouses} onWork={updateWork} /> },
-      { key: 'signoff', label: 'Sign-off', children: <PickupSignoffTab detail={detail} work={work} employees={masters.employees} onWork={updateWork} /> },
+      { key: 'photos', label: t('pickups.detail.tabPhotos', { count: work.attachments.length }), children: <PickupPhotosTab detail={detail} work={work} onWork={updateWork} /> },
+      { key: 'payments', label: t('pickups.detail.tabPayments'), children: <PickupPaymentsTab detail={detail} work={work} employees={masters.employees} currency={currency} onDetail={updateDetail} onWork={updateWork} onReceipt={setReceipt} /> },
+      { key: 'storage', label: t('pickups.detail.tabStorage'), children: <PickupStorageTab detail={detail} work={work} warehouses={masters.warehouses} onWork={updateWork} /> },
+      { key: 'signoff', label: t('pickups.signoffTab'), children: <PickupSignoffTab detail={detail} work={work} employees={masters.employees} onWork={updateWork} /> },
     ]} />
 
-    <PrintPreview open={labels !== null} title={labels?.length === 1 ? `Label · ${labels[0].trackingNumber}` : `Box labels (${labels?.length ?? 0})`} onClose={() => setLabels(null)} wide print={{ type: 'BOX_LABELS', id: detail.pickup.id, query: { packageIds: (labels ?? []).map(l => l.id).join(',') } }}>
+    <PrintPreview open={labels !== null} title={labels?.length === 1 ? t('pickups.detail.labelTitle', { number: labels[0].trackingNumber }) : t('pickups.detail.labelsTitle', { count: labels?.length ?? 0 })} onClose={() => setLabels(null)} wide print={{ type: 'BOX_LABELS', id: detail.pickup.id, query: { packageIds: (labels ?? []).map(l => l.id).join(',') } }}>
       {labels && <BoxLabels companyName={companyName} detail={detail} packages={labels} />}
     </PrintPreview>
-    <PrintPreview open={receipt !== null} title={`Receipt ${receipt?.transactionNumber ?? ''}`} onClose={() => setReceipt(null)} print={{ type: 'PICKUP_RECEIPT', id: detail.pickup.id, query: { transactionId: receipt?.id ?? '' } }}>
+    <PrintPreview open={receipt !== null} title={t('pickups.detail.receiptTitle', { number: receipt?.transactionNumber ?? '' })} onClose={() => setReceipt(null)} print={{ type: 'PICKUP_RECEIPT', id: detail.pickup.id, query: { transactionId: receipt?.id ?? '' } }}>
       {receipt && <PaymentReceipt companyName={companyName} detail={detail} payment={receipt} currency={receipt.currency || currency} receivedBy={userName} />}
     </PrintPreview>
   </div>

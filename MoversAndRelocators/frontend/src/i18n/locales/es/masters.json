@@ -1,0 +1,116 @@
+{
+  "contactPerson": "Persona de contacto",
+  "defaultCurrency": "Moneda predeterminada",
+  "invalidEmail": "Introduzca un correo electrónico válido",
+  "nameRequired": "Introduzca un nombre (hasta 120 caracteres)",
+  "taxReference": "Identificación fiscal",
+  "records_one": "{count} registro",
+  "records_other": "{count} registros",
+  "data": {
+    "title": "Datos maestros",
+    "description": "Seleccione un mosaico para gestionar los datos de configuración de su empresa.",
+    "search": "Buscar datos maestros",
+    "back": "Volver a datos maestros",
+    "noMatch": "Ningún dato maestro coincide con su búsqueda.",
+    "noPermission": "No tiene permiso para gestionar los datos maestros.",
+    "groups": {
+      "currencies": "Monedas",
+      "contacts": "Clientes y proveedores",
+      "pickupPayment": "Configuración de recogida y pagos",
+      "people": "Personas",
+      "sales": "Ventas",
+      "surveyPacking": "Inspección y embalaje",
+      "pickupTransport": "Recogida y transporte",
+      "quotationFinance": "Presupuestos y finanzas"
+    },
+    "tiles": {
+      "currencies": "Moneda",
+      "exchange-rates": "Tipos de cambio",
+      "customers": "Cliente",
+      "vendors": "Proveedor",
+      "crew-roles": "Funciones del equipo",
+      "payment-methods": "Forma de pago",
+      "payment-purposes": "Concepto de pago",
+      "expense-categories": "Categoría de gasto",
+      "message-templates": "Plantillas de mensaje",
+      "designations": "Cargo del empleado",
+      "lead-statuses": "Estado de cliente potencial",
+      "follow-up-statuses": "Estado de seguimiento",
+      "move-types": "Tipo de mudanza",
+      "household-items": "Artículos del hogar",
+      "box-types": "Tipos de caja",
+      "packing-materials": "Materiales de embalaje",
+      "pickup-statuses": "Estado de recogida",
+      "vehicles": "Vehículos",
+      "warehouses": "Almacenes",
+      "charges": "Maestro de cargos",
+      "taxes": "Configuración de impuestos"
+    }
+  },
+  "business": {
+    "eyebrow": "DATOS MAESTROS",
+    "saved": "Maestro guardado",
+    "saveFailed": "No se puede guardar",
+    "templateDescription": "El texto que se envía con cada enlace al cliente. Los marcadores se rellenan al enviar el mensaje; las pantallas que los envían se indican por código.",
+    "contactDescription": "Gestione los datos de contacto de los clientes y proveedores de su empresa.",
+    "choiceDescription": "Configure las opciones disponibles durante las operaciones de recogida. Las entradas inactivas se mantienen en los registros históricos.",
+    "addRecord": "Añadir registro",
+    "message": "Mensaje",
+    "messageRequired": "Introduzca el mensaje (hasta 2000 caracteres)",
+    "vendorType": "Tipo de proveedor",
+    "vendorTypeOptional": "Tipo de proveedor (opcional)",
+    "vendorTypePlaceholder": "Seleccione o introduzca un tipo de proveedor",
+    "agent": "Agente",
+    "agentHelp": "Actívelo para que este proveedor esté disponible como agente de origen o destino. Opcional.",
+    "autoCode": "El código se asigna automáticamente al guardar",
+    "currencyHelp": "Déjelo vacío para usar la moneda predeterminada de la ubicación en un registro nuevo.",
+    "placeholdersHelp": "Marcadores que se rellenan al enviar el mensaje: {placeholders}. Mantenga {link}: sin él, el cliente no tiene nada que abrir. Un marcador que esta pantalla no puede rellenar se deja tal cual.",
+    "availableIn": "Disponible en",
+    "availableInHelp": "Todas las empresas: cualquier empresa del grupo puede usarlo. Solo la empresa: oculto para las demás empresas.",
+    "allCompanies": "Todas las empresas",
+    "companyOnly": "Solo {company}",
+    "thisCompanyOnly": "Solo esta empresa",
+    "vendorTypes": {
+      "transporter": "Transportista",
+      "shippingLine": "Naviera",
+      "airline": "Aerolínea",
+      "freightForwarder": "Transitario",
+      "customsBroker": "Agente de aduanas",
+      "warehouseProvider": "Proveedor de almacén",
+      "packingSupplier": "Proveedor de embalaje",
+      "other": "Otro"
+    },
+    "kinds": {
+      "crewRole": { "title": "Funciones del equipo", "add": "Añadir función del equipo", "edit": "Editar función del equipo" },
+      "paymentMethod": { "title": "Formas de pago", "add": "Añadir forma de pago", "edit": "Editar forma de pago" },
+      "paymentPurpose": { "title": "Conceptos de pago", "add": "Añadir concepto de pago", "edit": "Editar concepto de pago" },
+      "expenseCategory": { "title": "Categorías de gasto", "add": "Añadir categoría de gasto", "edit": "Editar categoría de gasto" },
+      "customer": { "title": "Clientes", "add": "Añadir cliente", "edit": "Editar cliente" },
+      "vendor": { "title": "Proveedores", "add": "Añadir proveedor", "edit": "Editar proveedor" },
+      "messageTemplate": { "title": "Plantillas de mensaje", "add": "Añadir plantilla de mensaje", "edit": "Editar plantilla de mensaje" }
+    }
+  },
+  "createCustomer": {
+    "title": "Crear cliente",
+    "created": "Cliente {code} creado",
+    "saveAndReturn": "Guardar cliente y volver",
+    "intro": "Revise los datos del cliente. La página actual seguirá abierta cuando termine.",
+    "autoCode": "El código de cliente se asigna automáticamente al guardar",
+    "name": "Nombre del cliente"
+  },
+  "picker": {
+    "loadFailed": "No se pueden cargar los registros maestros",
+    "customer": {
+      "label": "Seleccionar del maestro de clientes",
+      "help": "Seleccione un cliente guardado para rellenar los datos de abajo.",
+      "placeholder": "Buscar por nombre, código o teléfono del cliente",
+      "empty": "No hay clientes activos. Añada registros en Datos maestros."
+    },
+    "vendor": {
+      "label": "Seleccionar del maestro de proveedores",
+      "help": "Seleccione un proveedor guardado para rellenar los datos de abajo.",
+      "placeholder": "Buscar por nombre, código o teléfono del proveedor",
+      "empty": "No hay proveedores activos. Añada registros en Datos maestros."
+    }
+  }
+}

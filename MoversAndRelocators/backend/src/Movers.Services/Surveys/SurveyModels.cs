@@ -41,5 +41,13 @@ public sealed record SurveyTripModel(Guid? ConductedByEmployeeId, string? Conduc
 public sealed record TripStepCommand(DateTimeOffset? At, string? Reason);
 public sealed record CompleteSurveyCommand(DateTimeOffset? At, decimal? DistanceKm, Guid? ConductedByEmployeeId);
 public sealed record UpdateSurveyTripCommand(decimal? DistanceKm, Guid? ConductedByEmployeeId);
+/// <param name="Added">Items added to the survey's rooms.</param>
+/// <param name="AlreadyThere">Lines whose household item was already in that room, left untouched rather than doubled.</param>
+/// <param name="Dropped">Lines the customer marked as not needed on the shared inventory.</param>
+/// <param name="Boxes">Box lines, which the packing plan works out from the items rather than taking as inventory.</param>
+/// <param name="Unmatched">Names with no active household item; they need a master before the survey can carry them.</param>
+/// <param name="Unmatched">Lines that could not come in (no volume, or their household item was deactivated).</param>
+/// <param name="CreatedItems">Household items added to the master data because no master matched (check their volumes).</param>
+public sealed record LeadInventoryIntoSurveyModel(SurveyDetailModel Detail, int Added, int AlreadyThere, int Dropped, int Boxes, IReadOnlyList<string> Unmatched, IReadOnlyList<string>? CreatedItems = null);
 public sealed record SaveSurveyExpenseCommand(string Category, decimal Amount, string Currency, DateTimeOffset IncurredAtUtc, Guid? PaidByEmployeeId, string? Notes, decimal? ExchangeRate = null);
 

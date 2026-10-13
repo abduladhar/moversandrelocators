@@ -1,0 +1,12 @@
+{
+  "movement": { "DRAFT": "Draft", "PACKED": "Packed", "LOADING": "Loading", "WAREHOUSE": "In warehouse", "IN_TRANSIT": "Transporting", "ARRIVED": "Arrived at destination", "DELIVERED": "Delivered", "CANCELLED": "Cancelled" },
+  "delivery": { "PLANNED": "Planned", "OUT_FOR_DELIVERY": "Out for delivery", "COMPLETED": "Completed", "CANCELLED": "Cancelled" },
+  "deliveryItem": { "LOADED": "Loaded", "DELIVERED": "Delivered", "RETURNED": "Not delivered" },
+  "party": {
+    "customer": "Customer", "vendor": "Vendor",
+    "currencyLoading": "Currency details are loading.",
+    "noCustomerMaster": "No linked customer master.", "noVendorMaster": "No linked vendor master.",
+    "noBaseAmount": "No saved base amount for conversion.", "noTransactionDate": "No transaction date for conversion.",
+    "noRate": "No {currency} exchange rate valid on {date}."
+  }
+}

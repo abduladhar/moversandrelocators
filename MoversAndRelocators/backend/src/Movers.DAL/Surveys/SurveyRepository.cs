@@ -56,6 +56,7 @@ public sealed class SurveyRepository(MoversDbContext db) : ISurveyRepository
     public Task<TenantAwsConfiguration?> GetAwsAsync(CancellationToken t) => db.TenantAwsConfigurations.AsNoTracking().SingleOrDefaultAsync(t);
     public async Task<IReadOnlyList<SurveyTimeEvent>> ListTimeEventsAsync(Guid surveyId, CancellationToken t) => (await db.SurveyTimeEvents.AsNoTracking().Where(x => x.SurveyId == surveyId).OrderBy(x => x.SerialNo).ToListAsync(t)).OrderBy(x => x.OccurredAtUtc).ToList();
     public void AddTimeEvent(SurveyTimeEvent x) => db.SurveyTimeEvents.Add(x);
+    public async Task<IReadOnlyList<Movers.Domain.Sales.SalesLeadInventoryItem>> ListLeadInventoryAsync(Guid leadId, CancellationToken t) => await db.Set<Movers.Domain.Sales.SalesLeadInventoryItem>().AsNoTracking().Where(x => x.SalesLeadId == leadId).OrderBy(x => x.SerialNo).ToListAsync(t);
     public async Task<IReadOnlyList<SurveyExpense>> ListExpensesAsync(Guid surveyId, CancellationToken t) => (await db.SurveyExpenses.AsNoTracking().Where(x => x.SurveyId == surveyId).OrderBy(x => x.SerialNo).ToListAsync(t)).OrderBy(x => x.IncurredAtUtc).ToList();
     public Task<SurveyExpense?> GetExpenseAsync(Guid id, bool track, CancellationToken t) => (track ? db.SurveyExpenses : db.SurveyExpenses.AsNoTracking()).SingleOrDefaultAsync(x => x.Id == id, t);
     public void AddExpense(SurveyExpense x) => db.SurveyExpenses.Add(x);

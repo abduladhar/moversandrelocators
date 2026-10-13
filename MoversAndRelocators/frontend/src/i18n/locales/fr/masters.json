@@ -1,0 +1,116 @@
+{
+  "contactPerson": "Personne à contacter",
+  "defaultCurrency": "Devise par défaut",
+  "invalidEmail": "Saisissez une adresse e-mail valide",
+  "nameRequired": "Saisissez un nom (120 caractères maximum)",
+  "taxReference": "Numéro fiscal",
+  "records_one": "{count} enregistrement",
+  "records_other": "{count} enregistrements",
+  "data": {
+    "title": "Données de référence",
+    "description": "Sélectionnez une vignette pour gérer les données de configuration de votre société.",
+    "search": "Rechercher dans les données de référence",
+    "back": "Retour aux données de référence",
+    "noMatch": "Aucune donnée de référence ne correspond à votre recherche.",
+    "noPermission": "Vous n'avez pas l'autorisation de gérer les données de référence.",
+    "groups": {
+      "currencies": "Devises",
+      "contacts": "Clients et fournisseurs",
+      "pickupPayment": "Configuration enlèvement et paiement",
+      "people": "Personnel",
+      "sales": "Ventes",
+      "surveyPacking": "Visite technique et emballage",
+      "pickupTransport": "Enlèvement et transport",
+      "quotationFinance": "Devis et finance"
+    },
+    "tiles": {
+      "currencies": "Devise",
+      "exchange-rates": "Taux de change",
+      "customers": "Client",
+      "vendors": "Fournisseur",
+      "crew-roles": "Rôles d'équipe",
+      "payment-methods": "Mode de paiement",
+      "payment-purposes": "Objet du paiement",
+      "expense-categories": "Catégorie de dépense",
+      "message-templates": "Modèles de message",
+      "designations": "Fonction de l'employé",
+      "lead-statuses": "Statut de prospect",
+      "follow-up-statuses": "Statut de relance",
+      "move-types": "Type de déménagement",
+      "household-items": "Objets ménagers",
+      "box-types": "Types de cartons",
+      "packing-materials": "Matériel d'emballage",
+      "pickup-statuses": "Statut d'enlèvement",
+      "vehicles": "Véhicules",
+      "warehouses": "Entrepôts",
+      "charges": "Référentiel des prestations",
+      "taxes": "Configuration des taxes"
+    }
+  },
+  "business": {
+    "eyebrow": "DONNÉES DE RÉFÉRENCE",
+    "saved": "Référentiel enregistré",
+    "saveFailed": "Impossible d'enregistrer",
+    "templateDescription": "Le texte envoyé avec chaque lien client. Les variables sont remplies à l'envoi du message ; les écrans qui les envoient sont indiqués par code.",
+    "contactDescription": "Gérez les coordonnées des clients et fournisseurs de votre société.",
+    "choiceDescription": "Configurez les choix disponibles lors des opérations d'enlèvement. Les entrées inactives restent dans l'historique.",
+    "addRecord": "Ajouter un enregistrement",
+    "message": "Message",
+    "messageRequired": "Saisissez le message (2000 caractères maximum)",
+    "vendorType": "Type de fournisseur",
+    "vendorTypeOptional": "Type de fournisseur (facultatif)",
+    "vendorTypePlaceholder": "Sélectionnez ou saisissez un type de fournisseur",
+    "agent": "Agent",
+    "agentHelp": "Activez pour rendre ce fournisseur disponible comme agent d'origine ou de destination. Facultatif.",
+    "autoCode": "Le code est attribué automatiquement à l'enregistrement",
+    "currencyHelp": "Laissez vide pour utiliser la devise par défaut du site pour un nouvel enregistrement.",
+    "placeholdersHelp": "Variables remplies à l'envoi du message : {placeholders}. Conservez {link} — sans lui, le client n'a rien à ouvrir. Une variable que cet écran ne peut pas remplir est laissée telle quelle.",
+    "availableIn": "Disponible dans",
+    "availableInHelp": "Toutes les sociétés : chaque société du groupe peut l'utiliser. Société uniquement : masqué pour les autres sociétés.",
+    "allCompanies": "Toutes les sociétés",
+    "companyOnly": "{company} uniquement",
+    "thisCompanyOnly": "Cette société uniquement",
+    "vendorTypes": {
+      "transporter": "Transporteur",
+      "shippingLine": "Compagnie maritime",
+      "airline": "Compagnie aérienne",
+      "freightForwarder": "Transitaire",
+      "customsBroker": "Commissionnaire en douane",
+      "warehouseProvider": "Prestataire d'entreposage",
+      "packingSupplier": "Fournisseur d'emballage",
+      "other": "Autre"
+    },
+    "kinds": {
+      "crewRole": { "title": "Rôles d'équipe", "add": "Ajouter un rôle d'équipe", "edit": "Modifier le rôle d'équipe" },
+      "paymentMethod": { "title": "Modes de paiement", "add": "Ajouter un mode de paiement", "edit": "Modifier le mode de paiement" },
+      "paymentPurpose": { "title": "Objets de paiement", "add": "Ajouter un objet de paiement", "edit": "Modifier l'objet de paiement" },
+      "expenseCategory": { "title": "Catégories de dépenses", "add": "Ajouter une catégorie de dépense", "edit": "Modifier la catégorie de dépense" },
+      "customer": { "title": "Clients", "add": "Ajouter un client", "edit": "Modifier le client" },
+      "vendor": { "title": "Fournisseurs", "add": "Ajouter un fournisseur", "edit": "Modifier le fournisseur" },
+      "messageTemplate": { "title": "Modèles de message", "add": "Ajouter un modèle de message", "edit": "Modifier le modèle de message" }
+    }
+  },
+  "createCustomer": {
+    "title": "Créer un client",
+    "created": "Client {code} créé",
+    "saveAndReturn": "Enregistrer le client et revenir",
+    "intro": "Vérifiez les informations du client. Votre page actuelle restera ouverte une fois terminé.",
+    "autoCode": "Le code client est attribué automatiquement à l'enregistrement",
+    "name": "Nom du client"
+  },
+  "picker": {
+    "loadFailed": "Impossible de charger les enregistrements de référence",
+    "customer": {
+      "label": "Sélectionner dans le référentiel clients",
+      "help": "Sélectionnez un client enregistré pour remplir les informations ci-dessous.",
+      "placeholder": "Rechercher par nom, code ou téléphone du client",
+      "empty": "Aucun client actif. Ajoutez des enregistrements dans Données de référence."
+    },
+    "vendor": {
+      "label": "Sélectionner dans le référentiel fournisseurs",
+      "help": "Sélectionnez un fournisseur enregistré pour remplir les informations ci-dessous.",
+      "placeholder": "Rechercher par nom, code ou téléphone du fournisseur",
+      "empty": "Aucun fournisseur actif. Ajoutez des enregistrements dans Données de référence."
+    }
+  }
+}

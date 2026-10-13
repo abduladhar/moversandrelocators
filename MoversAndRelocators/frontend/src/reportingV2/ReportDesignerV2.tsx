@@ -6,8 +6,9 @@ import {reportV2Api,type TemplateV2} from './api'
 import {bindData,createEngine,type Engine} from './engine/engine'
 import {letterhead,LETTERHEAD_H,professionalLayout} from './engine/autoLayout'
 import {layoutProblem} from './engine/validate'
-import {bandLabelFor,isSummaryBand,type ReportElement,type ToolName} from './engine/models'
-import {DesignerPanel} from './DesignerPanel'
+import {isSummaryBand,type ReportElement,type ToolName} from './engine/models'
+import {bandName,DesignerPanel} from './DesignerPanel'
+import {t as translate,useT} from '../i18n'
 import {ErrorBoundary} from './ErrorBoundary'
 import './report-designer.css'
 
@@ -24,31 +25,34 @@ export function setRecord(engine:Engine,record:any){
 }
 
 const icon=(d:string)=><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d={d}/></svg>
+/** tip = key under designer.tools */
 const TOOLS:{tool:ToolName;tip:string;svg:React.ReactNode;divider?:boolean}[]=[
- {tool:'select',tip:'Select / Move',svg:icon('M4 4l7 16 2-7 7-2z'),divider:true},
- {tool:'text',tip:'Text label',svg:icon('M4 6h16M12 6v13M9 19h6')},
- {tool:'field',tip:'Data field',svg:icon('M8 4H6a2 2 0 0 0-2 2v3a2 2 0 0 1-2 2 2 2 0 0 1 2 2v3a2 2 0 0 0 2 2h2M16 4h2a2 2 0 0 1 2 2v3a2 2 0 0 0 2 2 2 2 0 0 0-2 2v3a2 2 0 0 1-2 2h-2')},
- {tool:'table',tip:'Table / Loop',svg:icon('M3 4h18v16H3zM3 9h18M3 14h18M9 4v16M15 4v16'),divider:true},
- {tool:'line',tip:'Line',svg:icon('M4 18L20 6')},
- {tool:'rect',tip:'Box',svg:icon('M4 5h16v14H4z')},
- {tool:'image',tip:'Image',svg:icon('M3 4h18v16H3zM21 16l-5-5L5 20')},
- {tool:'barcode',tip:'Barcode',svg:icon('M4 5v14M7 5v14M10 5v9M13 5v14M16 5v9M20 5v14')},
- {tool:'qrcode',tip:'QR code',svg:icon('M3 3h7v7H3zM14 3h7v7h-7zM3 14h7v7H3zM14 14h3v3M20 14v0M17 20h0M20 17v4')}
+ {tool:'select',tip:'select',svg:icon('M4 4l7 16 2-7 7-2z'),divider:true},
+ {tool:'text',tip:'text',svg:icon('M4 6h16M12 6v13M9 19h6')},
+ {tool:'field',tip:'field',svg:icon('M8 4H6a2 2 0 0 0-2 2v3a2 2 0 0 1-2 2 2 2 0 0 1 2 2v3a2 2 0 0 0 2 2h2M16 4h2a2 2 0 0 1 2 2v3a2 2 0 0 0 2 2 2 2 0 0 0-2 2v3a2 2 0 0 1-2 2h-2')},
+ {tool:'table',tip:'table',svg:icon('M3 4h18v16H3zM3 9h18M3 14h18M9 4v16M15 4v16'),divider:true},
+ {tool:'line',tip:'line',svg:icon('M4 18L20 6')},
+ {tool:'rect',tip:'rect',svg:icon('M4 5h16v14H4z')},
+ {tool:'image',tip:'image',svg:icon('M3 4h18v16H3zM21 16l-5-5L5 20')},
+ {tool:'barcode',tip:'barcode',svg:icon('M4 5v14M7 5v14M10 5v9M13 5v14M16 5v9M20 5v14')},
+ {tool:'qrcode',tip:'qrcode',svg:icon('M3 3h7v7H3zM14 3h7v7h-7zM3 14h7v7H3zM14 14h3v3M20 14v0M17 20h0M20 17v4')}
 ]
 
 type DesignerProps={type:string;typeLabel:string;template?:TemplateV2;onClose:(changed:boolean)=>void}
 /** The designer behind an error boundary, so a rendering fault shows a message (and a way out) instead of a blank page. */
 export function ReportDesignerV2(props:DesignerProps){
- return <ErrorBoundary title="The report designer hit a problem" onReset={()=>props.onClose(false)} resetLabel="Back to templates"><Designer {...props}/></ErrorBoundary>
+ const {t:tr}=useT()
+ return <ErrorBoundary title={tr('designer.editor.errorTitle')} onReset={()=>props.onClose(false)} resetLabel={tr('designer.editor.backToTemplates')}><Designer {...props}/></ErrorBoundary>
 }
 
 function Designer({type,typeLabel,template,onClose}:DesignerProps){
+ const {t:tr}=useT()
  const engine=useMemo(()=>createEngine(),[])
  const {state,exporter}=engine
  useEngineTick(engine)
  const exportRoot=useRef<HTMLDivElement>(null),filePick=useRef<HTMLInputElement>(null),pickMode=useRef<'layout'|'data'>('layout')
  const [current,setCurrent]=useState<TemplateV2|undefined>(template)
- const [name,setName]=useState(template?.details.name??typeLabel+' template'),[listOnPrint,setListOnPrint]=useState(template?.details.listOnPrint??false)
+ const [name,setName]=useState(template?.details.name??tr('designer.editor.defaultName',{type:typeLabel})),[listOnPrint,setListOnPrint]=useState(template?.details.listOnPrint??false)
  const [saved,setSaved]=useState(''),[saving,setSaving]=useState(false),[changed,setChanged]=useState(false),[loading,setLoading]=useState(true)
  const [toast,setToast]=useState(''),record=useRef<any>({})
 
@@ -64,9 +68,9 @@ function Designer({type,typeLabel,template,onClose}:DesignerProps){
    // new template the record is the only suspect, so the fallback drops it: repeating the identical
    // call would throw again and the rejection would leave the designer loading for ever.
    try{state.importLayout(template?JSON.parse(template.details.layout):professionalLayout(type,sample))}
-   catch(e){state.importLayout(professionalLayout(type,{}));message.warning("Opened an empty "+typeLabel+" layout: "+(e instanceof Error?e.message:"the sample data could not be laid out"))}
+   catch(e){state.importLayout(professionalLayout(type,{}));message.warning(tr('designer.editor.emptyLayoutWarning',{type:typeLabel,reason:e instanceof Error?e.message:tr('designer.editor.sampleNotLaidOut')}))}
    setRecord(engine,sample);setSaved(JSON.stringify(state.exportLayout()))
-  }).catch(e=>{if(alive)message.error(e instanceof Error?e.message:"The designer could not be opened")})
+  }).catch(e=>{if(alive)message.error(e instanceof Error?e.message:tr('designer.editor.openFailed'))})
    .finally(()=>{if(alive)setLoading(false)})
   return ()=>{alive=false;t.unsubscribe()}
  },[])
@@ -90,18 +94,18 @@ function Designer({type,typeLabel,template,onClose}:DesignerProps){
  const dirty=!loading&&JSON.stringify(state.exportLayout())!==saved
  const close=()=>{
   if(!dirty){onClose(changed);return}
-  Modal.confirm({title:'Discard unsaved changes?',content:'The template has changes that are not saved.',okText:'Discard',okButtonProps:{danger:true},onOk:()=>onClose(changed),zIndex:1100})
+  Modal.confirm({title:tr('designer.editor.discardTitle'),content:tr('designer.editor.discardContent'),okText:tr('designer.editor.discard'),okButtonProps:{danger:true},onOk:()=>onClose(changed),zIndex:1100})
  }
  const save=async()=>{
   const layout=state.exportLayout(),problem=layoutProblem(JSON.parse(JSON.stringify(layout)))
-  if(!name.trim()){message.error('Enter a template name.');return}
+  if(!name.trim()){message.error(tr('designer.editor.enterName'));return}
   if(problem){message.error(problem);return}
   setSaving(true)
   try{
    const json=JSON.stringify(layout)
    const t=await reportV2Api.save(current?.id,{version:current?.version,type,name:name.trim(),layout:json,listOnPrint})
-   setCurrent(t);setSaved(json);setChanged(true);message.success(current?'Template updated':'Template saved'+(t.details.isDefault?' as the default for '+typeLabel:''))
-  }catch(e){message.error(e instanceof Error?e.message:'Save failed')}
+   setCurrent(t);setSaved(json);setChanged(true);message.success(current?tr('designer.editor.updated'):t.details.isDefault?tr('designer.editor.savedAsDefault',{type:typeLabel}):tr('designer.editor.saved'))
+  }catch(e){message.error(e instanceof Error?e.message:tr('designer.editor.saveFailed'))}
   finally{setSaving(false)}
  }
  const onFile=async()=>{
@@ -109,64 +113,64 @@ function Designer({type,typeLabel,template,onClose}:DesignerProps){
   try{
    const j=JSON.parse(await f.text())
    if(pickMode.current==='layout'){const problem=layoutProblem(j);if(problem){message.error(problem);return}state.importLayout(j)}
-   else{record.current=j;setRecord(engine,j);state.toast('Data loaded — switch to Preview')}
-  }catch{message.error('That file is not valid JSON.')}
+   else{record.current=j;setRecord(engine,j);state.toast(tr('designer.editor.dataLoaded'))}
+  }catch{message.error(tr('designer.editor.invalidJson'))}
  }
  const sampleGroups=useMemo(()=>{const g:Record<string,typeof state.samples>={};state.samples.forEach(s=>(g[s.group]??=[]).push(s));return Object.entries(g)},[state])
  const mode=state.doc.mode,view=state.viewMode
 
  return <div className="report-engine-v2">
   <div className="rev2-topbar">
-   <div className="rev2-brand"><span className="rev2-dot"/> Report Designer</div>
-   <select className="rev2-reptype" title="Report execution model" value={mode} onChange={e=>state.setReportType(e.target.value as any)}>
-    <option value="fixed">Fixed form (designed pages)</option><option value="batch">Batch (pages repeat per record)</option><option value="flow">Flowing report (banded, multi-page)</option>
+   <div className="rev2-brand"><span className="rev2-dot"/> {tr('designer.editor.brand')}</div>
+   <select className="rev2-reptype" title={tr('designer.editor.executionModel')} value={mode} onChange={e=>state.setReportType(e.target.value as any)}>
+    <option value="fixed">{tr('designer.editor.modeFixed')}</option><option value="batch">{tr('designer.editor.modeBatch')}</option><option value="flow">{tr('designer.editor.modeFlow')}</option>
    </select>
    <div className="rev2-tsep"/>
-   <button className="rev2-tbtn" onClick={()=>Modal.confirm({title:'Replace with the professional layout?',content:'The current design is replaced by the standard '+typeLabel+' layout (letterhead, details, line items, totals). You can undo this.',okText:'Replace',zIndex:1100,onOk:()=>{state.importLayout(professionalLayout(type,record.current));state.toast('Professional layout applied')}})} title="Standard layout for this document: letterhead, details, line items, totals">{icon('M4 4h16v6H4zM4 14h7v6H4zM15 14h5v6h-5z')}Professional layout</button>
-   <button className="rev2-tbtn" onClick={()=>insertLetterhead(engine)} title="Add the company logo (left) and address (right) to the top of the page">{icon('M3 5h7v6H3zM14 6h7M14 9h7M14 12h5M3 15h18')}Letterhead</button>
-   <button className="rev2-tbtn" onClick={()=>state.emptyTemplate()}>{icon('M14 3v4a1 1 0 0 0 1 1h4M5 3h9l5 5v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z')}Empty</button>
+   <button className="rev2-tbtn" onClick={()=>Modal.confirm({title:tr('designer.editor.professionalTitle'),content:tr('designer.editor.professionalContent',{type:typeLabel}),okText:tr('designer.editor.replace'),zIndex:1100,onOk:()=>{state.importLayout(professionalLayout(type,record.current));state.toast(tr('designer.editor.professionalApplied'))}})} title={tr('designer.editor.professionalTip')}>{icon('M4 4h16v6H4zM4 14h7v6H4zM15 14h5v6h-5z')}{tr('designer.editor.professional')}</button>
+   <button className="rev2-tbtn" onClick={()=>insertLetterhead(engine)} title={tr('designer.editor.letterheadTip')}>{icon('M3 5h7v6H3zM14 6h7M14 9h7M14 12h5M3 15h18')}{tr('designer.editor.letterhead')}</button>
+   <button className="rev2-tbtn" onClick={()=>state.emptyTemplate()}>{icon('M14 3v4a1 1 0 0 0 1 1h4M5 3h9l5 5v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z')}{tr('designer.editor.empty')}</button>
    <Dropdown trigger={['click']} menu={{style:{maxHeight:'70vh',overflow:'auto'},items:sampleGroups.map(([group,items])=>({type:'group' as const,key:group,label:group,children:items.map(s=>({key:s.key,label:<div><b>{s.name}</b><div style={{fontSize:11,color:'#6b7686'}}>{s.desc}</div></div>}))})),onClick:({key})=>{state.loadSample(key);setRecord(engine,record.current)}}}>
-    <button className="rev2-tbtn">{icon('M9 14l2 2 4-4M5 3h9l5 5v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z')}Samples</button>
+    <button className="rev2-tbtn">{icon('M9 14l2 2 4-4M5 3h9l5 5v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z')}{tr('designer.editor.samples')}</button>
    </Dropdown>
    <div className="rev2-tsep"/>
-   <button className="rev2-tbtn" onClick={()=>{pickMode.current='layout';filePick.current?.click()}}>{icon('M12 3v12m0 0l-4-4m4 4l4-4M5 21h14')}Open layout</button>
-   <button className="rev2-tbtn" onClick={()=>exporter.downloadLayout()}>{icon('M12 21V9m0 0l-4 4m4-4l4 4M5 3h14')}Save layout</button>
-   <button className="rev2-tbtn" onClick={()=>{pickMode.current='data';filePick.current?.click()}}>{icon('M4 5c0-1.7 3.6-3 8-3s8 1.3 8 3v14c0 1.7-3.6 3-8 3s-8-1.3-8-3zM4 5c0 1.7 3.6 3 8 3s8-1.3 8-3')}Load data</button>
-   <button className="rev2-tbtn" title="Reload the latest real record of this type" onClick={()=>void reportV2Api.sample(type).then(s=>{record.current=s;setRecord(engine,s);state.toast('Latest record loaded')}).catch(e=>message.error(e.message))}>{icon('M4 4v6h6M20 20v-6h-6M5 15a7 7 0 0 0 12 3M19 9A7 7 0 0 0 7 6')}Live data</button>
+   <button className="rev2-tbtn" onClick={()=>{pickMode.current='layout';filePick.current?.click()}}>{icon('M12 3v12m0 0l-4-4m4 4l4-4M5 21h14')}{tr('designer.editor.openLayout')}</button>
+   <button className="rev2-tbtn" onClick={()=>exporter.downloadLayout()}>{icon('M12 21V9m0 0l-4 4m4-4l4 4M5 3h14')}{tr('designer.editor.saveLayout')}</button>
+   <button className="rev2-tbtn" onClick={()=>{pickMode.current='data';filePick.current?.click()}}>{icon('M4 5c0-1.7 3.6-3 8-3s8 1.3 8 3v14c0 1.7-3.6 3-8 3s-8-1.3-8-3zM4 5c0 1.7 3.6 3 8 3s8-1.3 8-3')}{tr('designer.editor.loadData')}</button>
+   <button className="rev2-tbtn" title={tr('designer.editor.liveDataTip')} onClick={()=>void reportV2Api.sample(type).then(s=>{record.current=s;setRecord(engine,s);state.toast(tr('designer.editor.latestLoaded'))}).catch(e=>message.error(e.message))}>{icon('M4 4v6h6M20 20v-6h-6M5 15a7 7 0 0 0 12 3M19 9A7 7 0 0 0 7 6')}{tr('designer.editor.liveData')}</button>
    <div className="rev2-spacer"/>
-   <Tooltip title="Undo (Ctrl+Z)"><button className="rev2-tbtn" onClick={()=>state.undo()}><UndoOutlined/></button></Tooltip>
-   <Tooltip title="Redo (Ctrl+Y)"><button className="rev2-tbtn" onClick={()=>state.redo()}><RedoOutlined/></button></Tooltip>
+   <Tooltip title={tr('designer.editor.undo')}><button className="rev2-tbtn" aria-label={tr('designer.editor.undo')} onClick={()=>state.undo()}><UndoOutlined/></button></Tooltip>
+   <Tooltip title={tr('designer.editor.redo')}><button className="rev2-tbtn" aria-label={tr('designer.editor.redo')} onClick={()=>state.redo()}><RedoOutlined/></button></Tooltip>
    <div className="rev2-seg">
-    <button className={'rev2-tbtn'+(view==='design'?' rev2-on':'')} onClick={()=>state.setViewMode('design')}>{icon('M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z')}Design</button>
-    <button className={'rev2-tbtn'+(view==='preview'?' rev2-on':'')} onClick={()=>state.setViewMode('preview')}>{icon('M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12zM12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6z')}Preview</button>
+    <button className={'rev2-tbtn'+(view==='design'?' rev2-on':'')} onClick={()=>state.setViewMode('design')}>{icon('M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z')}{tr('designer.editor.design')}</button>
+    <button className={'rev2-tbtn'+(view==='preview'?' rev2-on':'')} onClick={()=>state.setViewMode('preview')}>{icon('M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12zM12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6z')}{tr('designer.editor.preview')}</button>
    </div>
-   <select className="rev2-mini" title="Zoom" value={state.zoom} onChange={e=>{state.zoom=+e.target.value;state.emit()}}>{[0.5,0.65,0.75,0.9,1,1.1,1.25].map(z=><option key={z} value={z}>{Math.round(z*100)}%</option>)}</select>
-   <button className={'rev2-tbtn'+(state.grid?' rev2-on':'')} title="Grid / snap" onClick={()=>{state.grid=!state.grid;state.emit()}}>{icon('M3 9h18M3 15h18M9 3v18M15 3v18')}</button>
+   <select className="rev2-mini" title={tr('designer.editor.zoom')} value={state.zoom} onChange={e=>{state.zoom=+e.target.value;state.emit()}}>{[0.5,0.65,0.75,0.9,1,1.1,1.25].map(z=><option key={z} value={z}>{Math.round(z*100)}%</option>)}</select>
+   <button className={'rev2-tbtn'+(state.grid?' rev2-on':'')} title={tr('designer.editor.grid')} aria-label={tr('designer.editor.grid')} onClick={()=>{state.grid=!state.grid;state.emit()}}>{icon('M3 9h18M3 15h18M9 3v18M15 3v18')}</button>
    <div className="rev2-tsep"/>
    <button className="rev2-tbtn rev2-ghost" onClick={()=>exporter.downloadHTML()}>{icon('M8 9l-3 3 3 3M16 9l3 3-3 3M13 6l-2 12')}HTML</button>
-   <button className="rev2-tbtn rev2-ghost" onClick={()=>exporter.print()}>{icon('M6 9V3h12v6M6 18H4a2 2 0 0 1-2-2v-4a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2h-2M6 14h12v7H6z')}Print</button>
+   <button className="rev2-tbtn rev2-ghost" onClick={()=>exporter.print()}>{icon('M6 9V3h12v6M6 18H4a2 2 0 0 1-2-2v-4a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2h-2M6 14h12v7H6z')}{tr('common.print')}</button>
    <button className="rev2-tbtn rev2-primary" onClick={()=>void exporter.exportPdfDispatch()}>{icon('M14 3v4a1 1 0 0 0 1 1h4M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-5z')}PDF</button>
    <input ref={filePick} type="file" accept="application/json,.json" style={{display:'none'}} onChange={()=>void onFile()}/>
   </div>
   <div className="rev2-topbar rev2-ctxbar">
-   <span className="rev2-ctx"><span className="rev2-ctx-label">Report type:</span><span className="rev2-ctx-val">{typeLabel}</span></span>
-   <span className="rev2-ctx"><span className="rev2-ctx-label">Template name:</span><Input size="small" style={{width:260}} value={name} maxLength={120} onChange={e=>setName(e.target.value)} aria-label="Template name"/></span>
-   <Checkbox checked={listOnPrint} onChange={e=>setListOnPrint(e.target.checked)}>Offer when printing</Checkbox>
-   {current?.details.isDefault&&<span className="rev2-ctx-val">Default</span>}
-   <Space style={{marginLeft:'auto'}}>
-    {dirty&&<span style={{color:'#b48a3a',fontSize:12}}>Unsaved changes</span>}
-    <Button type="primary" size="small" loading={saving} onClick={()=>void save()}>{current?'Update':'Save'}</Button>
-    <Button size="small" icon={<CloseOutlined/>} onClick={close}>Close</Button>
+   <span className="rev2-ctx"><span className="rev2-ctx-label">{tr('designer.editor.reportType')}</span><span className="rev2-ctx-val">{typeLabel}</span></span>
+   <span className="rev2-ctx"><span className="rev2-ctx-label">{tr('designer.editor.templateName')}</span><Input size="small" style={{width:260}} value={name} maxLength={120} onChange={e=>setName(e.target.value)} aria-label={tr('designer.editor.templateNameAria')}/></span>
+   <Checkbox checked={listOnPrint} onChange={e=>setListOnPrint(e.target.checked)}>{tr('designer.editor.offerWhenPrinting')}</Checkbox>
+   {current?.details.isDefault&&<span className="rev2-ctx-val">{tr('designer.templates.defaultTag')}</span>}
+   <Space style={{marginInlineStart:'auto'}}>
+    {dirty&&<span style={{color:'#b48a3a',fontSize:12}}>{tr('designer.editor.unsaved')}</span>}
+    <Button type="primary" size="small" loading={saving} onClick={()=>void save()}>{current?tr('common.update'):tr('common.save')}</Button>
+    <Button size="small" icon={<CloseOutlined/>} onClick={close}>{tr('common.close')}</Button>
    </Space>
   </div>
   <div className="rev2-stage">
    <div className="rev2-palette">
     {TOOLS.map(t=><div key={t.tool} style={{display:'contents'}}>
-     <button className={'rev2-ptool'+(state.tool===t.tool?' rev2-on':'')+(t.tool==='table'&&mode==='flow'?' rev2-hide':'')} onClick={()=>{state.setTool(t.tool);state.emit()}} aria-label={t.tip}><span className="rev2-tip">{t.tip}</span>{t.svg}</button>
+     <button className={'rev2-ptool'+(state.tool===t.tool?' rev2-on':'')+(t.tool==='table'&&mode==='flow'?' rev2-hide':'')} onClick={()=>{state.setTool(t.tool);state.emit()}} aria-label={tr('designer.tools.'+t.tip)}><span className="rev2-tip">{tr('designer.tools.'+t.tip)}</span>{t.svg}</button>
      {t.divider&&<div className="rev2-pdiv"/>}
     </div>)}
    </div>
-   {loading?<div className="rev2-workspace" style={{display:'flex',alignItems:'center',justifyContent:'center'}}>Loading data…</div>:<Workspace engine={engine}/>}
+   {loading?<div className="rev2-workspace" style={{display:'flex',alignItems:'center',justifyContent:'center'}}>{tr('designer.editor.loadingData')}</div>:<Workspace engine={engine}/>}
    {loading?<div className="rev2-rpanel"/>:<DesignerPanel engine={engine} type={type}/>}
   </div>
   <div ref={exportRoot} style={{position:'fixed',left:-99999,top:0,background:'#fff'}}/>
@@ -187,12 +191,13 @@ function insertLetterhead(engine:Engine){
   for(const e of state.elements)e.y+=LETTERHEAD_H+6
   state.elements.unshift(...letterhead(inner,page.margin,page.margin))
  }
- state.pushHistory();state.emit();state.toast('Letterhead added — logo and address come from Report designs › Letterhead')
+ state.pushHistory();state.emit();state.toast(translate('designer.editor.letterheadAdded'))
 }
 
 /* ---------------- canvas ---------------- */
 
 function Workspace({engine}:{engine:Engine}){
+ const {t:tr}=useT()
  const {state,render,exporter}=engine
  const sheet=useRef<HTMLDivElement>(null)
  const page:any=state.doc.page,mode=state.doc.mode,zoom=state.zoom
@@ -255,7 +260,7 @@ function Workspace({engine}:{engine:Engine}){
   try{sheets=exporter.exportSheets()}catch(e){console.error(e)}
   return <div className="rev2-workspace"><div className="rev2-canvas-wrap">
    {sheets.map((s,i)=><div key={i} className="rev2-sheet-wrap">
-    <div className="rev2-pagebadge">Page {i+1} of {sheets.length}</div>
+    <div className="rev2-pagebadge">{tr('designer.editor.pageOf',{page:i+1,pages:sheets.length})}</div>
     <div className="rev2-psheet-preview" style={{width:s.w,height:s.h,transform:'scale('+zoom+')',marginBottom:(zoom-1)*s.h}} dangerouslySetInnerHTML={{__html:s.html}}/>
    </div>)}
   </div></div>
@@ -272,11 +277,11 @@ function Workspace({engine}:{engine:Engine}){
    return html
   }
   return <div className="rev2-workspace"><div className="rev2-canvas-wrap"><div className="rev2-sheet-wrap">
-   <div className="rev2-pagebadge">Flowing report — band layout (detail repeats and flows across pages)</div>
+   <div className="rev2-pagebadge">{tr('designer.editor.flowBadge')}</div>
    <div ref={sheet} data-editsheet="1" className={'rev2-sheet'+(state.grid?' rev2-grid':'')} style={{width:page.w,height,transform:'scale('+zoom+')',marginBottom:(zoom-1)*height}} onPointerDown={place}>
     {stack.bands.map((s:any)=><div key={s.id}>
      <div className={'rev2-band'+(s.free?' rev2-free':'')+(state.selBand===s.id?' rev2-selband':'')} style={{top:s.top,height:s.h}} onPointerDown={e=>bandDown(s,e)}>
-      <div className={'rev2-bandtag'+(state.doc.bands[s.id].optional?' rev2-opt':'')}>{bandLabelFor(s.id)}{isSummaryBand(s.id)?' — flows after detail':state.doc.bands[s.id].optional?' (optional)':''}</div>
+      <div className={'rev2-bandtag'+(state.doc.bands[s.id].optional?' rev2-opt':'')}>{bandName(tr,s.id)}{isSummaryBand(s.id)?' — '+tr('designer.editor.flowsAfterDetail'):state.doc.bands[s.id].optional?' ('+tr('common.optional').toLowerCase()+')':''}</div>
      </div>
      {(s.id==='columnHeader'||s.id==='detail')&&<div style={{position:'absolute',pointerEvents:'none',left:page.margin,top:s.top,width:page.w-2*page.margin}} dangerouslySetInnerHTML={{__html:bandTable(s.id)}}/>}
     </div>)}
@@ -291,14 +296,14 @@ function Workspace({engine}:{engine:Engine}){
  return <div className="rev2-workspace"><div className="rev2-canvas-wrap">
   <div className="rev2-pagenav">
    {state.doc.pages.map((pg,i)=><div key={pg.id} className={'rev2-pchip'+(i===state.doc.activePage?' rev2-on':'')}>
-    <button className="rev2-pchip-lab" onClick={()=>state.setActivePage(i)}>Page {i+1} <span className="rev2-psz">{pg.size}</span></button>
-    <button className="rev2-pchip-mini" title="Duplicate page" onClick={()=>state.dupPage(i)}>⧉</button>
-    <button className="rev2-pchip-mini rev2-del" title="Delete page" onClick={()=>state.deletePage(i)}>✕</button>
+    <button className="rev2-pchip-lab" onClick={()=>state.setActivePage(i)}>{tr('designer.editor.page',{page:i+1})} <span className="rev2-psz">{pg.size}</span></button>
+    <button className="rev2-pchip-mini" title={tr('designer.editor.duplicatePage')} aria-label={tr('designer.editor.duplicatePage')} onClick={()=>state.dupPage(i)}>⧉</button>
+    <button className="rev2-pchip-mini rev2-del" title={tr('designer.editor.deletePage')} aria-label={tr('designer.editor.deletePage')} onClick={()=>state.deletePage(i)}>✕</button>
    </div>)}
-   <button className="rev2-paddbtn" onClick={()=>state.addPage()}>＋ Add page</button>
+   <button className="rev2-paddbtn" onClick={()=>state.addPage()}>＋ {tr('designer.editor.addPage')}</button>
   </div>
   <div className="rev2-sheet-wrap">
-   <div className="rev2-pagebadge">{mode==='batch'?'Template (binds to each record) — ':''}{state.doc.repeatPath?'Repeats for each '+state.doc.repeatPath+' — ':''}Page {state.doc.activePage+1} of {state.doc.pages.length}</div>
+   <div className="rev2-pagebadge">{[mode==='batch'?tr('designer.editor.batchBadge'):'',state.doc.repeatPath?tr('designer.editor.repeatsBadge',{path:state.doc.repeatPath}):'',tr('designer.editor.pageOf',{page:state.doc.activePage+1,pages:state.doc.pages.length})].filter(Boolean).join(' — ')}</div>
    <div ref={sheet} data-editsheet="1" className={'rev2-sheet'+(state.grid?' rev2-grid':'')} style={{width:P.w,height:P.h,transform:'scale('+zoom+')',marginBottom:(zoom-1)*P.h}} onPointerDown={place}>
     <div className="rev2-marg" style={{left:P.margin,top:P.margin,width:P.w-2*P.margin,height:P.h-2*P.margin}}/>
     {P.elements.map(el=><DesignElement key={el.id} engine={engine} el={el} record={record} ox={0} oy={0} onMove={startMove} onResize={startResize}/>)}
@@ -310,13 +315,14 @@ function Workspace({engine}:{engine:Engine}){
 
 function DesignElement({engine,el,record,ox,oy,onMove,onResize}:{engine:Engine;el:ReportElement;record:any;ox:number;oy:number;onMove:(ev:RPointerEvent,el:ReportElement,ox:number,oy:number)=>void;onResize:(ev:RPointerEvent,el:ReportElement)=>void}){
  const {state,render,expr}=engine
+ const {t:tr}=useT()
  const selected=state.selId===el.id
  const autoH=!!el.autoHeight&&['table','text','field'].includes(el.type)
  const box:CSSProperties={...render.boxCss(el),left:ox+el.x,top:oy+el.y,overflow:el.type==='table'?'visible':'hidden',...(autoH?{height:'auto'}:{}),...(el.type==='line'?{border:'none',background:'transparent'}:{})}
  let html=''
  if(el.type!=='line'&&el.type!=='rect'){
   expr.bind=record||{}
-  try{html=render.elInnerHtml(el,false)}catch(err){html='<div style="color:#c0392b;font:11px monospace">Render error: '+expr.escapeHtml(String((err as Error)?.message??err))+'</div>'}
+  try{html=render.elInnerHtml(el,false)}catch(err){html='<div style="color:#c0392b;font:11px monospace">'+expr.escapeHtml(tr('designer.editor.renderError',{message:String((err as Error)?.message??err)}))+'</div>'}
  }
  const line:CSSProperties=(el.lineDir||'h')==='h'?{position:'absolute',top:'50%',transform:'translateY(-50%)',width:'100%',height:Math.max(1,el.h),background:el.bg}:{position:'absolute',left:'50%',transform:'translateX(-50%)',height:'100%',width:Math.max(1,el.w),background:el.bg}
  return <div className={'rev2-de'+(selected?' rev2-sel':'')} style={box} onPointerDown={ev=>{if(state.viewMode!=='design'||(ev.target as HTMLElement).classList.contains('rev2-rh'))return;ev.stopPropagation();onMove(ev,el,ox,oy)}}>

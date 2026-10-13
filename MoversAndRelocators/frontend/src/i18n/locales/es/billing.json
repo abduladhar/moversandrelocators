@@ -1,0 +1,144 @@
+{
+  "pages": {
+    "creditMemos": "Notas de crédito", "debitMemos": "Notas de débito", "invoices": "Facturas", "bills": "Facturas de proveedor", "charges": "Conceptos de facturas y facturas de proveedor",
+    "cash": "Cobros de clientes y gastos pagados", "vouchers": "Recibos de cobro y comprobantes de pago", "currencyReport": "Informe de monedas", "currencies": "Monedas",
+    "exchangeRates": "Tipos de cambio", "mappings": "Asignación de cuentas a conceptos", "accounts": "Plan de cuentas"
+  },
+  "docTypes": { "INVOICE": "Factura", "BILL": "Factura de proveedor", "RECEIPT": "Recibo de cobro", "PAYMENT": "Comprobante de pago", "CREDIT_MEMO": "Nota de crédito", "DEBIT_MEMO": "Nota de débito" },
+  "accountTypes": { "Asset": "Activo", "Liability": "Pasivo", "Equity": "Patrimonio", "Revenue": "Ingreso", "Expense": "Gasto" },
+  "panel": {
+    "title": "Facturación",
+    "invoicesIntro": "Cree facturas a clientes, controle los saldos y registre los cobros.",
+    "billsIntro": "Cree facturas de proveedor, controle los saldos y registre los pagos.",
+    "postingAlertTitle": "Guarde, revise y después contabilice",
+    "postingAlertDescription": "Los borradores no generan asientos contables. Use el menú de la fila para contabilizar un documento revisado. Las facturas y facturas de proveedor deben contabilizarse antes de aplicar pagos.",
+    "searchLabel": "Buscar en facturación", "searchPlaceholder": "Buscar número, tercero o referencia",
+    "receivePayment": "Registrar cobro", "makeVendorPayments": "Pagar a proveedores", "newInvoice": "Nueva factura", "newBill": "Nueva factura de proveedor", "billingMenu": "Menú de facturación"
+  },
+  "errors": {
+    "load": "No se pudo cargar la facturación", "save": "No se pudo guardar", "selectSource": "Seleccione un registro de origen",
+    "paymentGroups": "Introduzca una asignación, un importe de pago y una referencia para cada grupo de comprobantes",
+    "documentGone": "El documento ya no está disponible. Actualice la facturación.", "preview": "No se pudo abrir la vista previa de impresión"
+  },
+  "columns": {
+    "number": "Número", "source": "Origen", "party": "Cliente / proveedor", "partyShort": "Tercero", "account": "Cuenta", "baseAmount": "Importe en moneda base",
+    "vendor": "Proveedor", "dueDate": "Fecha de vencimiento", "reference": "Referencia", "memoAdjustment": "Ajuste por notas", "paidAmount": "Importe pagado", "balance": "Saldo",
+    "accounting": "Contabilidad", "voucher": "Comprobante", "cashBank": "Caja / banco", "document": "Documento", "originalDocument": "Documento original",
+    "allocateDocumentCurrency": "Asignar en moneda del documento", "paymentAmountIn": "Importe del pago ({currency})", "allocateAmount": "Importe a asignar",
+    "charge": "Concepto", "reason": "Motivo", "receipts": "Justificantes", "postingVoucher": "Comprobante contable"
+  },
+  "status": {
+    "posted": "Contabilizado", "draft": "Borrador", "voided": "Anulado", "paid": "Pagado", "partPaid": "Pagado parcialmente", "unpaid": "Pendiente de pago", "cancelled": "Cancelado",
+    "converted": "Facturado", "unconverted": "Sin facturar", "cancelledReversed": "Cancelado / revertido", "pending": "Pendiente"
+  },
+  "actions": { "postToAccounting": "Contabilizar", "viewPrint": "Ver / imprimir", "void": "Anular", "cancelDraft": "Cancelar borrador", "reverseVoucher": "Revertir comprobante" },
+  "charges": {
+    "help": "Registre conceptos y luego selecciónelos para crear una factura o factura de proveedor. Los registros de ingresos y gastos de recogidas existentes siguen disponibles por separado; evite registrar el mismo costo dos veces.",
+    "add": "Agregar conceptos", "convert_one": "Convertir el seleccionado en factura / factura de proveedor ({count})", "convert_other": "Convertir los seleccionados en factura / factura de proveedor ({count})",
+    "incompatible": "Antes de convertir, seleccione conceptos de un solo cliente/proveedor, tipo y moneda.",
+    "customerCharge": "Concepto de cliente", "vendorCharge": "Concepto de proveedor", "cancelConfirm": "¿Cancelar este concepto no contabilizado?", "cancel": "Cancelar concepto"
+  },
+  "modal": {
+    "addCharges": "Agregar conceptos de cliente / proveedor", "convertCharges": "Convertir conceptos en factura / factura de proveedor", "receivePayment": "Registrar cobro de cliente",
+    "payBills": "Pagar facturas de proveedor", "reverseDocument": "Revertir documento financiero", "createInvoice": "Crear factura", "createBill": "Crear factura de proveedor",
+    "issueDocument": "Emitir documento", "saveDraftVouchers": "Guardar comprobantes en borrador"
+  },
+  "chargeForm": {
+    "source": "Recogida, trabajo o recibo de almacén", "sourcePlaceholder": "Seleccione una recogida, un trabajo o un recibo de almacén",
+    "directionIncome": "Conceptos de cliente — Factura", "directionExpense": "Conceptos de proveedor — Factura de proveedor", "addAtLeastOne": "Agregue al menos un concepto",
+    "chargeTitle": "Concepto {number}", "addAnother": "Agregar otro concepto",
+    "accountsHint": "Las cuentas provienen del maestro de conceptos. Pida al contador que asigne cualquier concepto faltante."
+  },
+  "issue": {
+    "summary_one": "{count} concepto seleccionado · {amount}", "summary_other": "{count} conceptos seleccionados · {amount}",
+    "description": "Los ingresos se convierten en una factura en borrador; los gastos, en una factura de proveedor en borrador. Use Contabilizar después de revisar el documento.",
+    "documentDate": "Fecha del documento", "reference": "Referencia del cliente / proveedor"
+  },
+  "pay": {
+    "receiptHelp": "Asigne un recibo de cobro a varias facturas del mismo cliente.",
+    "paymentHelp": "Seleccione facturas de distintos proveedores. Cada proveedor recibe un comprobante de pago y una referencia propios.",
+    "description": "Los importes asignados están en la moneda del documento. Para documentos en moneda extranjera, introduzca el importe pagado en la moneda de pago seleccionada. Los importes pueden ser parciales. Guarde el comprobante y luego use Contabilizar para actualizar el libro mayor y los saldos pagados.",
+    "paymentDate": "Fecha de pago", "cashBankAccount": "Cuenta de caja / banco", "allocateAria": "Asignar {number}",
+    "voucherReference": "Número de referencia del comprobante (obligatorio)", "voucherReferenceAria": "Referencia del comprobante para {name}"
+  },
+  "accounts": { "add": "Agregar cuenta", "code": "Código de cuenta", "name": "Nombre de la cuenta", "type": "Tipo de cuenta" },
+  "void": {
+    "postedWarning": "Se contabilizará un asiento de reversión. Las reversiones de pagos restablecen los saldos pendientes; las de documentos liberan los conceptos.",
+    "draftWarning": "Este borrador se cancelará sin crear un asiento contable. Los conceptos de una factura o factura de proveedor cancelada vuelven a estar disponibles.",
+    "reversalDate": "Fecha de reversión"
+  },
+  "preview": { "title": "Vista previa de impresión", "titleWithNumber": "{number} · Vista previa de impresión", "document": "Documento" },
+  "print": {
+    "titles": { "INVOICE": "Factura", "BILL": "Factura de proveedor", "RECEIPT": "Recibo de cobro", "PAYMENT": "Comprobante de pago" },
+    "tagline": "Servicios de mudanzas y reubicación", "draft": "BORRADOR — NO CONTABILIZADO", "voided": "ANULADO / REVERTIDO — {reason}",
+    "billTo": "Facturar a", "supplier": "Proveedor", "receivedFrom": "Recibido de", "paidTo": "Pagado a", "invoiceOrBill": "Factura / factura de proveedor",
+    "sourceReference": "Referencia de origen", "qty": "Cant.", "amountPerItem": "Precio unitario", "amountIn": "Importe ({currency})",
+    "documentTotal": "Total del documento", "paymentTotal": "Total del pago", "balanceDue": "Saldo pendiente"
+  },
+  "dualAmount": {
+    "tooltip": "Equivalente en la moneda actual del maestro de {party}; tipo de cambio vigente el {date}.",
+    "tooltipNoDate": "Equivalente en la moneda actual del maestro de {party}; tipo de cambio vigente en la fecha de la transacción."
+  },
+  "queue": {
+    "title": "Facturas, facturas de proveedor, notas y comprobantes pendientes de contabilizar", "alertTitle": "Revise los borradores antes de contabilizar",
+    "alertDescription": "Las facturas cargan cuentas por cobrar y abonan ingresos. Las facturas de proveedor cargan gastos y abonan cuentas por pagar. Los cobros cargan caja/banco y abonan cuentas por cobrar; los pagos a proveedores cargan cuentas por pagar y abonan caja/banco.",
+    "refresh": "Actualizar documentos", "pending_one": "{count} pendiente", "pending_other": "{count} pendientes",
+    "loadError": "No se pudieron cargar los borradores", "posted": "Contabilizado", "postError": "No se pudo contabilizar"
+  },
+  "mappings": {
+    "refresh": "Actualizar asignaciones", "addChargeMaster": "Agregar concepto maestro", "customerChargeAccount": "Cuenta de concepto de cliente",
+    "vendorChargeAccount": "Cuenta de concepto de proveedor", "defaultAmount": "Importe predeterminado", "mapAccounts": "Asignar cuentas",
+    "mappingTitle": "Asignación de cuentas · {name}", "newChargeMaster": "Nuevo concepto maestro", "chargeName": "Nombre del concepto", "unit": "Unidad",
+    "revenueAccount": "Concepto de cliente → Cuenta de ingresos", "expenseAccount": "Concepto de proveedor → Cuenta de gastos",
+    "help": "Los usuarios seleccionan un concepto y su cuenta asignada se aplica automáticamente. Los conceptos ya registrados conservan su cuenta original.",
+    "saved": "Asignación del concepto maestro guardada"
+  },
+  "newDocument": {
+    "customerInvoice": "FACTURA A CLIENTE", "vendorBill": "FACTURA DE PROVEEDOR",
+    "invoiceIntro": "Elija un cliente y agregue los servicios que factura.", "billIntro": "Elija un proveedor y agregue los conceptos que debe pagar.",
+    "numberAssigned": "El número del documento se asigna al guardar.", "details": "Datos del documento",
+    "selectCustomer": "Seleccione un cliente", "selectVendor": "Seleccione un proveedor", "customerPlaceholder": "Seleccionar cliente", "vendorPlaceholder": "Seleccionar proveedor",
+    "invoiceDate": "Fecha de factura", "billDate": "Fecha de factura de proveedor", "dueDateError": "La fecha de vencimiento debe ser igual o posterior a la fecha del documento",
+    "customerReference": "Referencia del cliente (opcional)", "supplierReference": "Referencia del proveedor (opcional)",
+    "referencePlaceholder": "Referencia o número de orden de compra", "relatedOperation": "Operación relacionada (opcional)",
+    "relatedOperationHelp": "Déjelo vacío para una factura o factura de proveedor directa.", "noLinkedOperation": "Sin operación vinculada",
+    "currencySection": "Moneda y tipo de cambio", "charges": "Conceptos", "amountsIn": "Importes en {currency}",
+    "chargeHelp": "Seleccione un concepto para completar su descripción e importe predeterminado. Introduzca el importe si no hay precio configurado.",
+    "noCharges": "No hay conceptos activos configurados para este documento. Agregue un concepto en Facturación → Asignación de cuentas a conceptos o habilite su asignación de cuenta.",
+    "totalIn": "Total ({currency})", "selectCharge": "Seleccione un concepto", "chargePlaceholder": "Seleccionar concepto",
+    "descriptionAria": "Descripción del concepto {number}", "descriptionPlaceholder": "Descripción del servicio", "quantityAria": "Cantidad del concepto {number}",
+    "enterPrice": "Introduzca el precio unitario", "positivePrice": "Introduzca un precio positivo", "priceAria": "Precio unitario del concepto {number}",
+    "removeAria": "Quitar concepto {number}", "addCharge": "Agregar concepto", "notes": "Notas (opcional)",
+    "invoiceNotesPlaceholder": "Información adicional para su cliente", "billNotesPlaceholder": "Información adicional sobre esta factura de proveedor",
+    "invoiceTotal": "Total de la factura", "billTotal": "Total de la factura de proveedor",
+    "chargeCount_one": "{count} concepto · {currency}", "chargeCount_other": "{count} conceptos · {currency}"
+  },
+  "cash": {
+    "receiptsTitle": "Justificantes · {number}", "loadError": "No se pudo cargar la cola de contabilización", "exactAllocation": "Asigne exactamente el importe cobrado/pagado.",
+    "receiptsAttached_one": "Justificante adjuntado", "receiptsAttached_other": "{count} justificantes adjuntados",
+    "postedToLedger": "Contabilizado en el libro mayor", "captured": "Registrado para revisión del contador", "queueTitle": "Cola de contabilización del contador",
+    "queueDescription": "Los pagos registrados no son asientos contables. Revise el tercero, la cuenta de caja/banco y las asignaciones antes de contabilizar. Los cobros de recogidas existentes y los gastos pagados por el equipo aparecen aquí automáticamente.",
+    "refresh": "Actualizar cola", "capture": "Registrar importe cobrado / pagado", "pendingPosting": "Pendiente de contabilizar", "allRecords": "Todos los registros",
+    "searchPlaceholder": "Buscar origen, referencia o tercero", "customerReceipt": "Cobro de cliente", "expensePaid": "Gasto pagado",
+    "reviewPost": "Revisar y contabilizar", "reviewPostTitle": "Revisar y contabilizar · {number}", "captureTitle": "Registrar cobro de cliente / gasto pagado",
+    "postToLedger": "Contabilizar en el libro mayor", "saveForPosting": "Guardar para contabilizar", "noReceipt": "No hay justificante adjunto.", "paymentType": "Tipo de pago",
+    "customerReceiptOption": "Cobro de cliente (pago recibido)", "source": "Recogida / Trabajo / Recibo de almacén", "vendorPayee": "Proveedor / beneficiario",
+    "postingDate": "Fecha de contabilización", "receivedPaidDate": "Fecha de cobro / pago", "referenceNumber": "Número de referencia", "receiptOptional": "Justificante (opcional)",
+    "receiptHelp": "Foto de la factura o del comprobante de pago; se sube al guardar.", "allocateInvoices": "Asignar a facturas",
+    "allocateBills": "Asignar a facturas de proveedor existentes", "expenseCharge": "Concepto de gasto", "allocateExactly": "Asigne exactamente {currency} {amount}.",
+    "receiptToAdvances": "Se contabiliza en Anticipos de clientes (2100). No liquida ninguna factura.",
+    "expenseToAccount": "Se contabiliza en la cuenta de gastos del concepto seleccionado. Use la asignación a facturas de proveedor si el gasto ya tiene una factura."
+  },
+  "memos": {
+    "creditMemo": "Nota de crédito", "debitMemo": "Nota de débito", "newCredit": "Nueva nota de crédito", "newDebit": "Nueva nota de débito", "loadError": "No se pudieron cargar las notas",
+    "creditHelp": "Reducir una factura de cliente o de proveedor", "debitHelp": "Aumentar una factura de cliente o de proveedor",
+    "description": "Seleccione un documento contabilizado y su concepto original. Guárdelo como borrador, revíselo y después contabilícelo. Se usan la moneda del documento original y la conversión guardada.",
+    "reverse": "Revertir nota", "saveDraft": "Guardar borrador", "postedDocument": "Factura / factura de proveedor contabilizada",
+    "reducesReceivable": "Reduce la cuenta por cobrar del cliente en {currency}", "reducesPayable": "Reduce la cuenta por pagar al proveedor en {currency}",
+    "increasesReceivable": "Aumenta la cuenta por cobrar del cliente en {currency}", "increasesPayable": "Aumenta la cuenta por pagar al proveedor en {currency}",
+    "currentOutstanding": "Saldo pendiente actual: {amount}", "originalCharge": "Concepto original", "memoDate": "Fecha de la nota",
+    "amountIn": "Importe ({currency})", "amountInDocumentCurrency": "Importe (moneda del documento)", "cancelDraftMemo": "Cancelar nota en borrador",
+    "preview": "Vista previa de la nota", "printVoided": "ANULADO / REVERTIDO", "printPosted": "CONTABILIZADO", "printDate": "Fecha: {date}",
+    "printOriginal": "Documento original: {number} · {type}"
+  }
+}

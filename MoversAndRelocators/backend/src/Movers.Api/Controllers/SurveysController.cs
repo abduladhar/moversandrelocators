@@ -16,6 +16,7 @@ public sealed class SurveysController(ISurveyService service, ISurveyFileService
     [HttpGet("{id:guid}")] public async Task<ActionResult> Get(Guid id, CancellationToken t) { var x = await service.GetSurveyAsync(id, t); return x is null ? NotFound() : Ok(x); }
     [HttpPost] public async Task<ActionResult> Create(SaveSurveyRequest r, CancellationToken t) => await Run(() => service.CreateSurveyAsync(r.ToCommand(), t));
     [HttpPut("{id:guid}")] public async Task<ActionResult> Update(Guid id, SaveSurveyRequest r, CancellationToken t) => await RunNullable(() => service.UpdateSurveyAsync(id, r.ToCommand(), t));
+    [HttpPost("{id:guid}/details/from-lead-inventory")] public async Task<ActionResult> ImportLeadInventory(Guid id, CancellationToken t) => await RunNullable(() => service.ImportLeadInventoryAsync(id, t));
     [HttpPut("{id:guid}/details")] public async Task<ActionResult> Details(Guid id, SaveSurveyDetailsRequest r, CancellationToken t) => await RunNullable(() => service.SaveDetailsAsync(id, r.ToCommand(), t));
     [HttpPost("{id:guid}/confirmation-link")] public async Task<ActionResult> Link(Guid id, GenerateSurveyLinkRequest r, CancellationToken t)
     {

@@ -106,33 +106,31 @@ public sealed class QuotationService(IQuotationRepository repository, ITenantCon
         var dropped = lines.Count(x => x.CustomerStatus == LeadInventoryCustomerStatuses.NotNeeded);
         var wanted = lines.Where(x => x.CustomerStatus != LeadInventoryCustomerStatuses.NotNeeded).ToList();
 
-        var masters = (await repository.ListHouseholdItemsAsync(t)).Where(x => x.IsActive).ToList();
-        static string Norm(string x) => new(x.ToLowerInvariant().Where(char.IsLetterOrDigit).ToArray());
-        HouseholdItem? Match(string name)
+        var allMasters = await repository.ListHouseholdItemsAsync(t);
+        var masters = allMasters.Where(x => x.IsActive).ToList();
+        var items = new List<QuotationItem>(); var unmatched = new List<string>(); var createdMasters = new List<string>(); var order = 0;
+        var source = $"the sales lead inventory (quotation {quote.QuotationNumber})";
+        // Box lines are packing suggestions, not household items: they are not quoted as items (nor turned into masters).
+        foreach (var line in wanted.Where(x => x.Kind == LeadInventoryKinds.Item))
         {
-            var n = Norm(name);
-            // A longer inventory name may contain the master name ("Television 55 inch" -> Television), never the reverse.
-            return masters.FirstOrDefault(m => Norm(m.Name) == n)
-                ?? masters.Where(m => Norm(m.Name).Length >= 4 && n.Contains(Norm(m.Name))).OrderByDescending(m => m.Name.Length).FirstOrDefault();
-        }
-
-        var items = new List<QuotationItem>(); var unmatched = new List<string>(); var order = 0;
-        foreach (var line in wanted)
-        {
-            if (Match(line.Name) is not { } master) { if (!unmatched.Contains(line.Name)) unmatched.Add(line.Name); continue; }
-            var volume = line.UnitCbm > 0 ? line.UnitCbm : master.VolumeCbm;
-            if (volume <= 0) { if (!unmatched.Contains(line.Name)) unmatched.Add(line.Name); continue; }
-            var note = string.Join(" · ", new[] { line.Fragile ? "Fragile" : null, line.Handling, line.Notes, line.CustomerNote }.Where(x => !string.IsNullOrWhiteSpace(x)));
+            // Names not in the master data become new household items (with the line's volume) instead of being left out.
+            var master = Movers.Services.Surveys.HouseholdItemMatching.FindOrCreate(masters, allMasters, line.Name, line.UnitCbm, tenantContext.TenantId, source,
+                x => { repository.AddHouseholdItem(x); createdMasters.Add(x.Name); });
+            var volume = line.UnitCbm > 0 ? line.UnitCbm : master?.VolumeCbm ?? 0;
+            if (master is null || volume <= 0) { if (!unmatched.Contains(line.Name)) unmatched.Add(line.Name); continue; }
+            // Each lead line stays its own quote item; the lead's more specific name ("Dining chair" for Chair) goes in the notes.
+            var note = string.Join(" · ", new[] { Movers.Services.Surveys.HouseholdItemMatching.Normalise(line.Name) == Movers.Services.Surveys.HouseholdItemMatching.Normalise(master.Name) ? null : line.Name.Trim(),
+                line.Fragile ? "Fragile" : null, line.Handling, line.Notes, line.CustomerNote }.Where(x => !string.IsNullOrWhiteSpace(x)));
             items.Add(new QuotationItem(tenantContext.TenantId, id, master.Id, line.Room ?? "Unspecified", master.Name, line.Quantity, volume, note.Length > 0 ? note[..Math.Min(note.Length, 500)] : null, ++order));
         }
         if (items.Count == 0) throw new InvalidOperationException(unmatched.Count > 0
-            ? "None of the inventory names match an active household item. Add them to the household items master first."
+            ? "None of the inventory lines could be brought in: they have no volume. Enter the CBM per unit on the lead inventory first."
             : "The customer marked every line as not needed, so there is nothing to quote.");
 
         repository.RemoveQuotationItems(await repository.ListQuotationItemsAsync(id, t));
         repository.AddQuotationItems(items);
         await repository.SaveChangesAsync(t);
-        return new(await LoadDetail(id, restriction, t) ?? throw new InvalidOperationException("Quotation was not found."), items.Count, dropped, unmatched);
+        return new(await LoadDetail(id, restriction, t) ?? throw new InvalidOperationException("Quotation was not found."), items.Count, dropped, unmatched, createdMasters);
     }
 
     public async Task<QuotationDetailModel?> ApplyRequoteRequestAsync(Guid quotationId, Guid requestId, CancellationToken t)

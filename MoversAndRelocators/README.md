@@ -20,7 +20,7 @@ After a successful build, subsequent starts can use `.\Start-Local.ps1 -SkipBuil
 - Stop only this project's processes: `.\Stop-Local.ps1`
 - Logs and process records: `.run/`
 
-The script runs both processes with hidden windows, verifies the API health endpoint, and uses separate ports from the original Movers project. It accepts Node 24–26 and can use this computer's bundled Node 24 runtime. On another machine, install Node 24+, pnpm, and the .NET SDK/runtime required for `net8.0`.
+The script runs both processes with hidden windows, verifies the API health endpoint, and uses separate ports from the original Movers project. It accepts Node 24–26 and can use this computer's bundled Node 24 runtime. On another machine, install Node 24+, pnpm, and the .NET 10 SDK (the API targets `net10.0`).
 
 Initial local login: **admin@movers.local** / **ChangeMe123!**. This is the bootstrap development account. Create a company on the Tenants screen, then open its workspace. Tenant creation atomically seeds sales statuses, follow-up statuses, move types, household items, materials, box recipes, charges, and example tax definitions. Review example quantities/prices and tax applicability before using them for a real customer; example tax definitions are not selected automatically.
 

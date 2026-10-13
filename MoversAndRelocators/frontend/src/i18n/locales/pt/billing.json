@@ -1,0 +1,144 @@
+{
+  "pages": {
+    "creditMemos": "Notas de crédito", "debitMemos": "Notas de débito", "invoices": "Faturas", "bills": "Faturas de fornecedor", "charges": "Itens de faturas e faturas de fornecedor",
+    "cash": "Recebimentos de clientes e despesas pagas", "vouchers": "Recibos e comprovantes de pagamento", "currencyReport": "Relatório de moedas", "currencies": "Moedas",
+    "exchangeRates": "Taxas de câmbio", "mappings": "Mapeamento de contas dos itens de cobrança", "accounts": "Plano de contas"
+  },
+  "docTypes": { "INVOICE": "Fatura", "BILL": "Fatura de fornecedor", "RECEIPT": "Recibo", "PAYMENT": "Comprovante de pagamento", "CREDIT_MEMO": "Nota de crédito", "DEBIT_MEMO": "Nota de débito" },
+  "accountTypes": { "Asset": "Ativo", "Liability": "Passivo", "Equity": "Patrimônio líquido", "Revenue": "Receita", "Expense": "Despesa" },
+  "panel": {
+    "title": "Faturamento",
+    "invoicesIntro": "Crie faturas de clientes, acompanhe saldos e registre recebimentos.",
+    "billsIntro": "Crie faturas de fornecedor, acompanhe saldos e registre pagamentos.",
+    "postingAlertTitle": "Salve, revise e depois lance na contabilidade",
+    "postingAlertDescription": "Rascunhos não geram lançamentos contábeis. Use o menu da linha para lançar um documento revisado. Faturas e faturas de fornecedor precisam ser lançadas antes da alocação de pagamentos.",
+    "searchLabel": "Pesquisar no faturamento", "searchPlaceholder": "Pesquisar número, parte ou referência",
+    "receivePayment": "Registrar recebimento", "makeVendorPayments": "Pagar fornecedores", "newInvoice": "Nova fatura", "newBill": "Nova fatura de fornecedor", "billingMenu": "Menu de faturamento"
+  },
+  "errors": {
+    "load": "Não foi possível carregar o faturamento", "save": "Não foi possível salvar", "selectSource": "Selecione um registro de origem",
+    "paymentGroups": "Informe uma alocação, um valor de pagamento e uma referência para cada grupo de comprovantes",
+    "documentGone": "O documento não está mais disponível. Atualize o faturamento.", "preview": "Não foi possível abrir a visualização de impressão"
+  },
+  "columns": {
+    "number": "Número", "source": "Origem", "party": "Cliente / fornecedor", "partyShort": "Parte", "account": "Conta", "baseAmount": "Valor na moeda base",
+    "vendor": "Fornecedor", "dueDate": "Data de vencimento", "reference": "Referência", "memoAdjustment": "Ajuste por notas", "paidAmount": "Valor pago", "balance": "Saldo",
+    "accounting": "Contabilidade", "voucher": "Comprovante", "cashBank": "Caixa / banco", "document": "Documento", "originalDocument": "Documento original",
+    "allocateDocumentCurrency": "Alocar na moeda do documento", "paymentAmountIn": "Valor do pagamento ({currency})", "allocateAmount": "Valor a alocar",
+    "charge": "Item de cobrança", "reason": "Motivo", "receipts": "Comprovantes", "postingVoucher": "Comprovante de lançamento"
+  },
+  "status": {
+    "posted": "Lançado", "draft": "Rascunho", "voided": "Anulado", "paid": "Pago", "partPaid": "Parcialmente pago", "unpaid": "Em aberto", "cancelled": "Cancelado",
+    "converted": "Faturado", "unconverted": "Não faturado", "cancelledReversed": "Cancelado / estornado", "pending": "Pendente"
+  },
+  "actions": { "postToAccounting": "Lançar na contabilidade", "viewPrint": "Ver / imprimir", "void": "Anular", "cancelDraft": "Cancelar rascunho", "reverseVoucher": "Estornar comprovante" },
+  "charges": {
+    "help": "Registre os itens e depois selecione-os para criar uma fatura ou fatura de fornecedor. Os registros existentes de receitas e despesas de coleta continuam disponíveis separadamente; evite registrar o mesmo custo duas vezes.",
+    "add": "Adicionar itens", "convert_one": "Converter selecionado em fatura / fatura de fornecedor ({count})", "convert_other": "Converter selecionados em fatura / fatura de fornecedor ({count})",
+    "incompatible": "Antes da conversão, selecione itens de apenas um cliente/fornecedor, tipo e moeda.",
+    "customerCharge": "Item de cliente", "vendorCharge": "Item de fornecedor", "cancelConfirm": "Cancelar este item não lançado?", "cancel": "Cancelar item"
+  },
+  "modal": {
+    "addCharges": "Adicionar itens de cliente / fornecedor", "convertCharges": "Converter itens em fatura / fatura de fornecedor", "receivePayment": "Registrar recebimento de cliente",
+    "payBills": "Pagar faturas de fornecedor", "reverseDocument": "Estornar documento financeiro", "createInvoice": "Criar fatura", "createBill": "Criar fatura de fornecedor",
+    "issueDocument": "Emitir documento", "saveDraftVouchers": "Salvar comprovantes como rascunho"
+  },
+  "chargeForm": {
+    "source": "Coleta, serviço ou recibo de armazém", "sourcePlaceholder": "Selecione uma coleta, um serviço ou um recibo de armazém",
+    "directionIncome": "Itens de cliente — Fatura", "directionExpense": "Itens de fornecedor — Fatura de fornecedor", "addAtLeastOne": "Adicione pelo menos um item",
+    "chargeTitle": "Item {number}", "addAnother": "Adicionar outro item",
+    "accountsHint": "As contas vêm do cadastro de itens de cobrança. Peça ao contador para mapear qualquer item faltante."
+  },
+  "issue": {
+    "summary_one": "{count} item selecionado · {amount}", "summary_other": "{count} itens selecionados · {amount}",
+    "description": "Receitas viram uma fatura em rascunho; despesas viram uma fatura de fornecedor em rascunho. Use Lançar na contabilidade depois de revisar o documento.",
+    "documentDate": "Data do documento", "reference": "Referência do cliente / fornecedor"
+  },
+  "pay": {
+    "receiptHelp": "Aloque um recibo em várias faturas do mesmo cliente.",
+    "paymentHelp": "Selecione faturas de vários fornecedores. Cada fornecedor recebe um comprovante de pagamento e uma referência próprios.",
+    "description": "Os valores alocados usam a moeda do documento. Para documentos em moeda estrangeira, informe o valor pago na moeda de pagamento selecionada. Os valores podem ser parciais. Salve o comprovante e depois use Lançar na contabilidade para atualizar o razão e os saldos pagos.",
+    "paymentDate": "Data do pagamento", "cashBankAccount": "Conta de caixa / banco", "allocateAria": "Alocar {number}",
+    "voucherReference": "Número de referência do comprovante (obrigatório)", "voucherReferenceAria": "Referência do comprovante de {name}"
+  },
+  "accounts": { "add": "Adicionar conta", "code": "Código da conta", "name": "Nome da conta", "type": "Tipo de conta" },
+  "void": {
+    "postedWarning": "Um lançamento de estorno será registrado. Estornos de pagamentos restauram os saldos em aberto; estornos de documentos liberam os itens.",
+    "draftWarning": "Este rascunho será cancelado sem gerar lançamento contábil. Os itens de uma fatura ou fatura de fornecedor cancelada voltam a ficar disponíveis.",
+    "reversalDate": "Data do estorno"
+  },
+  "preview": { "title": "Visualização de impressão", "titleWithNumber": "{number} · Visualização de impressão", "document": "Documento" },
+  "print": {
+    "titles": { "INVOICE": "Fatura", "BILL": "Fatura de fornecedor", "RECEIPT": "Recibo", "PAYMENT": "Comprovante de pagamento" },
+    "tagline": "Serviços de mudança e realocação", "draft": "RASCUNHO — NÃO LANÇADO NA CONTABILIDADE", "voided": "ANULADO / ESTORNADO — {reason}",
+    "billTo": "Faturar para", "supplier": "Fornecedor", "receivedFrom": "Recebido de", "paidTo": "Pago a", "invoiceOrBill": "Fatura / fatura de fornecedor",
+    "sourceReference": "Referência de origem", "qty": "Qtd.", "amountPerItem": "Valor unitário", "amountIn": "Valor ({currency})",
+    "documentTotal": "Total do documento", "paymentTotal": "Total do pagamento", "balanceDue": "Saldo devedor"
+  },
+  "dualAmount": {
+    "tooltip": "Equivalente na moeda atual do cadastro de {party}; taxa de câmbio vigente em {date}.",
+    "tooltipNoDate": "Equivalente na moeda atual do cadastro de {party}; taxa de câmbio vigente na data da transação."
+  },
+  "queue": {
+    "title": "Faturas, faturas de fornecedor, notas e comprovantes aguardando lançamento", "alertTitle": "Revise os rascunhos antes de lançar",
+    "alertDescription": "Faturas debitam contas a receber e creditam receitas. Faturas de fornecedor debitam despesas e creditam contas a pagar. Recebimentos debitam caixa/banco e creditam contas a receber; pagamentos a fornecedores debitam contas a pagar e creditam caixa/banco.",
+    "refresh": "Atualizar documentos", "pending_one": "{count} pendente", "pending_other": "{count} pendentes",
+    "loadError": "Não foi possível carregar os rascunhos", "posted": "Lançado na contabilidade", "postError": "Falha no lançamento"
+  },
+  "mappings": {
+    "refresh": "Atualizar mapeamentos", "addChargeMaster": "Adicionar item de cobrança", "customerChargeAccount": "Conta de itens de cliente",
+    "vendorChargeAccount": "Conta de itens de fornecedor", "defaultAmount": "Valor padrão", "mapAccounts": "Mapear contas",
+    "mappingTitle": "Mapeamento de contas · {name}", "newChargeMaster": "Novo item de cobrança", "chargeName": "Nome do item", "unit": "Unidade",
+    "revenueAccount": "Item de cliente → Conta de receita", "expenseAccount": "Item de fornecedor → Conta de despesa",
+    "help": "Os usuários selecionam um item e a conta mapeada é aplicada automaticamente. Itens já registrados mantêm a conta original.",
+    "saved": "Mapeamento do item de cobrança salvo"
+  },
+  "newDocument": {
+    "customerInvoice": "FATURA DE CLIENTE", "vendorBill": "FATURA DE FORNECEDOR",
+    "invoiceIntro": "Escolha um cliente e adicione os serviços que você está cobrando.", "billIntro": "Escolha um fornecedor e adicione os itens que você precisa pagar.",
+    "numberAssigned": "O número do documento é atribuído ao salvar.", "details": "Dados do documento",
+    "selectCustomer": "Selecione um cliente", "selectVendor": "Selecione um fornecedor", "customerPlaceholder": "Selecionar cliente", "vendorPlaceholder": "Selecionar fornecedor",
+    "invoiceDate": "Data da fatura", "billDate": "Data da fatura de fornecedor", "dueDateError": "A data de vencimento deve ser igual ou posterior à data do documento",
+    "customerReference": "Referência do cliente (opcional)", "supplierReference": "Referência do fornecedor (opcional)",
+    "referencePlaceholder": "Referência ou número do pedido de compra", "relatedOperation": "Operação relacionada (opcional)",
+    "relatedOperationHelp": "Deixe em branco para uma fatura ou fatura de fornecedor direta.", "noLinkedOperation": "Nenhuma operação vinculada",
+    "currencySection": "Moeda e taxa de câmbio", "charges": "Itens", "amountsIn": "Valores em {currency}",
+    "chargeHelp": "Selecione um item para preencher a descrição e o valor padrão. Informe o valor se não houver preço configurado.",
+    "noCharges": "Nenhum item ativo está configurado para este documento. Adicione um item em Faturamento → Mapeamento de contas dos itens de cobrança ou ative o mapeamento da conta.",
+    "totalIn": "Total ({currency})", "selectCharge": "Selecione um item", "chargePlaceholder": "Selecionar item",
+    "descriptionAria": "Descrição do item {number}", "descriptionPlaceholder": "Descrição do serviço", "quantityAria": "Quantidade do item {number}",
+    "enterPrice": "Informe o valor unitário", "positivePrice": "Informe um valor positivo", "priceAria": "Valor unitário do item {number}",
+    "removeAria": "Remover item {number}", "addCharge": "Adicionar item", "notes": "Observações (opcional)",
+    "invoiceNotesPlaceholder": "Informações adicionais para o seu cliente", "billNotesPlaceholder": "Informações adicionais sobre esta fatura de fornecedor",
+    "invoiceTotal": "Total da fatura", "billTotal": "Total da fatura de fornecedor",
+    "chargeCount_one": "{count} item · {currency}", "chargeCount_other": "{count} itens · {currency}"
+  },
+  "cash": {
+    "receiptsTitle": "Comprovantes · {number}", "loadError": "Não foi possível carregar a fila de lançamentos", "exactAllocation": "Aloque exatamente o valor recebido/pago.",
+    "receiptsAttached_one": "Comprovante anexado", "receiptsAttached_other": "{count} comprovantes anexados",
+    "postedToLedger": "Lançado no razão", "captured": "Registrado para revisão do contador", "queueTitle": "Fila de lançamentos do contador",
+    "queueDescription": "Pagamentos registrados não são lançamentos contábeis. Revise a parte, a conta de caixa/banco e as alocações antes de lançar. Recebimentos de coletas e despesas pagas pela equipe aparecem aqui automaticamente.",
+    "refresh": "Atualizar fila", "capture": "Registrar valor recebido / pago", "pendingPosting": "Aguardando lançamento", "allRecords": "Todos os registros",
+    "searchPlaceholder": "Pesquisar origem, referência ou parte", "customerReceipt": "Recebimento de cliente", "expensePaid": "Despesa paga",
+    "reviewPost": "Revisar e lançar", "reviewPostTitle": "Revisar e lançar · {number}", "captureTitle": "Registrar recebimento de cliente / despesa paga",
+    "postToLedger": "Lançar no razão", "saveForPosting": "Salvar para lançamento", "noReceipt": "Nenhum comprovante anexado.", "paymentType": "Tipo de pagamento",
+    "customerReceiptOption": "Recebimento de cliente (pagamento recebido)", "source": "Coleta / Serviço / Recibo de armazém", "vendorPayee": "Fornecedor / favorecido",
+    "postingDate": "Data de lançamento", "receivedPaidDate": "Data de recebimento / pagamento", "referenceNumber": "Número de referência", "receiptOptional": "Comprovante (opcional)",
+    "receiptHelp": "Foto da nota ou do comprovante de pagamento; enviada ao salvar.", "allocateInvoices": "Alocar em faturas",
+    "allocateBills": "Alocar em faturas de fornecedor existentes", "expenseCharge": "Item de despesa", "allocateExactly": "Aloque exatamente {currency} {amount}.",
+    "receiptToAdvances": "Lança em Adiantamentos de clientes (2100). Não quita nenhuma fatura.",
+    "expenseToAccount": "Lança na conta de despesa do item selecionado. Use a alocação em fatura de fornecedor acima se a despesa já tiver uma fatura."
+  },
+  "memos": {
+    "creditMemo": "Nota de crédito", "debitMemo": "Nota de débito", "newCredit": "Nova nota de crédito", "newDebit": "Nova nota de débito", "loadError": "Não foi possível carregar as notas",
+    "creditHelp": "Reduzir uma fatura de cliente ou de fornecedor", "debitHelp": "Aumentar uma fatura de cliente ou de fornecedor",
+    "description": "Selecione um documento lançado e o item original. Salve como rascunho, revise e depois lance na contabilidade. São usadas a moeda do documento original e a conversão salva.",
+    "reverse": "Estornar nota", "saveDraft": "Salvar rascunho", "postedDocument": "Fatura / fatura de fornecedor lançada",
+    "reducesReceivable": "Reduz o valor a receber do cliente em {currency}", "reducesPayable": "Reduz o valor a pagar ao fornecedor em {currency}",
+    "increasesReceivable": "Aumenta o valor a receber do cliente em {currency}", "increasesPayable": "Aumenta o valor a pagar ao fornecedor em {currency}",
+    "currentOutstanding": "Saldo em aberto atual: {amount}", "originalCharge": "Item original", "memoDate": "Data da nota",
+    "amountIn": "Valor ({currency})", "amountInDocumentCurrency": "Valor (moeda do documento)", "cancelDraftMemo": "Cancelar nota em rascunho",
+    "preview": "Visualização da nota", "printVoided": "ANULADO / ESTORNADO", "printPosted": "LANÇADO", "printDate": "Data: {date}",
+    "printOriginal": "Documento original: {number} · {type}"
+  }
+}

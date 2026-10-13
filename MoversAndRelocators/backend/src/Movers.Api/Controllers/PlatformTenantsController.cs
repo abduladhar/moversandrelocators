@@ -66,7 +66,7 @@ public sealed class PlatformTenantsController(ITenantService tenantService) : Co
 
     private ActionResult<TenantResponse> DuplicateSlugProblem()
     {
-        ModelState.AddModelError(nameof(SaveTenantRequest.Slug), "This tenant slug is already in use.");
-        return ValidationProblem(ModelState);
+        // A message of its own (code), so the client can say exactly what is wrong in the user's language.
+        return BadRequest(new { message = "This tenant slug is already in use." });
     }
 }

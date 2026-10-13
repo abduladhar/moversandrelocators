@@ -1,11 +1,13 @@
 import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react'
 import { Button } from 'antd'
 import { ClearOutlined } from '@ant-design/icons'
+import { useT } from '../i18n'
 
 export type SignaturePadHandle = { toDataUrl: () => string | null; clear: () => void }
 
 /** Finger, stylus or mouse signature capture. Exports a trimmed-width PNG data URL, or null when nothing was drawn. */
-export const SignaturePad = forwardRef<SignaturePadHandle, { label?: string }>(function SignaturePad({ label = 'Sign here' }, ref) {
+export const SignaturePad = forwardRef<SignaturePadHandle, { label?: string }>(function SignaturePad({ label: labelProp }, ref) {
+  const { t } = useT(), label = labelProp ?? t('customer.signature.signHere')
   const canvas = useRef<HTMLCanvasElement>(null), drawing = useRef(false), last = useRef<{ x: number; y: number } | null>(null)
   const [empty, setEmpty] = useState(true)
 
@@ -46,6 +48,6 @@ export const SignaturePad = forwardRef<SignaturePadHandle, { label?: string }>(f
     <canvas ref={canvas} aria-label={label} onPointerDown={down} onPointerMove={move} onPointerUp={up} onPointerLeave={up} onPointerCancel={up} />
     {empty && <span className="signature-pad-hint">{label}</span>}
     <div className="signature-pad-line" />
-    <Button size="small" type="text" icon={<ClearOutlined />} className="signature-pad-clear" onClick={clear} disabled={empty}>Clear</Button>
+    <Button size="small" type="text" icon={<ClearOutlined />} className="signature-pad-clear" onClick={clear} disabled={empty}>{t('common.clear')}</Button>
   </div>
 })

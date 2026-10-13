@@ -14,9 +14,28 @@ public interface IBusinessMasterRepository {
 }
 public sealed class BusinessMasterService(IBusinessMasterRepository repository, ITenantContext tenant, IRecordNumbers numbers, Movers.Services.Currencies.CurrencyService currencies)
 {
- public static readonly string[] Kinds = ["crew-role", "payment-method", "payment-purpose", "expense-category", "customer", "vendor"];
+ public static readonly string[] Kinds = ["crew-role", "payment-method", "payment-purpose", "expense-category", "customer", "vendor", "message-template"];
+ /// <summary>
+ /// The wording sent with each customer link. The code is fixed because a share dialog looks its template up by it;
+ /// only the text is the tenant's to change. Placeholders are filled in by the screen that sends the message, and an
+ /// unknown one is left as written rather than blanked, so a typo is visible instead of silently losing a sentence.
+ /// </summary>
+ private static readonly MasterModel[] MessageTemplates = [
+  new("SURVEY_CONFIRM", "Survey confirmation", true, Notes: "Hello {{customer}}, please confirm your moving survey {{reference}}, scheduled for {{date}}: {{link}}"),
+  new("QUOTATION", "Quotation approval", true, Notes: "Hello {{customer}}, please review quotation {{reference}} for your move from {{origin}} to {{destination}}, valued at {{amount}}, and approve or reject it here: {{link}}"),
+  new("LEAD_UPLOAD", "Sales lead · upload request", true, Notes: "Hello {{customer}}, please upload your moving documents, photos, videos or audio: {{link}}"),
+  new("LEAD_INVENTORY", "Sales lead · moving list review", true, Notes: "Hello {{customer}}, please check your moving list and mark anything you do not need moved: {{link}}"),
+  new("PICKUP_CONFIRM", "Pickup confirmation", true, Notes: "Hello {{customer}}, please confirm your pickup {{reference}}: {{link}}"),
+  new("PICKUP_PACKING_LIST", "Pickup packing list", true, Notes: "Hello {{customer}}, please check and confirm your packing list for {{reference}}: {{link}}"),
+  new("PACKING_DATE", "Packing date confirmation", true, Notes: "Hello {{customer}}, please confirm your packing date and time ({{reference}}): {{link}}"),
+  new("PACKING_LOCATION", "Packing location request", true, Notes: "Hello {{customer}}, please share your location for packing ({{reference}}): {{link}}"),
+  new("PACKING_ITEMS", "Packed items review", true, Notes: "Hello {{customer}}, please review and confirm your packed items ({{reference}}): {{link}}"),
+  new("DELIVERY_DATE", "Delivery date confirmation", true, Notes: "Hello {{customer}}, please confirm your delivery date and time (delivery {{reference}}): {{link}}"),
+  new("DELIVERY_LOCATION", "Delivery location request", true, Notes: "Hello {{customer}}, please share your delivery location (delivery {{reference}}): {{link}}"),
+ ];
  private static void CheckKind(string kind) { if (!Kinds.Contains(kind)) throw new InvalidOperationException("Unknown master type."); }
  private static IEnumerable<MasterModel> Defaults(string kind) {
+  if (kind == "message-template") return MessageTemplates;
   var pairs = kind switch {
    "crew-role" => new[] { "LEAD|Crew lead", "SUPERVISOR|Supervisor", "PACKER|Packer", "DRIVER|Driver", "HELPER|Helper", "CARPENTER|Carpenter" },
    "payment-method" => ["CASH|Cash", "UPI|UPI", "CARD|Card", "BANK|Bank transfer", "CHEQUE|Cheque"],
@@ -44,6 +63,11 @@ public sealed class BusinessMasterService(IBusinessMasterRepository repository, 
   if (input.VendorType?.Length > 80) throw new InvalidOperationException("Vendor type must be 80 characters or fewer.");
   input = input with { VendorType = kind == "vendor" ? input.VendorType?.Trim() : null, IsAgent = kind == "vendor" && input.IsAgent };
   if (kind is "customer" or "vendor") input = input with { Currency = (await currencies.Require(input.Currency ?? (await currencies.Settings(ct)).DefaultCurrency, ct)).Code };
+  if (kind == "message-template") {
+   if (code is null) throw new InvalidOperationException("Message templates cannot be added: each one belongs to a screen that sends it. Edit the wording of an existing template instead.");
+   if (string.IsNullOrWhiteSpace(input.Notes)) throw new InvalidOperationException("Enter the message to send.");
+   if (!input.Notes.Contains("{{link}}")) throw new InvalidOperationException("Keep {{link}} in the message: without it the customer has nothing to open.");
+  }
   var existing = code is null ? null : await repository.Get(kind, code, ct);
   if (code is not null && existing is null && !Defaults(kind).Any(x => x.Code == code)) throw new KeyNotFoundException("Master record not found.");
   var prefix = kind switch { "customer" => "CUS", "vendor" => "VEN", "crew-role" => "ROLE", "payment-method" => "PAY", "payment-purpose" => "PUR", _ => "EXP" };

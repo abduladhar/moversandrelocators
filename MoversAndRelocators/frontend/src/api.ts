@@ -1,5 +1,6 @@
 import type { AuditLog, PickupAttachment, PickupWork, Warehouse, SurveyExpenseInput, CatalogItem, CustomerChangesInput, SurveyAttachment, AuthSession, AwsConfiguration, AwsConfigurationInput, BoxType, ChargeMaster, TaxMaster, Designation, DesignationInput, Employee, EmployeeHierarchyNode, EmployeeInput, FollowUpInput, FollowUpStatus, HouseholdItem, LeadAttachment, LeadFollowUp, LeadStatus, LeadUploadLink, MoveType, MyTask, OpenAiConfiguration, OpenAiConfigurationInput, PackingMaterial, Permission, PresignedUpload, PublicQuotation, PublicSurvey, PublicUploadInfo, Quotation, QuotationDetail, QuotationInput, QuotationItemInput, QuotationLineInput, Role, SalesLead, SalesLeadInput, Survey, SurveyDetail, SurveyDetailsInput, SurveyInput, Tenant, TenantInput, User } from './types'
 import { apiUrl } from './apiBase'
+import { serverMessage, t } from './i18n'
 import type { Pickup, PickupDetail, PickupStatus, PublicPickup, Vehicle, Company, CompanyInput, CompanyOption } from './types'
 
 const jsonHeaders = { 'Content-Type': 'application/json' }
@@ -15,14 +16,14 @@ export async function request<T>(url: string, options: RequestInit = {}): Promis
   const headers = new Headers(options.headers)
   if (options.body) headers.set('Content-Type', 'application/json')
   if (accessToken) headers.set('Authorization', `Bearer ${accessToken}`)
-  const response = await fetch(apiUrl(url), { ...options, headers })
+  // A dropped connection gives a TypeError with a browser-specific English text: say it in the user's language.
+  const response = await fetch(apiUrl(url), { ...options, headers }).catch(() => { throw new Error(t('common.errors.network')) })
   if (!response.ok) {
     const problem = await response.json().catch(() => null)
-    const message = problem?.errors
-      ? Object.values(problem.errors).flat().join(' ')
-      : problem?.message ?? `Request failed (${response.status})`
-    const error = new Error(message) as Error & { status?: number }
+    // The server sends a message code (and values); the text is shown in the user's language.
+    const error = new Error(serverMessage(problem, response.status)) as Error & { status?: number; code?: string }
     error.status = response.status
+    error.code = problem?.code
     throw error
   }
   if ((options.method ?? 'GET') === 'GET' && url.startsWith('/api/billing/reports/') && !url.includes('/mappings')) lastBillingReport = url
@@ -179,6 +180,8 @@ export const surveysApi = {
   create: (input: SurveyInput) => request<Survey>('/api/surveys', { method: 'POST', body: JSON.stringify(input) }),
   update: (id: string, input: SurveyInput) => request<Survey>(`/api/surveys/${id}`, { method: 'PUT', body: JSON.stringify(input) }),
   saveDetails: (id: string, input: SurveyDetailsInput) => request<SurveyDetail>(`/api/surveys/${id}/details`, { method: 'PUT', body: JSON.stringify(input) }),
+  /** Adds the sales lead's expected inventory to this survey's rooms, leaving what is already there untouched. */
+  importLeadInventory: (id: string) => request<{ detail: SurveyDetail; added: number; alreadyThere: number; dropped: number; boxes: number; unmatched: string[]; createdItems?: string[] | null }>(`/api/surveys/${id}/details/from-lead-inventory`, { method: 'POST' }),
   start: (id: string, at?: string) => request<SurveyDetail>(`/api/surveys/${id}/start`, { method: 'POST', body: JSON.stringify({ at }) }),
   pause: (id: string, reason: string, at?: string) => request<SurveyDetail>(`/api/surveys/${id}/pause`, { method: 'POST', body: JSON.stringify({ reason, at }) }),
   resume: (id: string, at?: string) => request<SurveyDetail>(`/api/surveys/${id}/resume`, { method: 'POST', body: JSON.stringify({ at }) }),
@@ -223,7 +226,7 @@ export const quotationsApi = {
   saveLines: (id: string, lines: QuotationLineInput[]) => request<QuotationDetail>(`/api/quotations/${id}/lines`, { method: 'PUT', body: JSON.stringify({ lines }) }),
   saveItems: (id: string, items: QuotationItemInput[]) => request<QuotationDetail>(`/api/quotations/${id}/items`, { method: 'PUT', body: JSON.stringify({ items }) }),
   /** Replaces the quotation's items with the sales lead's inventory, minus whatever the customer said they do not need. */
-  importLeadInventory: (id: string) => request<{ detail: QuotationDetail; imported: number; dropped: number; unmatched: string[] }>(`/api/quotations/${id}/items/from-lead-inventory`, { method: 'POST' }),
+  importLeadInventory: (id: string) => request<{ detail: QuotationDetail; imported: number; dropped: number; unmatched: string[]; createdItems?: string[] | null }>(`/api/quotations/${id}/items/from-lead-inventory`, { method: 'POST' }),
   applyRequote: (id: string, requestId: string) => request<QuotationDetail>(`/api/quotations/${id}/requote-requests/${requestId}/apply`, { method: 'POST' }),
   share: (id: string, validDays = 7) => request<{ url: string; expiresAtUtc: string }>(`/api/quotations/${id}/share-link`, { method: 'POST', body: JSON.stringify({ validDays }) }),
 }
@@ -287,7 +290,7 @@ export async function downloadFile(url: string, name: string): Promise<void> {
   const headers = new Headers()
   if (accessToken) headers.set('Authorization', 'Bearer ' + accessToken)
   const response = await fetch(apiUrl(url), { headers })
-  if (!response.ok) throw new Error('Unable to download report (' + response.status + ')')
+  if (!response.ok) throw new Error(serverMessage(await response.json().catch(() => null), response.status))
   const blob = await response.blob()
   const href = URL.createObjectURL(blob)
   const anchor = document.createElement('a')

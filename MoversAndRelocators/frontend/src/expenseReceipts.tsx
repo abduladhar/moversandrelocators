@@ -3,6 +3,7 @@ import { Button, Empty, Image, Modal, Popconfirm, Space, Spin, Tag, Tooltip, mes
 import { CameraOutlined, DeleteOutlined, FileOutlined, FilePdfOutlined, PaperClipOutlined } from '@ant-design/icons'
 import { request, uploadFile } from './api'
 import type { PresignedUpload } from './types'
+import { formatDateTime, formatNumber, t as translate, useT } from './i18n'
 
 /** The kind of expense a receipt belongs to (matches the API). */
 export type ReceiptKind = 'SURVEY' | 'PICKUP' | 'PACKING' | 'DELIVERY' | 'OPERATIONS' | 'CASH'
@@ -45,9 +46,9 @@ export async function uploadReceipts(kind: ReceiptKind, expenseId: string, files
   for (const original of files) {
     try {
       const file = await prepareReceipt(original)
-      if (file.size > MAX_BYTES) throw new Error(file.name + ' is larger than 25 MB.')
+      if (file.size > MAX_BYTES) throw new Error(translate('expenses.receipts.tooLarge', { name: file.name }))
       await receiptsApi.upload(kind, expenseId, file); done++
-    } catch (e) { message.error(e instanceof Error ? e.message : 'Unable to upload ' + original.name) }
+    } catch (e) { message.error(e instanceof Error ? e.message : translate('expenses.receipts.uploadFailed', { name: original.name })) }
   }
   return done
 }
@@ -65,12 +66,13 @@ export function useReceipts(expenseIds: string[]) {
 /** Hidden file inputs behind "Take photo" (opens the camera on phones) and "Attach file". */
 function PickButtons({ onFiles, busy, size }: { onFiles: (files: File[]) => void; busy?: boolean; size?: 'small' | 'middle' }) {
   const camera = useRef<HTMLInputElement>(null), files = useRef<HTMLInputElement>(null)
+  const { t } = useT()
   const take = (e: React.ChangeEvent<HTMLInputElement>) => { const list = Array.from(e.target.files ?? []); e.target.value = ''; if (list.length) onFiles(list) }
   return <Space wrap>
     <input ref={camera} type="file" accept="image/*" capture="environment" hidden onChange={take} />
     <input ref={files} type="file" accept={receiptAccept} multiple hidden onChange={take} />
-    <Button size={size} icon={<CameraOutlined />} loading={busy} onClick={() => camera.current?.click()}>Take photo</Button>
-    <Button size={size} icon={<PaperClipOutlined />} disabled={busy} onClick={() => files.current?.click()}>Attach file</Button>
+    <Button size={size} icon={<CameraOutlined />} loading={busy} onClick={() => camera.current?.click()}>{t('expenses.receipts.takePhoto')}</Button>
+    <Button size={size} icon={<PaperClipOutlined />} disabled={busy} onClick={() => files.current?.click()}>{t('expenses.receipts.attachFile')}</Button>
   </Space>
 }
 
@@ -84,33 +86,33 @@ export function ReceiptPicker({ value, onChange }: { value: File[]; onChange: (f
 
 /** Paper-clip button showing how many receipts an expense has; opens the receipts window. */
 export function ReceiptsButton({ kind, expenseId, receipts, editable = true, onChanged, title }: { kind: ReceiptKind; expenseId: string; receipts: ExpenseReceipt[]; editable?: boolean; onChanged: () => void; title?: string }) {
-  const [open, setOpen] = useState(false)
+  const [open, setOpen] = useState(false), { t } = useT()
   return <>
-    <Tooltip title={receipts.length ? receipts.length + ' receipt' + (receipts.length === 1 ? '' : 's') : editable ? 'Add receipt photo or document' : 'No receipt'}>
-      <Button size="small" type={receipts.length ? 'default' : 'text'} icon={<PaperClipOutlined />} aria-label="Receipts" onClick={() => setOpen(true)} disabled={!editable && !receipts.length}>{receipts.length || null}</Button>
+    <Tooltip title={receipts.length ? t('expenses.receipts.count', { count: receipts.length }) : editable ? t('expenses.receipts.addTip') : t('expenses.receipts.none')}>
+      <Button size="small" type={receipts.length ? 'default' : 'text'} icon={<PaperClipOutlined />} aria-label={t('expenses.receipts.receipts')} onClick={() => setOpen(true)} disabled={!editable && !receipts.length}>{receipts.length || null}</Button>
     </Tooltip>
     {open && <ReceiptsModal kind={kind} expenseId={expenseId} receipts={receipts} editable={editable} title={title} onChanged={onChanged} onClose={() => setOpen(false)} />}
   </>
 }
 
 function ReceiptsModal({ kind, expenseId, receipts, editable, title, onChanged, onClose }: { kind: ReceiptKind; expenseId: string; receipts: ExpenseReceipt[]; editable: boolean; title?: string; onChanged: () => void; onClose: () => void }) {
-  const [urls, setUrls] = useState<Record<string, string>>({}), [busy, setBusy] = useState(false)
+  const [urls, setUrls] = useState<Record<string, string>>({}), [busy, setBusy] = useState(false), { t } = useT()
   useEffect(() => {
     // Signed preview links for images (valid for a few minutes).
     for (const r of receipts) if (r.contentType.startsWith('image/') && !urls[r.id])
       void receiptsApi.download(r.id).then(x => setUrls(u => ({ ...u, [r.id]: x.url }))).catch(() => undefined)
   }, [receipts])
-  const add = async (files: File[]) => { setBusy(true); const n = await uploadReceipts(kind, expenseId, files); setBusy(false); if (n) { message.success(n === 1 ? 'Receipt attached' : n + ' receipts attached'); onChanged() } }
-  const open = async (r: ExpenseReceipt) => { try { window.open((await receiptsApi.download(r.id)).url, '_blank', 'noopener') } catch (e) { message.error(e instanceof Error ? e.message : 'Unable to open the receipt') } }
-  const remove = async (r: ExpenseReceipt) => { try { await receiptsApi.remove(r.id); message.success('Receipt removed'); onChanged() } catch (e) { message.error(e instanceof Error ? e.message : 'Unable to remove the receipt') } }
-  return <Modal centered open title={title ?? 'Expense receipts'} footer={<Button onClick={onClose}>Close</Button>} onCancel={onClose} width={640}>
-    {editable && <div className="receipt-actions"><PickButtons onFiles={f => void add(f)} busy={busy} /><small>Photos are reduced in size before upload. PDF, Word and Excel files are accepted (up to 25 MB).</small></div>}
-    {busy && <div className="receipt-uploading"><Spin size="small" /> Uploading…</div>}
-    {!receipts.length ? <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="No receipts attached yet" /> :
+  const add = async (files: File[]) => { setBusy(true); const n = await uploadReceipts(kind, expenseId, files); setBusy(false); if (n) { message.success(t('expenses.receipts.attached', { count: n })); onChanged() } }
+  const open = async (r: ExpenseReceipt) => { try { window.open((await receiptsApi.download(r.id)).url, '_blank', 'noopener') } catch (e) { message.error(e instanceof Error ? e.message : t('expenses.receipts.openFailed')) } }
+  const remove = async (r: ExpenseReceipt) => { try { await receiptsApi.remove(r.id); message.success(t('expenses.receipts.removed')); onChanged() } catch (e) { message.error(e instanceof Error ? e.message : t('expenses.receipts.removeFailed')) } }
+  return <Modal centered open title={title ?? t('expenses.receipts.title')} footer={<Button onClick={onClose}>{t('common.close')}</Button>} onCancel={onClose} width={640}>
+    {editable && <div className="receipt-actions"><PickButtons onFiles={f => void add(f)} busy={busy} /><small>{t('expenses.receipts.help')}</small></div>}
+    {busy && <div className="receipt-uploading"><Spin size="small" /> {t('expenses.receipts.uploading')}</div>}
+    {!receipts.length ? <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description={t('expenses.receipts.empty')} /> :
       <Image.PreviewGroup><ul className="receipt-list">{receipts.map(r => <li key={r.id}>
         <div className="receipt-thumb">{r.contentType.startsWith('image/') ? (urls[r.id] ? <Image src={urls[r.id]} alt={r.originalFileName} width={64} height={64} style={{ objectFit: 'cover' }} /> : <Spin size="small" />) : r.contentType === 'application/pdf' ? <FilePdfOutlined /> : <FileOutlined />}</div>
-        <div className="receipt-meta"><a onClick={() => void open(r)}>{r.originalFileName}</a><small>{(r.sizeBytes / 1024 / 1024 >= 1 ? (r.sizeBytes / 1024 / 1024).toFixed(1) + ' MB' : Math.max(1, Math.round(r.sizeBytes / 1024)) + ' KB')} · {r.uploadedBy}{r.uploadedAtUtc ? ' · ' + new Date(r.uploadedAtUtc).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' }) : ''}</small></div>
-        {editable && <Popconfirm title="Remove this receipt?" okText="Remove" okButtonProps={{ danger: true }} onConfirm={() => void remove(r)}><Button type="text" size="small" danger icon={<DeleteOutlined />} aria-label="Remove receipt" /></Popconfirm>}
+        <div className="receipt-meta"><a onClick={() => void open(r)}>{r.originalFileName}</a><small>{(r.sizeBytes / 1024 / 1024 >= 1 ? formatNumber(r.sizeBytes / 1024 / 1024, { maximumFractionDigits: 1, minimumFractionDigits: 1 }) + ' MB' : formatNumber(Math.max(1, Math.round(r.sizeBytes / 1024))) + ' KB')} · {r.uploadedBy}{r.uploadedAtUtc ? ' · ' + formatDateTime(r.uploadedAtUtc) : ''}</small></div>
+        {editable && <Popconfirm title={t('expenses.receipts.removeTitle')} okText={t('common.remove')} cancelText={t('common.cancel')} okButtonProps={{ danger: true }} onConfirm={() => void remove(r)}><Button type="text" size="small" danger icon={<DeleteOutlined />} aria-label={t('expenses.receipts.remove')} /></Popconfirm>}
       </li>)}</ul></Image.PreviewGroup>}
   </Modal>
 }

@@ -1,0 +1,144 @@
+{
+  "pages": {
+    "creditMemos": "Credit memos", "debitMemos": "Debit memos", "invoices": "Invoices", "bills": "Bills", "charges": "Invoice & bill charges",
+    "cash": "Customer receipts & expenses paid", "vouchers": "Receipts & payment vouchers", "currencyReport": "Currency report", "currencies": "Currency",
+    "exchangeRates": "Currency Exchange Rates", "mappings": "Charge master mappings", "accounts": "Chart of accounts"
+  },
+  "docTypes": { "INVOICE": "Invoice", "BILL": "Bill", "RECEIPT": "Receipt", "PAYMENT": "Payment voucher", "CREDIT_MEMO": "Credit memo", "DEBIT_MEMO": "Debit memo" },
+  "accountTypes": { "Asset": "Asset", "Liability": "Liability", "Equity": "Equity", "Revenue": "Revenue", "Expense": "Expense" },
+  "panel": {
+    "title": "Invoicing & billing",
+    "invoicesIntro": "Create customer invoices, track balances and receive payments.",
+    "billsIntro": "Create vendor bills, track balances and record payments.",
+    "postingAlertTitle": "Save, review, then post to accounting",
+    "postingAlertDescription": "Drafts do not create journal entries. Use the row menu to post a reviewed document. Invoices and bills must be posted before allocating payments.",
+    "searchLabel": "Search billing", "searchPlaceholder": "Search number, party or reference",
+    "receivePayment": "Receive payment", "makeVendorPayments": "Make vendor payments", "newInvoice": "New invoice", "newBill": "New bill", "billingMenu": "Billing menu"
+  },
+  "errors": {
+    "load": "Unable to load billing", "save": "Unable to save", "selectSource": "Select a source record",
+    "paymentGroups": "Enter an allocation, a payment amount and a reference for every voucher group",
+    "documentGone": "Document no longer available. Refresh billing.", "preview": "Unable to open print preview"
+  },
+  "columns": {
+    "number": "Number", "source": "Source", "party": "Customer / vendor", "partyShort": "Party", "account": "Account", "baseAmount": "Base amount",
+    "vendor": "Vendor", "dueDate": "Due date", "reference": "Reference", "memoAdjustment": "Memo adjustment", "paidAmount": "Paid amount", "balance": "Balance",
+    "accounting": "Accounting", "voucher": "Voucher", "cashBank": "Cash / bank", "document": "Document", "originalDocument": "Original document",
+    "allocateDocumentCurrency": "Allocate in document currency", "paymentAmountIn": "Payment amount ({currency})", "allocateAmount": "Allocate amount",
+    "charge": "Charge", "reason": "Reason", "receipts": "Receipts", "postingVoucher": "Posting voucher"
+  },
+  "status": {
+    "posted": "Posted", "draft": "Draft", "voided": "Voided", "paid": "Paid", "partPaid": "Part paid", "unpaid": "Unpaid", "cancelled": "Cancelled",
+    "converted": "Converted", "unconverted": "Unconverted", "cancelledReversed": "Cancelled / reversed", "pending": "Pending"
+  },
+  "actions": { "postToAccounting": "Post to accounting", "viewPrint": "View / print", "void": "Void", "cancelDraft": "Cancel draft", "reverseVoucher": "Reverse voucher" },
+  "charges": {
+    "help": "Capture charges, then select them to create an invoice or bill. Existing pickup income and expense records remain available separately; avoid recording the same cost twice.",
+    "add": "Add charges", "convert_one": "Convert selected to invoice / bill ({count})", "convert_other": "Convert selected to invoice / bill ({count})",
+    "incompatible": "Select charges for only one customer/vendor, type and currency before conversion.",
+    "customerCharge": "Customer charge", "vendorCharge": "Vendor charge", "cancelConfirm": "Cancel this unposted charge?", "cancel": "Cancel charge"
+  },
+  "modal": {
+    "addCharges": "Add customer / vendor charges", "convertCharges": "Convert charges to invoice / bill", "receivePayment": "Receive customer payment",
+    "payBills": "Pay vendor bills", "reverseDocument": "Reverse financial document", "createInvoice": "Create invoice", "createBill": "Create bill",
+    "issueDocument": "Issue document", "saveDraftVouchers": "Save draft vouchers"
+  },
+  "chargeForm": {
+    "source": "Pickup, job or warehouse receipt", "sourcePlaceholder": "Select a pickup, job or warehouse receipt",
+    "directionIncome": "Customer charges — Invoice", "directionExpense": "Vendor charges — Bill", "addAtLeastOne": "Add at least one charge",
+    "chargeTitle": "Charge {number}", "addAnother": "Add another charge",
+    "accountsHint": "Accounts come from the charge master. Ask the accountant to map any missing charge."
+  },
+  "issue": {
+    "summary_one": "{count} selected charge · {amount}", "summary_other": "{count} selected charges · {amount}",
+    "description": "Income becomes a draft invoice; expense becomes a draft bill. Use Post to accounting after reviewing the document.",
+    "documentDate": "Document date", "reference": "Customer / supplier reference"
+  },
+  "pay": {
+    "receiptHelp": "Allocate one receipt across invoices for the same customer.",
+    "paymentHelp": "Select bills across vendors. Each vendor gets a separate payment voucher and reference.",
+    "description": "Allocation amounts use the document currency. Enter the amount paid in the selected payment currency for foreign-currency documents. Amounts may be partial. Save the voucher, then use Post to accounting to update the ledger and paid balances.",
+    "paymentDate": "Payment date", "cashBankAccount": "Cash / bank account", "allocateAria": "Allocate {number}",
+    "voucherReference": "Voucher reference number (required)", "voucherReferenceAria": "Voucher reference for {name}"
+  },
+  "accounts": { "add": "Add account", "code": "Account code", "name": "Account name", "type": "Account type" },
+  "void": {
+    "postedWarning": "A reversing ledger entry will be posted. Payment reversals restore outstanding balances; document reversals release charges.",
+    "draftWarning": "This draft will be cancelled without creating a journal entry. Charges on a cancelled invoice or bill become available again.",
+    "reversalDate": "Reversal date"
+  },
+  "preview": { "title": "Print preview", "titleWithNumber": "{number} · Print preview", "document": "Document" },
+  "print": {
+    "titles": { "INVOICE": "Invoice", "BILL": "Supplier bill", "RECEIPT": "Payment receipt", "PAYMENT": "Payment voucher" },
+    "tagline": "Movers & relocation services", "draft": "DRAFT — NOT POSTED TO ACCOUNTING", "voided": "VOID / REVERSED — {reason}",
+    "billTo": "Bill to", "supplier": "Supplier", "receivedFrom": "Received from", "paidTo": "Paid to", "invoiceOrBill": "Invoice / bill",
+    "sourceReference": "Source reference", "qty": "Qty", "amountPerItem": "Amount per item", "amountIn": "Amount ({currency})",
+    "documentTotal": "Document total", "paymentTotal": "Payment total", "balanceDue": "Balance due"
+  },
+  "dualAmount": {
+    "tooltip": "Equivalent in the current {party} master currency; exchange rate valid on {date}.",
+    "tooltipNoDate": "Equivalent in the current {party} master currency; exchange rate valid on the transaction date."
+  },
+  "queue": {
+    "title": "Invoices, bills, memos & vouchers awaiting posting", "alertTitle": "Review drafts before posting",
+    "alertDescription": "Invoices debit receivables and credit income. Bills debit expenses and credit payables. Receipts debit cash/bank and credit receivables; vendor payments debit payables and credit cash/bank.",
+    "refresh": "Refresh documents", "pending_one": "{count} pending", "pending_other": "{count} pending",
+    "loadError": "Unable to load drafts", "posted": "Posted to accounting", "postError": "Posting failed"
+  },
+  "mappings": {
+    "refresh": "Refresh mappings", "addChargeMaster": "Add charge master", "customerChargeAccount": "Customer charge account",
+    "vendorChargeAccount": "Vendor charge account", "defaultAmount": "Default amount", "mapAccounts": "Map accounts",
+    "mappingTitle": "Account mapping · {name}", "newChargeMaster": "New charge master", "chargeName": "Charge name", "unit": "Unit",
+    "revenueAccount": "Customer charge → Revenue account", "expenseAccount": "Vendor charge → Expense account",
+    "help": "Users select a charge; its mapped account is applied automatically. Existing captured charges keep their original account.",
+    "saved": "Charge master mapping saved"
+  },
+  "newDocument": {
+    "customerInvoice": "CUSTOMER INVOICE", "vendorBill": "VENDOR BILL",
+    "invoiceIntro": "Choose a customer and add the services you are charging for.", "billIntro": "Choose a vendor and add the charges you need to pay.",
+    "numberAssigned": "The document number is assigned when saved.", "details": "Document details",
+    "selectCustomer": "Select a customer", "selectVendor": "Select a vendor", "customerPlaceholder": "Select customer", "vendorPlaceholder": "Select vendor",
+    "invoiceDate": "Invoice date", "billDate": "Bill date", "dueDateError": "Due date must be on or after the document date",
+    "customerReference": "Customer reference (optional)", "supplierReference": "Supplier reference (optional)",
+    "referencePlaceholder": "Reference or purchase order number", "relatedOperation": "Related operation (optional)",
+    "relatedOperationHelp": "Leave empty for a direct invoice or bill.", "noLinkedOperation": "No linked operation",
+    "currencySection": "Currency & exchange rate", "charges": "Charges", "amountsIn": "Amounts in {currency}",
+    "chargeHelp": "Select a charge to fill its description and default amount. Enter the amount if no price is configured.",
+    "noCharges": "No active charges are configured for this document. Add a charge under Invoicing & billing → Charge master mappings, or enable its account mapping.",
+    "totalIn": "Total ({currency})", "selectCharge": "Select a charge", "chargePlaceholder": "Select charge",
+    "descriptionAria": "Description for charge {number}", "descriptionPlaceholder": "Service description", "quantityAria": "Quantity for charge {number}",
+    "enterPrice": "Enter price per item", "positivePrice": "Enter a positive price", "priceAria": "Amount per item for charge {number}",
+    "removeAria": "Remove charge {number}", "addCharge": "Add charge", "notes": "Notes (optional)",
+    "invoiceNotesPlaceholder": "Additional information for your customer", "billNotesPlaceholder": "Additional information about this bill",
+    "invoiceTotal": "Invoice total", "billTotal": "Bill total",
+    "chargeCount_one": "{count} charge · {currency}", "chargeCount_other": "{count} charges · {currency}"
+  },
+  "cash": {
+    "receiptsTitle": "Receipts · {number}", "loadError": "Unable to load posting queue", "exactAllocation": "Allocate the exact received/paid amount.",
+    "receiptsAttached_one": "Receipt attached", "receiptsAttached_other": "{count} receipts attached",
+    "postedToLedger": "Posted to ledger", "captured": "Captured for accountant review", "queueTitle": "Accountant posting queue",
+    "queueDescription": "Captured payments are not ledger postings. Review the party, cash/bank account and allocations before posting. Existing pickup receipts and paid crew expenses appear here automatically.",
+    "refresh": "Refresh queue", "capture": "Capture received / paid amount", "pendingPosting": "Pending posting", "allRecords": "All records",
+    "searchPlaceholder": "Search source, reference or party", "customerReceipt": "Customer receipt", "expensePaid": "Expense paid",
+    "reviewPost": "Review & post", "reviewPostTitle": "Review & post · {number}", "captureTitle": "Capture customer receipt / expense paid",
+    "postToLedger": "Post to ledger", "saveForPosting": "Save for posting", "noReceipt": "No receipt attached.", "paymentType": "Payment type",
+    "customerReceiptOption": "Customer receipt (received payment)", "source": "Pickup / Job / Warehouse receipt", "vendorPayee": "Vendor / payee",
+    "postingDate": "Posting date", "receivedPaidDate": "Received / paid date", "referenceNumber": "Reference number", "receiptOptional": "Receipt (optional)",
+    "receiptHelp": "Photo of the bill or the payment slip; uploaded when you save.", "allocateInvoices": "Allocate to invoices",
+    "allocateBills": "Allocate to existing bills", "expenseCharge": "Expense charge", "allocateExactly": "Allocate exactly {currency} {amount}.",
+    "receiptToAdvances": "Posts to Customer advances (2100). It does not settle any invoice.",
+    "expenseToAccount": "Posts to the selected charge’s expense account. Use bill allocation above if the expense already has a bill."
+  },
+  "memos": {
+    "creditMemo": "Credit memo", "debitMemo": "Debit memo", "newCredit": "New credit memo", "newDebit": "New debit memo", "loadError": "Unable to load memos",
+    "creditHelp": "Reduce a customer invoice or vendor bill", "debitHelp": "Increase a customer invoice or vendor bill",
+    "description": "Select a posted document and its original charge. Save as draft, review, then post to accounting. The original document currency and saved conversion are used.",
+    "reverse": "Reverse memo", "saveDraft": "Save draft", "postedDocument": "Posted invoice / bill",
+    "reducesReceivable": "Reduces customer receivable in {currency}", "reducesPayable": "Reduces vendor payable in {currency}",
+    "increasesReceivable": "Increases customer receivable in {currency}", "increasesPayable": "Increases vendor payable in {currency}",
+    "currentOutstanding": "Current outstanding: {amount}", "originalCharge": "Original charge", "memoDate": "Memo date",
+    "amountIn": "Amount ({currency})", "amountInDocumentCurrency": "Amount (document currency)", "cancelDraftMemo": "Cancel draft memo",
+    "preview": "Memo preview", "printVoided": "VOID / REVERSED", "printPosted": "POSTED", "printDate": "Date: {date}",
+    "printOriginal": "Original document: {number} · {type}"
+  }
+}

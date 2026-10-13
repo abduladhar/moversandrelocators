@@ -124,6 +124,59 @@ public sealed class QuotationApiTests : IAsyncLifetime
         Assert.Equal("ACCEPTED", accepted.Quotation.Status);
     }
 
+    [Fact]
+    public async Task Lead_inventory_loads_every_line_and_creates_missing_household_items()
+    {
+        await LoginAndSelectTenant();
+        var designation = await Post<IdResponse>("/api/designations", new { code = "SALES", name = "Sales Executive", level = 2, description = "Sales team", isSalesman = true });
+        var employee = await Post<IdResponse>("/api/employees", new { employeeNumber = "SALE-002", firstName = "Ravi", lastName = "K", workEmail = "ravi@example.test", phone = "101", joiningDate = "2026-01-01", designationId = designation.Id, reportsToEmployeeId = (Guid?)null });
+        var leadStatuses = await _client.GetFromJsonAsync<List<CodeResponse>>("/api/sales/statuses/leads");
+        var moveTypes = await _client.GetFromJsonAsync<List<CodeResponse>>("/api/sales/statuses/move-types");
+        var lead = await Post<IdResponse>("/api/sales/leads", new { leadNumber = "LEAD-INV-001", customerName = "Inventory Customer", phone = "+919900000001", email = "inv@example.test", source = "Website", moveTypeId = moveTypes!.Single(x => x.Code == "HOUSEHOLD").Id, origin = "Kochi", destination = "Pune", expectedMoveDate = "2026-11-15", statusId = leadStatuses!.Single(x => x.Code == "NEW").Id, assignedEmployeeId = employee.Id, notes = "Import test" });
+        await Post<IdResponse>("/api/surveys/masters/items", new { code = "T_LAMP", name = "Lamp stand", volumeCbm = 0.2m, description = (string?)null });
+        var piano = await Post<IdResponse>("/api/surveys/masters/items", new { code = "T_PIANO", name = "Old upright piano", volumeCbm = 1.5m, description = (string?)null });
+        (await _client.PatchAsJsonAsync($"/api/surveys/masters/items/{piano.Id}/status", new { isActive = false })).EnsureSuccessStatusCode();
+
+        object Line(string kind, string room, string name, int quantity, decimal cbm) => new { kind, room, name, quantity, unitCbm = cbm, fragile = false, handling = (string?)null, notes = (string?)null, sourceAttachmentId = (Guid?)null };
+        await Put<object>($"/api/sales/leads/{lead.Id}/inventory", new { lines = new[] {
+            Line("ITEM", "Study", "Lamp stand", 1, 0.2m),
+            Line("ITEM", "Study", "Tall lamp stand", 2, 0.25m),              // matches the same master: must still be its own line
+            Line("ITEM", "Study", "Robot vacuum cleaner", 1, 0.05m),          // not in the master data: created
+            Line("ITEM", "Garage", "Robot vacuum cleaner", 1, 0.05m),         // same new name again: reuses the new master
+            Line("ITEM", "Hall", "Mystery crate", 1, 0m),                     // no volume: cannot be created
+            Line("ITEM", "Hall", "Old upright piano", 1, 1.5m),               // its master was deactivated on purpose
+            Line("BOX", "Study", "Book carton", 3, 0.06m) } });
+
+        var survey = await Post<IdResponse>("/api/surveys", new { surveyNumber = "SVY-INV-001", salesLeadId = lead.Id, customerName = "Inventory Customer", phone = "+919900000001", email = "inv@example.test", assignedEmployeeId = employee.Id, scheduledAtUtc = DateTimeOffset.UtcNow.AddDays(2), address = "Kochi", notes = "Import" });
+        var loaded = await Post<System.Text.Json.JsonElement>($"/api/surveys/{survey.Id}/details/from-lead-inventory", new { });
+        Assert.Equal(4, loaded.GetProperty("added").GetInt32());
+        Assert.Equal(1, loaded.GetProperty("boxes").GetInt32());
+        Assert.Equal(["Robot vacuum cleaner"], loaded.GetProperty("createdItems").EnumerateArray().Select(x => x.GetString()).ToArray());
+        Assert.Equal(["Mystery crate", "Old upright piano"], loaded.GetProperty("unmatched").EnumerateArray().Select(x => x.GetString()).ToArray());
+        var study = loaded.GetProperty("detail").GetProperty("rooms").EnumerateArray().Single(r => r.GetProperty("name").GetString() == "Study").GetProperty("items").EnumerateArray().ToList();
+        Assert.Equal(3, study.Count);
+        var tall = study.Single(i => i.GetProperty("quantity").GetInt32() == 2);
+        Assert.Equal("Lamp stand", tall.GetProperty("itemName").GetString());
+        Assert.Equal("Tall lamp stand", tall.GetProperty("notes").GetString());
+        Assert.Equal(0.25m, tall.GetProperty("volumePerUnitCbm").GetDecimal());
+
+        var masters = await _client.GetFromJsonAsync<List<System.Text.Json.JsonElement>>("/api/surveys/masters/items");
+        var robot = masters!.Single(m => m.GetProperty("name").GetString() == "Robot vacuum cleaner");
+        Assert.StartsWith("LI-ROBOTVACUUMCLEANER-", robot.GetProperty("code").GetString());
+        Assert.Equal(0.05m, robot.GetProperty("volumeCbm").GetDecimal());
+        Assert.DoesNotContain(masters!, m => m.GetProperty("name").GetString() is "Mystery crate" or "Book carton");
+
+        // Loading again adds nothing new (and creates no second master).
+        Assert.Equal(System.Net.HttpStatusCode.BadRequest, (await _client.PostAsJsonAsync($"/api/surveys/{survey.Id}/details/from-lead-inventory", new { })).StatusCode);
+
+        // The quotation gets every item line too (boxes are not household items), reusing the master created above.
+        var quote = await Post<QuotationResponse>("/api/quotations", new { quotationNumber = "QT-INV-001", surveyId = (Guid?)null, salesLeadId = lead.Id, customerName = "Inventory Customer", phone = "+919900000001", email = "inv@example.test", origin = "Kochi", destination = "Pune", assignedEmployeeId = employee.Id, currency = "INR", validUntil = "2026-12-31", terms = (string?)null, notes = (string?)null });
+        var imported = await Post<System.Text.Json.JsonElement>($"/api/quotations/{quote.Id}/items/from-lead-inventory", new { });
+        Assert.Equal(4, imported.GetProperty("imported").GetInt32());
+        Assert.Empty(imported.GetProperty("createdItems").EnumerateArray());
+        Assert.Equal(1, (await _client.GetFromJsonAsync<List<System.Text.Json.JsonElement>>("/api/surveys/masters/items"))!.Count(m => m.GetProperty("name").GetString() == "Robot vacuum cleaner"));
+    }
+
     private async Task LoginAndSelectTenant()
     {
         var login = await Post<LoginResponse>("/api/auth/login", new { email = "admin@movers.local", password = "ChangeMe123!" }); SetToken(login);

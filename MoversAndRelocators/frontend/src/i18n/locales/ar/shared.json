@@ -1,0 +1,12 @@
+{
+  "movement": { "DRAFT": "مسودة", "PACKED": "تم التغليف", "LOADING": "جارٍ التحميل", "WAREHOUSE": "في المستودع", "IN_TRANSIT": "قيد النقل", "ARRIVED": "وصل إلى الوجهة", "DELIVERED": "تم التسليم", "CANCELLED": "ملغى" },
+  "delivery": { "PLANNED": "مخطط", "OUT_FOR_DELIVERY": "خرج للتسليم", "COMPLETED": "مكتمل", "CANCELLED": "ملغى" },
+  "deliveryItem": { "LOADED": "تم التحميل", "DELIVERED": "تم التسليم", "RETURNED": "لم يُسلَّم" },
+  "party": {
+    "customer": "العميل", "vendor": "المورد",
+    "currencyLoading": "جارٍ تحميل بيانات العملة.",
+    "noCustomerMaster": "لا يوجد سجل عميل مرتبط.", "noVendorMaster": "لا يوجد سجل مورد مرتبط.",
+    "noBaseAmount": "لا يوجد مبلغ أساسي محفوظ للتحويل.", "noTransactionDate": "لا يوجد تاريخ معاملة للتحويل.",
+    "noRate": "لا يوجد سعر صرف لعملة {currency} ساري بتاريخ {date}."
+  }
+}

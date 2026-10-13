@@ -1,3 +1,4 @@
+import { serverMessage, t } from './i18n'
 import {request} from './api'
 import {apiUrl} from './apiBase'
 import type {WarehouseStock} from './warehouseApi'
@@ -59,14 +60,16 @@ export const deliveryApi={
  transaction:(id:string,v:{type:'INCOME'|'EXPENSE';category:string;amount:number;paymentMethod:string;notes?:string;currency?:string;exchangeRate?:number;deliveryNoteId?:string|null;paidByEmployeeId?:string|null})=>send<DeliveryDetail>(one(id)+'/transactions','POST',v)
 }
 
-export const DELIVERY_STATUS:Record<DeliveryStatus,{label:string;color:string}>={PLANNED:{label:'Planned',color:'blue'},OUT_FOR_DELIVERY:{label:'Out for delivery',color:'orange'},COMPLETED:{label:'Completed',color:'green'},CANCELLED:{label:'Cancelled',color:'default'}}
-export const ITEM_STATUS:Record<DeliveryItemStatus,{label:string;color:string}>={LOADED:{label:'Loaded',color:'blue'},DELIVERED:{label:'Delivered',color:'green'},RETURNED:{label:'Not delivered',color:'volcano'}}
+// Labels are getters: read at render, they follow the chosen language.
+const status=(key:string,color:string)=>({get label(){return t(key)},color})
+export const DELIVERY_STATUS:Record<DeliveryStatus,{label:string;color:string}>={PLANNED:status('shared.delivery.PLANNED','blue'),OUT_FOR_DELIVERY:status('shared.delivery.OUT_FOR_DELIVERY','orange'),COMPLETED:status('shared.delivery.COMPLETED','green'),CANCELLED:status('shared.delivery.CANCELLED','default')}
+export const ITEM_STATUS:Record<DeliveryItemStatus,{label:string;color:string}>={LOADED:status('shared.deliveryItem.LOADED','blue'),DELIVERED:status('shared.deliveryItem.DELIVERED','green'),RETURNED:status('shared.deliveryItem.RETURNED','volcano')}
 
 /** Customer link calls. Sent without the staff session so a signed-in browser cannot switch the tenant. */
 const anonymous=async<T,>(url:string,body?:unknown):Promise<T>=>{
  const response=await fetch(apiUrl(url),body===undefined?{}:{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)})
  const data=await response.json().catch(()=>null)
- if(!response.ok)throw new Error(data?.errors?Object.values(data.errors).flat().join(' '):data?.message??'Request failed ('+response.status+')')
+ if(!response.ok)throw new Error(serverMessage(data,response.status)) // the server's message code, in the user's language
  return data as T
 }
 const publicBase=(token:string)=>'/api/public/delivery-notes/'+encodeURIComponent(token)

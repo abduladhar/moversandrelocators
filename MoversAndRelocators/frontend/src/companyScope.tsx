@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Modal, Select, message } from 'antd'
 import { request } from './api'
+import { useT } from './i18n'
 
 /** Master kinds that can be shared by every company or kept to one (matches api/master-scopes/{kind}). */
 export type ScopeKind = 'customer' | 'vendor' | 'crew-role' | 'payment-method' | 'payment-purpose' | 'expense-category' | 'employee' | 'designation' | 'team'
@@ -17,26 +18,28 @@ export const masterScopesApi = {
  * Shared or company-only masters. Records are shared by every company of the tenant unless marked for the current
  * company. column() adds an "Available in" column to a master table; it is empty while the tenant has one company.
  */
-export function useCompanyScopes(kind: ScopeKind) {
+export function useCompanyScopes(kind: ScopeKind | null) {
+  const { t } = useT()
   const [scopes, setScopes] = useState<Scopes>({ enabled: false, companyName: null, companyOnly: [] })
-  const load = useCallback(() => masterScopesApi.get(kind).then(setScopes).catch(() => setScopes({ enabled: false, companyName: null, companyOnly: [] })), [kind])
+  const load = useCallback(() => kind === null ? Promise.resolve() : masterScopesApi.get(kind).then(setScopes).catch(() => setScopes({ enabled: false, companyName: null, companyOnly: [] })), [kind])
   useEffect(() => { void load() }, [load])
   const isCompanyOnly = (key: string) => scopes.companyOnly.includes(key)
 
   const set = async (key: string, companyOnly: boolean) => {
     try {
+      if (kind === null) return
       await masterScopesApi.set(kind, key, companyOnly)
       setScopes(s => ({ ...s, companyOnly: companyOnly ? [...s.companyOnly.filter(x => x !== key), key] : s.companyOnly.filter(x => x !== key) }))
-      message.success(companyOnly ? `Now only in ${scopes.companyName ?? 'this company'}` : 'Now shared with all companies')
-    } catch (reason) { message.error(reason instanceof Error ? reason.message : 'Unable to change where this record is available') }
+      message.success(companyOnly ? t('shell.scope.nowOnlyIn', { company: scopes.companyName ?? t('shell.scope.thisCompany') }) : t('shell.scope.nowShared'))
+    } catch (reason) { message.error(reason instanceof Error ? reason.message : t('shell.scope.changeFailed')) }
   }
 
   const change = (key: string, companyOnly: boolean) => {
     if (!companyOnly) { void set(key, false); return }
     Modal.confirm({
-      title: `Keep this record to ${scopes.companyName ?? 'this company'} only?`,
-      content: 'Other companies will no longer see or pick it. Documents they already made with it are not changed.',
-      okText: 'Keep to this company',
+      title: t('shell.scope.keepTitle', { company: scopes.companyName ?? t('shell.scope.thisCompany') }),
+      content: t('shell.scope.keepContent'),
+      okText: t('shell.scope.keepOk'), cancelText: t('common.cancel'),
       onOk: () => set(key, true),
     })
   }
@@ -44,11 +47,11 @@ export function useCompanyScopes(kind: ScopeKind) {
   /** The "Available in" selector for one record. */
   const control = (key: string) => <Select size="small" className="company-scope-select" value={isCompanyOnly(key) ? 'company' : 'all'} popupMatchSelectWidth={false}
     onChange={value => change(key, value === 'company')} onClick={event => event.stopPropagation()}
-    options={[{ value: 'all', label: 'All companies' }, { value: 'company', label: `${scopes.companyName ?? 'This company'} only` }]} />
+    options={[{ value: 'all', label: t('shell.scope.allCompanies') }, { value: 'company', label: scopes.companyName ? t('shell.scope.companyOnly', { company: scopes.companyName }) : t('shell.scope.thisCompanyOnly') }]} />
 
   /** Column definition for antd tables (an empty list while the tenant has a single company). */
   const column = <T,>(keyOf: (row: T) => string) => scopes.enabled
-    ? [{ title: 'Available in', key: 'company-scope', width: 190, render: (_: unknown, row: T) => control(keyOf(row)) }]
+    ? [{ title: t('shell.scope.availableIn'), key: 'company-scope', width: 190, render: (_: unknown, row: T) => control(keyOf(row)) }]
     : []
 
   return { ...scopes, isCompanyOnly, set, change, control, column, reload: load }

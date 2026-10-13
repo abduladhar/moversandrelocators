@@ -15,10 +15,14 @@ import { ResponsiveDataView } from '../components/ResponsiveDataView'
 import { StatusTag } from '../components/StatusTag'
 import { useInfiniteRows } from '../hooks/useInfiniteRows'
 import { sortRecords, type SortDirection } from '../utils/sortRecords'
+import { formatNumber, useT } from '../i18n'
+
+const money2 = (value: number) => formatNumber(value, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 
 type ChargeInput = Omit<ChargeMaster, 'id' | 'serialNo' | 'isActive' | 'createdAtUtc' | 'updatedAtUtc'>
 
 export function ChargeMastersPage() {
+  const { t } = useT()
   const scopes = useCompanyScopes('charge')
   const canBill=useBilling(), [mappingOpen,setMappingOpen]=useState(false)
   const [items, setItems] = useState<ChargeMaster[]>([])
@@ -43,17 +47,17 @@ export function ChargeMastersPage() {
   }
   const save = async () => {
     const values = await form.validateFields(); setSaving(true)
-    try { editing ? await quotationsApi.updateCharge(editing.id, values) : await quotationsApi.createCharge(values); await load(); setOpen(false); message.success('Charge saved') }
-    catch (error) { message.error(error instanceof Error ? error.message : 'Unable to save') }
+    try { editing ? await quotationsApi.updateCharge(editing.id, values) : await quotationsApi.createCharge(values); await load(); setOpen(false); message.success(t('quotations.charges.saved')) }
+    catch (error) { message.error(error instanceof Error ? error.message : t('quotations.charges.saveFailed')) }
     finally { setSaving(false) }
   }
   const columns: ColumnsType<ChargeMaster> = [
-    { title: 'Charge', dataIndex: 'name', sorter: true, sortOrder: sortField === 'name' ? (sortDirection === 'asc' ? 'ascend' : 'descend') : null, render: (_, item) => <div className="primary-cell"><strong>{item.name}</strong><small>#{item.serialNo} · {item.code}</small></div> },
-    { title: 'Unit', dataIndex: 'unit', width: 120 },
-    { title: 'Default rate', dataIndex: 'defaultRate', sorter: true, sortOrder: sortField === 'defaultRate' ? (sortDirection === 'asc' ? 'ascend' : 'descend') : null, render: value => value.toFixed(2) },
+    { title: t('quotations.detail.charge'), dataIndex: 'name', sorter: true, sortOrder: sortField === 'name' ? (sortDirection === 'asc' ? 'ascend' : 'descend') : null, render: (_, item) => <div className="primary-cell"><strong>{item.name}</strong><small>#{item.serialNo} · {item.code}</small></div> },
+    { title: t('quotations.charges.unit'), dataIndex: 'unit', width: 120 },
+    { title: t('quotations.charges.defaultRate'), dataIndex: 'defaultRate', sorter: true, sortOrder: sortField === 'defaultRate' ? (sortDirection === 'asc' ? 'ascend' : 'descend') : null, render: value => money2(value) },
     ...scopes.column<ChargeMaster>(x => x.id),
-    { title: 'Status', dataIndex: 'isActive', width: 100, filters: [{ text: 'Active', value: true }, { text: 'Inactive', value: false }], filteredValue: active === undefined ? null : [active], render: value => <StatusTag active={value} /> },
-    { title: 'Actions', width: 210, align: 'right', render: (_, item) => <ChargeActions item={item} onEdit={() => show(item)} onChanged={load} /> },
+    { title: t('common.status'), dataIndex: 'isActive', width: 100, filters: [{ text: t('common.active'), value: true }, { text: t('common.inactive'), value: false }], filteredValue: active === undefined ? null : [active], render: value => <StatusTag active={value} /> },
+    { title: t('common.actions'), width: 210, align: 'right', render: (_, item) => <ChargeActions item={item} onEdit={() => show(item)} onChanged={load} /> },
   ]
   const tableChange: TableProps<ChargeMaster>['onChange'] = (_, filters, sorter) => {
     const selected = Array.isArray(sorter) ? sorter[0] : sorter
@@ -62,15 +66,16 @@ export function ChargeMastersPage() {
   }
 
   return <>
-    {canBill&&<><Button onClick={()=>setMappingOpen(true)} style={{marginBottom:12}}>Charge account mappings</Button><Modal width={900} open={mappingOpen} title="Charge master account mappings" footer={null} destroyOnHidden onCancel={()=>{setMappingOpen(false);void load()}}><ChargeAccountMappings/></Modal></>}
-    <PageHeader onRefresh={load} eyebrow="QUOTATION MASTER" title="Charge master" description="Maintain reusable quotation charges, units, and default rates. Taxes are selected from Tax configuration when pricing a quotation." action="Add charge" onAction={() => show()} filters={<AdvancedSearch value={query} onChange={setQuery} onReset={() => { setQuery(''); setActive(undefined); setSortField('serialNo'); setSortDirection('desc') }} placeholder="Search charges" active={active !== undefined || sortField !== 'serialNo' || sortDirection !== 'desc'} sortField={String(sortField)} onSortField={value => setSortField(value as keyof ChargeMaster)} sortDirection={sortDirection} onSortDirection={setSortDirection} sortOptions={[{ value: 'serialNo', label: 'Created sequence' }, { value: 'name', label: 'Name' }, { value: 'defaultRate', label: 'Default rate' }]}><Select allowClear showSearch optionFilterProp="label" placeholder="Status" value={active} onChange={setActive} options={[{ value: true, label: 'Active' }, { value: false, label: 'Inactive' }]} /></AdvancedSearch>} />
-    <Card className="grid-card" title="Charges" extra={`${filtered.length} records`}><ResponsiveDataView rowKey="id" columns={columns} data={visibleRows} onScroll={onScroll} onChange={tableChange} hasMore={hasMore} total={filtered.length} label="charges" scrollX={680} renderTile={item => <><div className="tile-heading"><div className="primary-cell"><strong>{item.name}</strong><small>#{item.serialNo} · {item.code}</small></div><StatusTag active={item.isActive} /></div><div className="tile-details"><span>Unit: {item.unit}</span><span>Default rate: {item.defaultRate.toFixed(2)}</span></div><div className="tile-actions"><ChargeActions item={item} onEdit={() => show(item)} onChanged={load} /></div></>} /></Card>
-    <Modal centered title={editing ? 'Edit charge' : 'Add charge'} open={open} onCancel={() => setOpen(false)} onOk={save} confirmLoading={saving} destroyOnHidden><Form form={form} layout="vertical"><Form.Item name="taxPercent" hidden><InputNumber /></Form.Item><div className="master-form-grid"><Form.Item label="Code" name="code" rules={[{ required: true }]}><Input /></Form.Item><Form.Item label="Name" name="name" rules={[{ required: true }]}><Input /></Form.Item><Form.Item label="Unit" name="unit" rules={[{ required: true }]}><Input placeholder="service, CBM, km, day" /></Form.Item><Form.Item className="amount-field" label="Default rate" name="defaultRate" rules={[{ required: true }]}><InputNumber controls={false} min={0} precision={2} style={{ width: '100%' }} /></Form.Item></div><Form.Item label="Description" name="description"><Input.TextArea rows={3} /></Form.Item></Form></Modal>
+    {canBill&&<><Button onClick={()=>setMappingOpen(true)} style={{marginBottom:12}}>{t('quotations.charges.accountMappings')}</Button><Modal width={900} open={mappingOpen} title={t('quotations.charges.accountMappingsTitle')} footer={null} destroyOnHidden onCancel={()=>{setMappingOpen(false);void load()}}><ChargeAccountMappings/></Modal></>}
+    <PageHeader onRefresh={load} eyebrow={t('quotations.charges.eyebrow')} title={t('quotations.charges.title')} description={t('quotations.charges.description')} action={t('quotations.detail.addCharge')} onAction={() => show()} filters={<AdvancedSearch value={query} onChange={setQuery} onReset={() => { setQuery(''); setActive(undefined); setSortField('serialNo'); setSortDirection('desc') }} placeholder={t('quotations.charges.search')} active={active !== undefined || sortField !== 'serialNo' || sortDirection !== 'desc'} sortField={String(sortField)} onSortField={value => setSortField(value as keyof ChargeMaster)} sortDirection={sortDirection} onSortDirection={setSortDirection} sortOptions={[{ value: 'serialNo', label: t('quotations.list.sortCreated') }, { value: 'name', label: t('common.name') }, { value: 'defaultRate', label: t('quotations.charges.defaultRate') }]}><Select allowClear showSearch optionFilterProp="label" placeholder={t('common.status')} value={active} onChange={setActive} options={[{ value: true, label: t('common.active') }, { value: false, label: t('common.inactive') }]} /></AdvancedSearch>} />
+    <Card className="grid-card" title={t('quotations.detail.charges')} extra={t('quotations.records', { count: filtered.length })}><ResponsiveDataView rowKey="id" columns={columns} data={visibleRows} onScroll={onScroll} onChange={tableChange} hasMore={hasMore} total={filtered.length} label={t('quotations.charges.gridLabel')} scrollX={680} renderTile={item => <><div className="tile-heading"><div className="primary-cell"><strong>{item.name}</strong><small>#{item.serialNo} · {item.code}</small></div><StatusTag active={item.isActive} /></div><div className="tile-details"><span>{t('quotations.charges.unitValue', { unit: item.unit })}</span><span>{t('quotations.charges.defaultRateValue', { rate: money2(item.defaultRate) })}</span></div><div className="tile-actions"><ChargeActions item={item} onEdit={() => show(item)} onChanged={load} /></div></>} /></Card>
+    <Modal centered title={editing ? t('quotations.detail.editCharge') : t('quotations.detail.addCharge')} open={open} onCancel={() => setOpen(false)} onOk={save} confirmLoading={saving} destroyOnHidden><Form form={form} layout="vertical"><Form.Item name="taxPercent" hidden><InputNumber /></Form.Item><div className="master-form-grid"><Form.Item label={t('common.code')} name="code" rules={[{ required: true, message: t('common.required') }]}><Input /></Form.Item><Form.Item label={t('common.name')} name="name" rules={[{ required: true, message: t('common.required') }]}><Input /></Form.Item><Form.Item label={t('quotations.charges.unit')} name="unit" rules={[{ required: true, message: t('common.required') }]}><Input placeholder={t('quotations.charges.unitPlaceholder')} /></Form.Item><Form.Item className="amount-field" label={t('quotations.charges.defaultRate')} name="defaultRate" rules={[{ required: true, message: t('common.required') }]}><InputNumber controls={false} min={0} precision={2} style={{ width: '100%' }} /></Form.Item></div><Form.Item label={t('common.description')} name="description"><Input.TextArea rows={3} /></Form.Item></Form></Modal>
   </>
 }
 
 function ChargeActions({ item, onEdit, onChanged }: { item: ChargeMaster; onEdit: () => void; onChanged: () => void }) {
-  return <RowActions><Space wrap><Button size="small" icon={<EditOutlined />} onClick={onEdit}>Edit</Button><Popconfirm title={`${item.isActive ? 'Deactivate' : 'Activate'} this charge?`} onConfirm={async () => { await quotationsApi.setChargeStatus(item.id, !item.isActive); onChanged() }}><Button size="small">{item.isActive ? 'Deactivate' : 'Activate'}</Button></Popconfirm></Space></RowActions>
+  const { t } = useT()
+  return <RowActions><Space wrap><Button size="small" icon={<EditOutlined />} onClick={onEdit}>{t('common.edit')}</Button><Popconfirm title={item.isActive ? t('quotations.charges.confirmDeactivate') : t('quotations.charges.confirmActivate')} onConfirm={async () => { await quotationsApi.setChargeStatus(item.id, !item.isActive); onChanged() }}><Button size="small">{item.isActive ? t('common.deactivate') : t('common.activate')}</Button></Popconfirm></Space></RowActions>
 }
 
 

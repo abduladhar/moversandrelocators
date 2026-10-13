@@ -19,6 +19,8 @@ public interface ISurveyService
     Task<SurveyModel?> UpdateSurveyAsync(Guid id, SaveSurveyCommand command, CancellationToken token);
     Task<SurveyDetailModel?> GetSurveyAsync(Guid id, CancellationToken token);
     Task<SurveyDetailModel?> SaveDetailsAsync(Guid id, SaveSurveyDetailsCommand command, CancellationToken token);
+    /// <summary>Adds the sales lead's expected inventory to this survey's rooms, without disturbing what is already there.</summary>
+    Task<LeadInventoryIntoSurveyModel?> ImportLeadInventoryAsync(Guid id, CancellationToken token);
     Task<GeneratedSurveyLinkModel> GenerateConfirmationLinkAsync(Guid id, int validDays, CancellationToken token);
     Task<PublicSurveyModel?> GetPublicAsync(string token, CancellationToken cancellationToken);
     Task<PublicSurveyModel?> ConfirmScheduleAsync(string token, ConfirmSurveyScheduleCommand command, CancellationToken cancellationToken);

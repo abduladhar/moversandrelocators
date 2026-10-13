@@ -1,0 +1,152 @@
+{
+  "pages": {
+    "creditMemos": "الإشعارات الدائنة", "debitMemos": "الإشعارات المدينة", "invoices": "الفواتير", "bills": "فواتير الموردين", "charges": "بنود الفواتير وفواتير الموردين",
+    "cash": "مقبوضات العملاء والمصروفات المدفوعة", "vouchers": "سندات القبض والصرف", "currencyReport": "تقرير العملات", "currencies": "العملات",
+    "exchangeRates": "أسعار صرف العملات", "mappings": "ربط البنود الرئيسية بالحسابات", "accounts": "دليل الحسابات"
+  },
+  "docTypes": { "INVOICE": "فاتورة", "BILL": "فاتورة مورد", "RECEIPT": "سند قبض", "PAYMENT": "سند صرف", "CREDIT_MEMO": "إشعار دائن", "DEBIT_MEMO": "إشعار مدين" },
+  "accountTypes": { "Asset": "أصل", "Liability": "التزام", "Equity": "حقوق ملكية", "Revenue": "إيراد", "Expense": "مصروف" },
+  "panel": {
+    "title": "الفوترة والحسابات",
+    "invoicesIntro": "أنشئ فواتير العملاء وتابع الأرصدة واستلم المدفوعات.",
+    "billsIntro": "أنشئ فواتير الموردين وتابع الأرصدة وسجّل المدفوعات.",
+    "postingAlertTitle": "احفظ، ثم راجع، ثم رحّل إلى الحسابات",
+    "postingAlertDescription": "المسودات لا تُنشئ قيود يومية. استخدم قائمة الصف لترحيل المستند بعد مراجعته. يجب ترحيل الفواتير وفواتير الموردين قبل تخصيص المدفوعات.",
+    "searchLabel": "البحث في الفوترة", "searchPlaceholder": "ابحث بالرقم أو الطرف أو المرجع",
+    "receivePayment": "استلام دفعة", "makeVendorPayments": "سداد دفعات الموردين", "newInvoice": "فاتورة جديدة", "newBill": "فاتورة مورد جديدة", "billingMenu": "قائمة الفوترة"
+  },
+  "errors": {
+    "load": "تعذّر تحميل بيانات الفوترة", "save": "تعذّر الحفظ", "selectSource": "اختر السجل المصدر",
+    "paymentGroups": "أدخل مبلغ التخصيص ومبلغ الدفعة والمرجع لكل مجموعة سندات",
+    "documentGone": "المستند لم يعد متاحًا. حدّث بيانات الفوترة.", "preview": "تعذّر فتح معاينة الطباعة"
+  },
+  "columns": {
+    "number": "الرقم", "source": "المصدر", "party": "العميل / المورد", "partyShort": "الطرف", "account": "الحساب", "baseAmount": "المبلغ بالعملة الأساسية",
+    "vendor": "المورد", "dueDate": "تاريخ الاستحقاق", "reference": "المرجع", "memoAdjustment": "تسوية الإشعارات", "paidAmount": "المبلغ المدفوع", "balance": "الرصيد",
+    "accounting": "المحاسبة", "voucher": "السند", "cashBank": "نقدية / بنك", "document": "المستند", "originalDocument": "المستند الأصلي",
+    "allocateDocumentCurrency": "التخصيص بعملة المستند", "paymentAmountIn": "مبلغ الدفعة ({currency})", "allocateAmount": "المبلغ المخصص",
+    "charge": "البند", "reason": "السبب", "receipts": "الإيصالات", "postingVoucher": "سند الترحيل"
+  },
+  "status": {
+    "posted": "مُرحّل", "draft": "مسودة", "voided": "ملغى", "paid": "مدفوع", "partPaid": "مدفوع جزئيًا", "unpaid": "غير مدفوع", "cancelled": "ملغى",
+    "converted": "محوّل", "unconverted": "غير محوّل", "cancelledReversed": "ملغى / معكوس", "pending": "قيد الانتظار"
+  },
+  "actions": { "postToAccounting": "ترحيل إلى الحسابات", "viewPrint": "عرض / طباعة", "void": "إلغاء", "cancelDraft": "إلغاء المسودة", "reverseVoucher": "عكس السند" },
+  "charges": {
+    "help": "سجّل البنود ثم اخترها لإنشاء فاتورة أو فاتورة مورد. تبقى سجلات إيرادات ومصروفات الاستلام الحالية متاحة بشكل منفصل؛ تجنّب تسجيل التكلفة نفسها مرتين.",
+    "add": "إضافة بنود",
+    "convert_zero": "تحويل المحدد إلى فاتورة / فاتورة مورد ({count})", "convert_one": "تحويل المحدد إلى فاتورة / فاتورة مورد ({count})",
+    "convert_two": "تحويل المحدد إلى فاتورة / فاتورة مورد ({count})", "convert_few": "تحويل المحدد إلى فاتورة / فاتورة مورد ({count})",
+    "convert_many": "تحويل المحدد إلى فاتورة / فاتورة مورد ({count})", "convert_other": "تحويل المحدد إلى فاتورة / فاتورة مورد ({count})",
+    "incompatible": "اختر بنودًا لعميل/مورد واحد ونوع واحد وعملة واحدة فقط قبل التحويل.",
+    "customerCharge": "بند عميل", "vendorCharge": "بند مورد", "cancelConfirm": "هل تريد إلغاء هذا البند غير المُرحّل؟", "cancel": "إلغاء البند"
+  },
+  "modal": {
+    "addCharges": "إضافة بنود العملاء / الموردين", "convertCharges": "تحويل البنود إلى فاتورة / فاتورة مورد", "receivePayment": "استلام دفعة من عميل",
+    "payBills": "سداد فواتير الموردين", "reverseDocument": "عكس مستند مالي", "createInvoice": "إنشاء الفاتورة", "createBill": "إنشاء فاتورة المورد",
+    "issueDocument": "إصدار المستند", "saveDraftVouchers": "حفظ السندات كمسودة"
+  },
+  "chargeForm": {
+    "source": "الاستلام أو العملية أو إيصال المستودع", "sourcePlaceholder": "اختر استلامًا أو عملية أو إيصال مستودع",
+    "directionIncome": "بنود العميل — فاتورة", "directionExpense": "بنود المورد — فاتورة مورد", "addAtLeastOne": "أضف بندًا واحدًا على الأقل",
+    "chargeTitle": "البند {number}", "addAnother": "إضافة بند آخر",
+    "accountsHint": "تُؤخذ الحسابات من البند الرئيسي. اطلب من المحاسب ربط أي بند غير مربوط."
+  },
+  "issue": {
+    "summary_zero": "لا توجد بنود محددة · {amount}", "summary_one": "بند واحد محدد · {amount}", "summary_two": "بندان محددان · {amount}",
+    "summary_few": "{count} بنود محددة · {amount}", "summary_many": "{count} بندًا محددًا · {amount}", "summary_other": "{count} بند محدد · {amount}",
+    "description": "يتحول الإيراد إلى مسودة فاتورة، ويتحول المصروف إلى مسودة فاتورة مورد. استخدم «ترحيل إلى الحسابات» بعد مراجعة المستند.",
+    "documentDate": "تاريخ المستند", "reference": "مرجع العميل / المورد"
+  },
+  "pay": {
+    "receiptHelp": "خصّص سند قبض واحدًا على عدة فواتير للعميل نفسه.",
+    "paymentHelp": "اختر فواتير من عدة موردين. يحصل كل مورد على سند صرف ومرجع مستقلين.",
+    "description": "تُحسب مبالغ التخصيص بعملة المستند. أدخل المبلغ المدفوع بعملة الدفع المختارة للمستندات بالعملات الأجنبية. يمكن أن تكون المبالغ جزئية. احفظ السند، ثم استخدم «ترحيل إلى الحسابات» لتحديث الدفتر والأرصدة المدفوعة.",
+    "paymentDate": "تاريخ الدفع", "cashBankAccount": "حساب النقدية / البنك", "allocateAria": "تخصيص {number}",
+    "voucherReference": "رقم مرجع السند (إلزامي)", "voucherReferenceAria": "مرجع السند لـ {name}"
+  },
+  "accounts": { "add": "إضافة حساب", "code": "رمز الحساب", "name": "اسم الحساب", "type": "نوع الحساب" },
+  "void": {
+    "postedWarning": "سيتم ترحيل قيد عكسي في الدفتر. عكس المدفوعات يعيد الأرصدة المستحقة، وعكس المستندات يحرّر البنود.",
+    "draftWarning": "سيتم إلغاء هذه المسودة دون إنشاء قيد يومية. تصبح بنود الفاتورة أو فاتورة المورد الملغاة متاحة مرة أخرى.",
+    "reversalDate": "تاريخ العكس"
+  },
+  "preview": { "title": "معاينة الطباعة", "titleWithNumber": "{number} · معاينة الطباعة", "document": "مستند" },
+  "print": {
+    "titles": { "INVOICE": "فاتورة", "BILL": "فاتورة مورد", "RECEIPT": "سند قبض", "PAYMENT": "سند صرف" },
+    "tagline": "خدمات النقل والانتقال", "draft": "مسودة — غير مُرحّلة إلى الحسابات", "voided": "ملغى / معكوس — {reason}",
+    "billTo": "فاتورة إلى", "supplier": "المورد", "receivedFrom": "استُلم من", "paidTo": "دُفع إلى", "invoiceOrBill": "فاتورة / فاتورة مورد",
+    "sourceReference": "مرجع المصدر", "qty": "الكمية", "amountPerItem": "سعر الوحدة", "amountIn": "المبلغ ({currency})",
+    "documentTotal": "إجمالي المستند", "paymentTotal": "إجمالي الدفعة", "balanceDue": "الرصيد المستحق"
+  },
+  "dualAmount": {
+    "tooltip": "المعادل بعملة {party} الحالية في البيانات الرئيسية؛ سعر الصرف الساري في {date}.",
+    "tooltipNoDate": "المعادل بعملة {party} الحالية في البيانات الرئيسية؛ سعر الصرف الساري في تاريخ المعاملة."
+  },
+  "queue": {
+    "title": "الفواتير وفواتير الموردين والإشعارات والسندات بانتظار الترحيل", "alertTitle": "راجع المسودات قبل الترحيل",
+    "alertDescription": "الفواتير: مدين الذمم المدينة ودائن الإيرادات. فواتير الموردين: مدين المصروفات ودائن الذمم الدائنة. سندات القبض: مدين النقدية/البنك ودائن الذمم المدينة؛ ومدفوعات الموردين: مدين الذمم الدائنة ودائن النقدية/البنك.",
+    "refresh": "تحديث المستندات",
+    "pending_zero": "لا يوجد شيء معلق", "pending_one": "مستند واحد معلق", "pending_two": "مستندان معلقان", "pending_few": "{count} مستندات معلقة",
+    "pending_many": "{count} مستندًا معلقًا", "pending_other": "{count} مستند معلق",
+    "loadError": "تعذّر تحميل المسودات", "posted": "تم الترحيل إلى الحسابات", "postError": "فشل الترحيل"
+  },
+  "mappings": {
+    "refresh": "تحديث الربط", "addChargeMaster": "إضافة بند رئيسي", "customerChargeAccount": "حساب بند العميل",
+    "vendorChargeAccount": "حساب بند المورد", "defaultAmount": "المبلغ الافتراضي", "mapAccounts": "ربط الحسابات",
+    "mappingTitle": "ربط الحسابات · {name}", "newChargeMaster": "بند رئيسي جديد", "chargeName": "اسم البند", "unit": "الوحدة",
+    "revenueAccount": "بند العميل ← حساب الإيرادات", "expenseAccount": "بند المورد ← حساب المصروفات",
+    "help": "يختار المستخدمون البند فيُطبَّق حسابه المربوط تلقائيًا. تحتفظ البنود المسجلة سابقًا بحسابها الأصلي.",
+    "saved": "تم حفظ ربط البند الرئيسي"
+  },
+  "newDocument": {
+    "customerInvoice": "فاتورة عميل", "vendorBill": "فاتورة مورد",
+    "invoiceIntro": "اختر عميلًا وأضف الخدمات التي تفوترها.", "billIntro": "اختر موردًا وأضف البنود المطلوب سدادها.",
+    "numberAssigned": "يُعيَّن رقم المستند عند الحفظ.", "details": "بيانات المستند",
+    "selectCustomer": "اختر عميلًا", "selectVendor": "اختر موردًا", "customerPlaceholder": "اختر العميل", "vendorPlaceholder": "اختر المورد",
+    "invoiceDate": "تاريخ الفاتورة", "billDate": "تاريخ فاتورة المورد", "dueDateError": "يجب أن يكون تاريخ الاستحقاق في تاريخ المستند أو بعده",
+    "customerReference": "مرجع العميل (اختياري)", "supplierReference": "مرجع المورد (اختياري)",
+    "referencePlaceholder": "المرجع أو رقم أمر الشراء", "relatedOperation": "العملية المرتبطة (اختياري)",
+    "relatedOperationHelp": "اتركه فارغًا لفاتورة أو فاتورة مورد مباشرة.", "noLinkedOperation": "لا توجد عملية مرتبطة",
+    "currencySection": "العملة وسعر الصرف", "charges": "البنود", "amountsIn": "المبالغ بعملة {currency}",
+    "chargeHelp": "اختر بندًا لملء وصفه ومبلغه الافتراضي. أدخل المبلغ إذا لم يكن هناك سعر محدد.",
+    "noCharges": "لا توجد بنود نشطة مهيأة لهذا المستند. أضف بندًا من الفوترة والحسابات ← ربط البنود الرئيسية بالحسابات، أو فعّل ربط حسابه.",
+    "totalIn": "الإجمالي ({currency})", "selectCharge": "اختر بندًا", "chargePlaceholder": "اختر البند",
+    "descriptionAria": "وصف البند {number}", "descriptionPlaceholder": "وصف الخدمة", "quantityAria": "كمية البند {number}",
+    "enterPrice": "أدخل سعر الوحدة", "positivePrice": "أدخل سعرًا موجبًا", "priceAria": "سعر الوحدة للبند {number}",
+    "removeAria": "إزالة البند {number}", "addCharge": "إضافة بند", "notes": "ملاحظات (اختياري)",
+    "invoiceNotesPlaceholder": "معلومات إضافية لعميلك", "billNotesPlaceholder": "معلومات إضافية عن فاتورة المورد هذه",
+    "invoiceTotal": "إجمالي الفاتورة", "billTotal": "إجمالي فاتورة المورد",
+    "chargeCount_zero": "لا توجد بنود · {currency}", "chargeCount_one": "بند واحد · {currency}", "chargeCount_two": "بندان · {currency}",
+    "chargeCount_few": "{count} بنود · {currency}", "chargeCount_many": "{count} بندًا · {currency}", "chargeCount_other": "{count} بند · {currency}"
+  },
+  "cash": {
+    "receiptsTitle": "الإيصالات · {number}", "loadError": "تعذّر تحميل قائمة الترحيل", "exactAllocation": "خصّص المبلغ المستلم/المدفوع بالضبط.",
+    "receiptsAttached_zero": "لم يُرفق أي إيصال", "receiptsAttached_one": "تم إرفاق الإيصال", "receiptsAttached_two": "تم إرفاق إيصالين",
+    "receiptsAttached_few": "تم إرفاق {count} إيصالات", "receiptsAttached_many": "تم إرفاق {count} إيصالًا", "receiptsAttached_other": "تم إرفاق {count} إيصال",
+    "postedToLedger": "تم الترحيل إلى الدفتر", "captured": "تم التسجيل لمراجعة المحاسب", "queueTitle": "قائمة ترحيل المحاسب",
+    "queueDescription": "المدفوعات المسجلة ليست ترحيلات في الدفتر. راجع الطرف وحساب النقدية/البنك والتخصيصات قبل الترحيل. تظهر هنا تلقائيًا إيصالات الاستلام الحالية ومصروفات الطاقم المدفوعة.",
+    "refresh": "تحديث القائمة", "capture": "تسجيل مبلغ مستلم / مدفوع", "pendingPosting": "بانتظار الترحيل", "allRecords": "جميع السجلات",
+    "searchPlaceholder": "ابحث بالمصدر أو المرجع أو الطرف", "customerReceipt": "مقبوضات عميل", "expensePaid": "مصروف مدفوع",
+    "reviewPost": "مراجعة وترحيل", "reviewPostTitle": "مراجعة وترحيل · {number}", "captureTitle": "تسجيل مقبوضات عميل / مصروف مدفوع",
+    "postToLedger": "ترحيل إلى الدفتر", "saveForPosting": "حفظ للترحيل", "noReceipt": "لا يوجد إيصال مرفق.", "paymentType": "نوع الدفعة",
+    "customerReceiptOption": "مقبوضات عميل (دفعة مستلمة)", "source": "الاستلام / العملية / إيصال المستودع", "vendorPayee": "المورد / المستفيد",
+    "postingDate": "تاريخ الترحيل", "receivedPaidDate": "تاريخ الاستلام / الدفع", "referenceNumber": "الرقم المرجعي", "receiptOptional": "الإيصال (اختياري)",
+    "receiptHelp": "صورة الفاتورة أو قسيمة الدفع؛ تُرفع عند الحفظ.", "allocateInvoices": "تخصيص على الفواتير",
+    "allocateBills": "تخصيص على فواتير الموردين الحالية", "expenseCharge": "بند المصروف", "allocateExactly": "خصّص {currency} {amount} بالضبط.",
+    "receiptToAdvances": "يُرحَّل إلى الدفعات المقدمة من العملاء (2100). لا يسدد أي فاتورة.",
+    "expenseToAccount": "يُرحَّل إلى حساب مصروف البند المختار. استخدم التخصيص على فاتورة المورد أعلاه إذا كان للمصروف فاتورة مورد."
+  },
+  "memos": {
+    "creditMemo": "إشعار دائن", "debitMemo": "إشعار مدين", "newCredit": "إشعار دائن جديد", "newDebit": "إشعار مدين جديد", "loadError": "تعذّر تحميل الإشعارات",
+    "creditHelp": "تخفيض فاتورة عميل أو فاتورة مورد", "debitHelp": "زيادة فاتورة عميل أو فاتورة مورد",
+    "description": "اختر مستندًا مُرحّلًا والبند الأصلي فيه. احفظه كمسودة، وراجعه، ثم رحّله إلى الحسابات. تُستخدم عملة المستند الأصلي وسعر التحويل المحفوظ.",
+    "reverse": "عكس الإشعار", "saveDraft": "حفظ كمسودة", "postedDocument": "فاتورة / فاتورة مورد مُرحّلة",
+    "reducesReceivable": "يخفّض الذمم المدينة للعميل بعملة {currency}", "reducesPayable": "يخفّض الذمم الدائنة للمورد بعملة {currency}",
+    "increasesReceivable": "يزيد الذمم المدينة للعميل بعملة {currency}", "increasesPayable": "يزيد الذمم الدائنة للمورد بعملة {currency}",
+    "currentOutstanding": "المستحق الحالي: {amount}", "originalCharge": "البند الأصلي", "memoDate": "تاريخ الإشعار",
+    "amountIn": "المبلغ ({currency})", "amountInDocumentCurrency": "المبلغ (بعملة المستند)", "cancelDraftMemo": "إلغاء مسودة الإشعار",
+    "preview": "معاينة الإشعار", "printVoided": "ملغى / معكوس", "printPosted": "مُرحّل", "printDate": "التاريخ: {date}",
+    "printOriginal": "المستند الأصلي: {number} · {type}"
+  }
+}

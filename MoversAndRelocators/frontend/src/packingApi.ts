@@ -1,3 +1,4 @@
+import { serverMessage } from './i18n'
 import {request} from './api'
 import {apiUrl} from './apiBase'
 
@@ -47,7 +48,7 @@ export const STATUS_LABEL:Record<PackingStatus,{label:string;color:string}>={PLA
 const anonymous=async<T,>(url:string,body?:unknown):Promise<T>=>{
  const response=await fetch(apiUrl(url),body===undefined?{}:{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)})
  const data=await response.json().catch(()=>null)
- if(!response.ok)throw new Error(data?.errors?Object.values(data.errors).flat().join(' '):data?.message??'Request failed ('+response.status+')')
+ if(!response.ok)throw new Error(serverMessage(data,response.status)) // the server's message code, in the user's language
  return data as T
 }
 const publicBase=(token:string)=>'/api/public/packing-jobs/'+encodeURIComponent(token)

@@ -4,25 +4,28 @@ import { DollarOutlined, ExperimentOutlined, FileSearchOutlined, KeyOutlined } f
 import { settingsApi } from '../api'
 import type { AiUsageSummary, AiUsageTotals, ClaudeConfiguration, ClaudeConfigurationInput } from '../types'
 import { PageHeader } from '../components/PageHeader'
+import { formatDateTime, formatNumber, useT } from '../i18n'
 
-const usd = (v: number | null | undefined) => v == null ? '—' : '$' + v.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: v < 1 ? 4 : 2 })
-const num = (v: number) => v.toLocaleString()
+const usd = (v: number | null | undefined) => v == null ? '—' : '$' + formatNumber(v, { minimumFractionDigits: 2, maximumFractionDigits: v < 1 ? 4 : 2 })
+const num = (v: number) => formatNumber(v)
 const priceFields = (x?: ClaudeConfiguration) => ({ inputPricePerMillion: x?.inputPricePerMillion ?? null, cachedInputPricePerMillion: x?.cachedInputPricePerMillion ?? null, outputPricePerMillion: x?.outputPricePerMillion ?? null })
 
 /** Anthropic list prices (USD per 1M tokens) used to fill the price fields when a model is chosen; edit them if your contract differs. */
 const extractionModels = [
-  { value: 'claude-opus-5-5', label: 'Claude Opus 5.5 · Recommended', prices: { inputPricePerMillion: 4, cachedInputPricePerMillion: 0.4, outputPricePerMillion: 20 } },
-  { value: 'claude-sonnet-5-5', label: 'Claude Sonnet 5.5 · Balanced', prices: { inputPricePerMillion: 2, cachedInputPricePerMillion: 0.2, outputPricePerMillion: 10 } },
-  { value: 'claude-haiku-5-5', label: 'Claude Haiku 5.5 · High volume, lowest cost', prices: { inputPricePerMillion: 0.1, cachedInputPricePerMillion: null, outputPricePerMillion: 0.5 } },
-  { value: 'claude-fable-5-1', label: 'Claude Fable 5.1 · Most capable', prices: { inputPricePerMillion: 10, cachedInputPricePerMillion: 0.25, outputPricePerMillion: 50 } },
-]
-const efforts = [
-  { value: 'low', label: 'Low · fastest and cheapest' },
-  { value: 'medium', label: 'Medium · recommended' },
-  { value: 'high', label: 'High · most careful counting, slower' },
+  { value: 'claude-opus-5-5', name: 'Claude Opus 5.5', note: 'recommended', prices: { inputPricePerMillion: 4, cachedInputPricePerMillion: 0.4, outputPricePerMillion: 20 } },
+  { value: 'claude-sonnet-5-5', name: 'Claude Sonnet 5.5', note: 'balanced', prices: { inputPricePerMillion: 2, cachedInputPricePerMillion: 0.2, outputPricePerMillion: 10 } },
+  { value: 'claude-haiku-5-5', name: 'Claude Haiku 5.5', note: 'lowestCost', prices: { inputPricePerMillion: 0.1, cachedInputPricePerMillion: null, outputPricePerMillion: 0.5 } },
+  { value: 'claude-fable-5-1', name: 'Claude Fable 5.1', note: 'mostCapable', prices: { inputPricePerMillion: 10, cachedInputPricePerMillion: 0.25, outputPricePerMillion: 50 } },
 ]
 
 export function ClaudeConfigurationPage() {
+  const { t } = useT()
+  const efforts = [
+    { value: 'low', label: t('settings.claude.efforts.low') },
+    { value: 'medium', label: t('settings.claude.efforts.medium') },
+    { value: 'high', label: t('settings.claude.efforts.high') },
+  ]
+  const usageLine = (x: AiUsageTotals) => [t('settings.ai.runs', { count: x.runs }), t('settings.ai.tokens', { tokens: num(x.inputTokens + x.outputTokens) }), ...(x.audioMinutes ? [t('settings.ai.audioMinutes', { minutes: x.audioMinutes })] : [])].join(' · ')
   const [configuration, setConfiguration] = useState<ClaudeConfiguration>()
   const [loading, setLoading] = useState(true), [saving, setSaving] = useState(false)
   const [form] = Form.useForm<ClaudeConfigurationInput>()
@@ -44,59 +47,59 @@ export function ClaudeConfigurationPage() {
       setConfiguration(saved)
       form.setFieldsValue({ apiKey: null, extractionModel: saved.extractionModel, effort: saved.effort, ...priceFields(saved) })
       void loadUsage()
-      message.success('Claude configuration saved securely')
+      message.success(t('settings.claude.saved'))
     } catch (reason) { if (reason instanceof Error) message.error(reason.message) }
     finally { setSaving(false) }
   }
   return <>
-    <PageHeader onRefresh={load} refreshDisabled={saving || loading} refreshConfirm="Refreshing replaces unsaved configuration changes." eyebrow="TENANT SETTINGS" title="Claude configuration" description="Configure the tenant Anthropic API key and the Claude model used to extract items from sales-lead photos and videos." />
+    <PageHeader onRefresh={load} refreshDisabled={saving || loading} refreshConfirm={t('settings.common.refreshConfirm')} eyebrow={t('settings.common.tenantSettings')} title={t('settings.claude.title')} description={t('settings.claude.description')} />
     <Row gutter={[14, 14]}>
       <Col xs={24} xl={16}>
-        <Card className="grid-card integration-settings-card" loading={loading} title={<Space><ExperimentOutlined /> Connection and model</Space>} extra={configuration ? <Tag color="green">Configured</Tag> : <Tag>Not configured</Tag>}>
+        <Card className="grid-card integration-settings-card" loading={loading} title={<Space><ExperimentOutlined /> {t('settings.claude.connectionAndModel')}</Space>} extra={configuration ? <Tag color="green">{t('settings.common.configured')}</Tag> : <Tag>{t('settings.common.notConfigured')}</Tag>}>
           <Form form={form} layout="vertical" requiredMark="optional">
-            <Form.Item label="Anthropic API key" name="apiKey" extra={configuration ? `Current credential: ${configuration.maskedApiKey}. Leave blank to keep it.` : 'Required for initial configuration. Create one in the Claude Console (console.anthropic.com).'} rules={configuration ? [{ min: 20 }] : [{ required: true, min: 20 }]}>
-              <Input.Password autoComplete="new-password" prefix={<KeyOutlined />} placeholder={configuration ? 'Enter only to rotate' : 'sk-ant-…'} />
+            <Form.Item label={t('settings.claude.apiKey')} name="apiKey" extra={configuration ? t('settings.common.currentCredential', { masked: configuration.maskedApiKey }) : t('settings.claude.requiredInitially')} rules={configuration ? [{ min: 20 }] : [{ required: true, min: 20 }]}>
+              <Input.Password autoComplete="new-password" prefix={<KeyOutlined />} placeholder={configuration ? t('settings.common.enterToRotate') : 'sk-ant-…'} />
             </Form.Item>
-            <Form.Item label="Extraction model" name="extractionModel" extra="Reads the photo or the video frames and returns the rooms, items, fragile pieces and boxes." rules={[{ required: true }]}>
-              <Select showSearch optionFilterProp="label" options={extractionModels.map(({ value, label }) => ({ value, label }))} suffixIcon={<FileSearchOutlined />} onChange={modelChanged} />
+            <Form.Item label={t('settings.claude.extractionModel')} name="extractionModel" extra={t('settings.claude.extractionModelHint')} rules={[{ required: true }]}>
+              <Select showSearch optionFilterProp="label" options={extractionModels.map(({ value, name, note }) => ({ value, label: `${name} · ${t('settings.claude.models.' + note)}` }))} suffixIcon={<FileSearchOutlined />} onChange={modelChanged} />
             </Form.Item>
-            <Form.Item label="Effort" name="effort" extra="How long Claude thinks before answering. Higher effort counts busy rooms more carefully but takes longer and uses more output tokens." rules={[{ required: true }]}>
+            <Form.Item label={t('settings.claude.effort')} name="effort" extra={t('settings.claude.effortHint')} rules={[{ required: true }]}>
               <Select options={efforts} />
             </Form.Item>
-            <Divider titlePlacement="start" plain><DollarOutlined /> Prices (for the approximate cost)</Divider>
-            <Typography.Paragraph type="secondary" className="ai-price-hint">Filled with Anthropic's list prices when you pick a model; adjust them to your contract. Each run's cost is worked out with the prices saved at that moment. Speech-to-text is priced in Settings › OpenAI.</Typography.Paragraph>
+            <Divider titlePlacement="start" plain><DollarOutlined /> {t('settings.ai.pricesTitle')}</Divider>
+            <Typography.Paragraph type="secondary" className="ai-price-hint">{t('settings.claude.pricesHint')}</Typography.Paragraph>
             <div className="ai-price-grid">
-              <Form.Item label="Input · per 1M tokens" name="inputPricePerMillion"><InputNumber min={0} max={1000} step={0.05} precision={4} prefix="$" style={{ width: '100%' }} /></Form.Item>
-              <Form.Item label="Cached input · per 1M tokens" name="cachedInputPricePerMillion" extra="Blank = same as input"><InputNumber min={0} max={1000} step={0.01} precision={4} prefix="$" style={{ width: '100%' }} /></Form.Item>
-              <Form.Item label="Output · per 1M tokens" name="outputPricePerMillion"><InputNumber min={0} max={1000} step={0.05} precision={4} prefix="$" style={{ width: '100%' }} /></Form.Item>
+              <Form.Item label={t('settings.ai.inputPrice')} name="inputPricePerMillion"><InputNumber min={0} max={1000} step={0.05} precision={4} prefix="$" style={{ width: '100%' }} /></Form.Item>
+              <Form.Item label={t('settings.ai.cachedInputPrice')} name="cachedInputPricePerMillion" extra={t('settings.ai.cachedBlank')}><InputNumber min={0} max={1000} step={0.01} precision={4} prefix="$" style={{ width: '100%' }} /></Form.Item>
+              <Form.Item label={t('settings.ai.outputPrice')} name="outputPricePerMillion"><InputNumber min={0} max={1000} step={0.05} precision={4} prefix="$" style={{ width: '100%' }} /></Form.Item>
             </div>
-            <Button type="primary" loading={saving} onClick={save}>Save Claude configuration</Button>
+            <Button type="primary" loading={saving} onClick={save}>{t('settings.claude.save')}</Button>
           </Form>
         </Card>
       </Col>
       <Col xs={24} xl={8}>
-        <Card className="ai-usage-card" title={<Space><DollarOutlined /> Claude usage &amp; approximate cost</Space>} extra={usage && !usage.pricesConfigured && <Tag color="gold">No prices set</Tag>} style={{ marginBottom: 14 }}>
-          {!usage ? <Typography.Text type="secondary">No usage yet.</Typography.Text> : <>
-            <div className="ai-usage-totals">{([['This month', usage.thisMonth], ['All time', usage.allTime]] as [string, AiUsageTotals][]).map(([label, t]) => <div key={label}><small>{label}</small><strong>{usd(t.cost)}</strong><span>{t.runs} run{t.runs === 1 ? '' : 's'} · {num(t.inputTokens + t.outputTokens)} tokens{t.audioMinutes ? ' · ' + t.audioMinutes + ' min audio' : ''}</span></div>)}</div>
-            {!usage.pricesConfigured && <Alert style={{ marginTop: 10 }} type="info" showIcon title="Enter the prices to see costs. Runs from now on will be priced." />}
+        <Card className="ai-usage-card" title={<Space><DollarOutlined /> {t('settings.claude.usageTitle')}</Space>} extra={usage && !usage.pricesConfigured && <Tag color="gold">{t('settings.ai.noPrices')}</Tag>} style={{ marginBottom: 14 }}>
+          {!usage ? <Typography.Text type="secondary">{t('settings.ai.noUsage')}</Typography.Text> : <>
+            <div className="ai-usage-totals">{([[t('settings.ai.thisMonth'), usage.thisMonth], [t('settings.ai.allTime'), usage.allTime]] as [string, AiUsageTotals][]).map(([label, x]) => <div key={label}><small>{label}</small><strong>{usd(x.cost)}</strong><span>{usageLine(x)}</span></div>)}</div>
+            {!usage.pricesConfigured && <Alert style={{ marginTop: 10 }} type="info" showIcon title={t('settings.ai.enterPrices')} />}
           </>}
         </Card>
-        <Card title="Processing design">
-          <Alert type="success" showIcon title="API key encrypted at rest" description="The key is never returned by the API and is excluded from audit payloads." />
-          <Typography.Paragraph type="secondary" className="aws-security-copy">Claude reads pictures, not video files. For a video, still frames are stored in S3 next to it and Claude receives short-lived signed links to them. Claude cannot listen to sound, so when OpenAI is also configured the narration is transcribed by OpenAI and given to Claude as text.</Typography.Paragraph>
-          {configuration && <Typography.Text type="secondary">Last updated {new Date(configuration.updatedAtUtc).toLocaleString()}</Typography.Text>}
+        <Card title={t('settings.ai.processingDesign')}>
+          <Alert type="success" showIcon title={t('settings.ai.keyEncryptedTitle')} description={t('settings.ai.keyEncryptedText')} />
+          <Typography.Paragraph type="secondary" className="aws-security-copy">{t('settings.claude.processingText')}</Typography.Paragraph>
+          {configuration && <Typography.Text type="secondary">{t('settings.common.lastUpdated', { when: formatDateTime(configuration.updatedAtUtc) })}</Typography.Text>}
         </Card>
       </Col>
       {usage && usage.recent.length > 0 && <Col xs={24}>
-        <Card className="grid-card" title="Recent Claude runs">
+        <Card className="grid-card" title={t('settings.claude.recentRuns')}>
           <Table size="small" rowKey={r => r.createdAtUtc + r.model} pagination={false} scroll={{ x: 820 }} dataSource={usage.recent} columns={[
-            { title: 'When', dataIndex: 'createdAtUtc', render: (v: string) => new Date(v).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' }) },
-            { title: 'Sales lead', render: (_: unknown, r: AiUsageSummary['recent'][number]) => r.leadNumber ? <>{r.leadNumber}<br /><small>{r.customerName}</small></> : '—' },
-            { title: 'Model', dataIndex: 'model' },
-            { title: 'Tokens in / out', align: 'right' as const, render: (_: unknown, r: AiUsageSummary['recent'][number]) => num(r.inputTokens) + ' / ' + num(r.outputTokens) },
-            { title: 'Audio (OpenAI)', dataIndex: 'audioSeconds', align: 'right' as const, render: (v: number) => v ? Math.round(v) + ' s' : '—' },
-            { title: 'Approx. cost', dataIndex: 'cost', align: 'right' as const, render: (v: number | null) => usd(v) },
-            { title: 'By', dataIndex: 'createdBy' }]} />
+            { title: t('settings.ai.when'), dataIndex: 'createdAtUtc', render: (v: string) => formatDateTime(v) },
+            { title: t('settings.ai.salesLead'), render: (_: unknown, r: AiUsageSummary['recent'][number]) => r.leadNumber ? <>{r.leadNumber}<br /><small>{r.customerName}</small></> : '—' },
+            { title: t('settings.ai.model'), dataIndex: 'model' },
+            { title: t('settings.ai.tokensInOut'), align: 'right' as const, render: (_: unknown, r: AiUsageSummary['recent'][number]) => num(r.inputTokens) + ' / ' + num(r.outputTokens) },
+            { title: t('settings.claude.audioOpenAi'), dataIndex: 'audioSeconds', align: 'right' as const, render: (v: number) => v ? t('settings.ai.seconds', { seconds: Math.round(v) }) : '—' },
+            { title: t('settings.ai.approxCost'), dataIndex: 'cost', align: 'right' as const, render: (v: number | null) => usd(v) },
+            { title: t('settings.ai.by'), dataIndex: 'createdBy' }]} />
         </Card>
       </Col>}
     </Row>

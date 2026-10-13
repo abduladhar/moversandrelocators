@@ -40,6 +40,7 @@ public interface IQuotationRepository
     Task<IReadOnlyList<SurveyItem>> ListSurveyItemsForUpdateAsync(Guid id, CancellationToken token);
     void RemoveSurveyItems(IEnumerable<SurveyItem> items);
     Task<IReadOnlyList<HouseholdItem>> ListHouseholdItemsAsync(CancellationToken token);
+    void AddHouseholdItem(HouseholdItem item);
     Task<SalesLead?> GetLeadAsync(Guid id, CancellationToken token);
     Task<IReadOnlyList<SalesLeadInventoryItem>> ListLeadInventoryAsync(Guid leadId, CancellationToken token);
     Task<IReadOnlyList<SalesLead>> ListLeadsAsync(CancellationToken token);

@@ -22,7 +22,9 @@ public sealed record QuotationDetailModel(QuotationModel Quotation, IReadOnlyLis
 /// <param name="Imported">Lines that became quotation items.</param>
 /// <param name="Dropped">Lines the customer marked as not needed on the shared inventory, which were left out.</param>
 /// <param name="Unmatched">Names with no active household item to price them against; they need a master before they can be quoted.</param>
-public sealed record LeadInventoryImportModel(QuotationDetailModel Detail, int Imported, int Dropped, IReadOnlyList<string> Unmatched);
+/// <param name="Unmatched">Lines that could not come in (no volume, or their household item was deactivated).</param>
+/// <param name="CreatedItems">Household items added to the master data because no master matched (check their volumes).</param>
+public sealed record LeadInventoryImportModel(QuotationDetailModel Detail, int Imported, int Dropped, IReadOnlyList<string> Unmatched, IReadOnlyList<string>? CreatedItems = null);
 public sealed record GeneratedQuotationLinkModel(string Token, DateTimeOffset ExpiresAtUtc);
 public sealed record PublicQuotationModel(string TenantName, QuotationModel Quotation, IReadOnlyList<QuotationLineModel> Lines, IReadOnlyList<QuotationSurveyRoomModel> SurveyRooms, IReadOnlyList<QuotationItemModel> QuotationItems);
 public sealed record PublicQuotationResolutionModel(Guid QuotationId, string TenantName);

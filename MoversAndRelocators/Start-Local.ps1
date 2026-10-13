@@ -40,7 +40,7 @@ if (-not $SkipBuild) {
         if ($LASTEXITCODE -ne 0) { throw 'Frontend build failed.' }
     } finally { Pop-Location }
 }
-$apiDll = Join-Path $apiRoot 'bin\Debug\net8.0\Movers.Api.dll'
+$apiDll = Join-Path $apiRoot 'bin\Debug\net10.0\Movers.Api.dll'
 $viteScript = Join-Path $frontendRoot 'node_modules\vite\bin\vite.js'
 if (-not (Test-Path -LiteralPath $apiDll) -or -not (Test-Path -LiteralPath $viteScript)) {
     throw 'Build output or dependencies are missing. Run this script without -SkipBuild.'

@@ -1,3 +1,4 @@
+import { t } from './i18n'
 import { request, downloadFile } from './api'
 
 export interface PickupChoice { id: string; pickupNumber: string; customerName: string }
@@ -36,8 +37,6 @@ export const operationsApi = {
 export const readable = (value: string) => value.replace(/([A-Z])/g, ' $1').replaceAll('_', ' ').toLowerCase().replace(/^./, c => c.toUpperCase())
 
 /** Where a box or a job is, in the crew's words. One map, so no two screens name the same state differently. */
-export const movementLabel = (value: string): string => ({
-  DRAFT: 'Draft', PACKED: 'Packed', LOADING: 'Loading', WAREHOUSE: 'In warehouse',
-  IN_TRANSIT: 'Transporting', ARRIVED: 'Arrived at destination', DELIVERED: 'Delivered', CANCELLED: 'Cancelled',
-} as Record<string, string>)[value] ?? readable(value)
+export const movementLabel = (value: string): string =>
+  ['DRAFT', 'PACKED', 'LOADING', 'WAREHOUSE', 'IN_TRANSIT', 'ARRIVED', 'DELIVERED', 'CANCELLED'].includes(value) ? t('shared.movement.' + value) : readable(value)
 

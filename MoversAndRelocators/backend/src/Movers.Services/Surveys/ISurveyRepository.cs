@@ -50,6 +50,7 @@ public interface ISurveyRepository
     Task<TenantAwsConfiguration?> GetAwsAsync(CancellationToken token);
     Task<IReadOnlyList<SurveyTimeEvent>> ListTimeEventsAsync(Guid surveyId, CancellationToken token);
     void AddTimeEvent(SurveyTimeEvent timeEvent);
+    Task<IReadOnlyList<Movers.Domain.Sales.SalesLeadInventoryItem>> ListLeadInventoryAsync(Guid leadId, CancellationToken token);
     Task<IReadOnlyList<SurveyExpense>> ListExpensesAsync(Guid surveyId, CancellationToken token);
     Task<SurveyExpense?> GetExpenseAsync(Guid id, bool track, CancellationToken token);
     void AddExpense(SurveyExpense expense);

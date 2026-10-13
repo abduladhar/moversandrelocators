@@ -20,7 +20,9 @@ using Movers.Services.Quotations;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddControllers();
+// Error responses carry a message code (Localization/server-messages.json) so the client can show them in the user's language.
+builder.Services.AddControllers(options => options.Filters.Add<Movers.Api.Localization.MessageCodeFilter>())
+    .ConfigureApiBehaviorOptions(options => options.InvalidModelStateResponseFactory = Movers.Api.Localization.MessageCodeFilter.Validation);
 builder.Services.AddScoped<Movers.Services.Operations.IShipmentService, Movers.Services.Operations.ShipmentService>();
 builder.Services.AddRateLimiter(options =>
 {
@@ -32,11 +34,12 @@ builder.Services.AddRateLimiter(options =>
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {
-    options.AddSecurityDefinition("Bearer", new()
+    // OpenAPI.NET 2 (Swashbuckle 10): the models live in Microsoft.OpenApi, and the definition takes the concrete scheme.
+    options.AddSecurityDefinition("Bearer", new Microsoft.OpenApi.OpenApiSecurityScheme
     {
         Name = "Authorization",
-        In = Microsoft.OpenApi.Models.ParameterLocation.Header,
-        Type = Microsoft.OpenApi.Models.SecuritySchemeType.Http,
+        In = Microsoft.OpenApi.ParameterLocation.Header,
+        Type = Microsoft.OpenApi.SecuritySchemeType.Http,
         Scheme = "bearer",
         BearerFormat = "JWT",
         Description = "JWT access token returned by /api/auth/login."
