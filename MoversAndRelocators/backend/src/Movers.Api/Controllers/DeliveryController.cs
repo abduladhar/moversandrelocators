@@ -21,8 +21,8 @@ public sealed record RespondDeliveryDateRequest(bool Confirmed, DateTimeOffset? 
 public sealed record ShareDeliveryLocationRequest(decimal? Latitude, decimal? Longitude, [StringLength(500)] string? Address, [StringLength(500)] string? Notes);
 public sealed record DeliveryDistanceRequest([Range(0, 5000)] decimal? DistanceKm);
 public sealed record AddDeliveryTransactionRequest([Required] string Type, [Required, StringLength(120)] string Category, [Range(.01, 999999999)] decimal Amount, [Required, StringLength(40)] string PaymentMethod,
-    [StringLength(500)] string? Notes, string? Currency = null, decimal? ExchangeRate = null, Guid? DeliveryNoteId = null)
-{ public AddDeliveryTransactionCommand Command() => new(Type, Category, Amount, PaymentMethod, Notes, Currency, ExchangeRate, DeliveryNoteId); }
+    [StringLength(500)] string? Notes, string? Currency = null, decimal? ExchangeRate = null, Guid? DeliveryNoteId = null, Guid? PaidByEmployeeId = null)
+{ public AddDeliveryTransactionCommand Command() => new(Type, Category, Amount, PaymentMethod, Notes, Currency, ExchangeRate, DeliveryNoteId, PaidByEmployeeId); }
 
 /// <summary>Delivery module: runs, packages from warehouse or jobs, customer delivery notes and signatures, crew, trip and money.</summary>
 [ApiController, Authorize(Policy = SecurityPermissions.DeliveryManage), Route("api/delivery")]

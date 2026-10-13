@@ -1,5 +1,6 @@
 import { surveysApi } from '../api'
 import type { Employee, SurveyDetail } from '../types'
+import { AiSpendCard } from './AiSpendCard'
 import { ExpensesCard } from './ExpensesCard'
 import { TripClockCard } from './TripClockCard'
 
@@ -20,8 +21,9 @@ export function SurveyTripPanel({ detail, employees, onUpdated }: Props) {
       onComplete={x => update(surveysApi.complete(survey.id, { at: x.at, distanceKm: x.distanceKm, conductedByEmployeeId: x.conductedByEmployeeId ?? survey.assignedEmployeeId }))}
       onEdit={x => update(surveysApi.updateTrip(survey.id, x))} />
     <ExpensesCard receiptKind="SURVEY" title="Survey expenses" expenses={trip.expenses} totals={trip.expenseTotals} employeeOptions={employeeOptions} defaultPaidBy={trip.conductedByEmployeeId ?? survey.assignedEmployeeId}
-      emptyText="No expenses recorded. Add fuel, transport, metro, bus, toll or parking costs from the survey."
+      emptyText="No expenses recorded. Add fuel, transport, metro, bus, toll or parking costs from the survey. They go to Accountant posting for the ledger."
       onSave={(input, existing) => update(existing ? surveysApi.updateExpense(survey.id, existing.id, input) : surveysApi.addExpense(survey.id, input))}
       onDelete={expense => update(surveysApi.deleteExpense(survey.id, expense.id))} />
+    <AiSpendCard spend={detail.leadAiSpend} context="survey" />
   </>
 }

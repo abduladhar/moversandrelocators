@@ -195,6 +195,73 @@ public sealed partial class BillingApiTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task Survey_expense_enters_queue_posts_to_the_ledger_and_is_locked_after_posting()
+    {
+        var f=await Setup();var date=DateOnly.FromDateTime(DateTime.UtcNow);
+        var designation=await Post("/api/designations",new{code="SURVEYOR",name="Surveyor",level=2,description="Survey team"});
+        var employee=await Post("/api/employees",new{firstName="Sara",lastName="Surveyor",workEmail="surveyor@example.test",phone="100",joiningDate="2026-01-01",designationId=Id(designation),reportsToEmployeeId=(Guid?)null});
+        var survey=await Post("/api/surveys",new{surveyNumber="AUTO",customerName="Survey customer",phone="123",email="survey@example.test",assignedEmployeeId=Id(employee),scheduledAtUtc=DateTimeOffset.UtcNow,address="Origin",notes="Billing test"});
+        var master=(await Post("/api/billing/charge-masters",new{name="Survey travel",unit="service",defaultRate=25m,expenseAccount="5200"})).GetGuid();
+        await Post($"/api/surveys/{Id(survey)}/expenses",new{category="FUEL",amount=40m,currency="INR",incurredAtUtc=DateTimeOffset.UtcNow.AddMinutes(-5),paidByEmployeeId=Id(employee),notes="Petrol to site"});
+        var queued=Assert.Single(await Get("/api/billing/cash"));
+        var details=queued.GetProperty("details");
+        Assert.Equal("SURVEY",details.GetProperty("sourceKind").GetString());
+        Assert.Equal(Id(survey),details.GetProperty("sourceId").GetGuid());
+        Assert.Equal("EXPENSE_PAID",details.GetProperty("type").GetString());
+        Assert.Contains("Survey customer",details.GetProperty("sourceLabel").GetString());
+        Assert.Contains("Paid by Sara Surveyor",details.GetProperty("notes").GetString());
+        var id=Id(queued);
+        await Post($"/api/billing/cash/{id}/post",new{requestId=Guid.NewGuid(),expectedVersion=queued.GetProperty("version").GetString(),date,accountCode="1000",partyCode=f.Vendor1,chargeMasterId=master});
+        Assert.True(Assert.Single(await Get("/api/billing/cash")).GetProperty("posted").GetBoolean());
+        var balance=await Get($"/api/operations-costs/trial-balance?currency=INR");
+        Assert.Equal(40m,balance.Single(x=>Code(x)=="5200").GetProperty("debit").GetDecimal());
+        Assert.Equal(HttpStatusCode.BadRequest,(await _client.PutAsJsonAsync($"/api/surveys/{Id(survey)}/expenses/{id}",new{category="FUEL",amount=45m,currency="INR",incurredAtUtc=DateTimeOffset.UtcNow.AddMinutes(-5),notes="Not allowed"})).StatusCode);
+        Assert.Equal(HttpStatusCode.BadRequest,(await _client.DeleteAsync($"/api/surveys/{Id(survey)}/expenses/{id}")).StatusCode);
+    }
+
+    [Fact]
+    public async Task Employee_expense_report_covers_survey_pickup_packing_and_delivery_by_who_paid()
+    {
+        var f=await Setup();var today=DateOnly.FromDateTime(DateTime.UtcNow);var now=DateTimeOffset.UtcNow.AddMinutes(-5);
+        var designation=await Post("/api/designations",new{code="CREW",name="Crew",level=3,description="Crew"});
+        Guid Employee(JsonElement e)=>Id(e);
+        var sara=Employee(await Post("/api/employees",new{firstName="Sara",lastName="Field",workEmail="sara@example.test",phone="101",joiningDate="2026-01-01",designationId=Id(designation),reportsToEmployeeId=(Guid?)null}));
+        var omar=Employee(await Post("/api/employees",new{firstName="Omar",lastName="Driver",workEmail="omar@example.test",phone="102",joiningDate="2026-01-01",designationId=Id(designation),reportsToEmployeeId=(Guid?)null}));
+        var survey=await Post("/api/surveys",new{surveyNumber="AUTO",customerName="Survey customer",phone="123",email="s@example.test",assignedEmployeeId=sara,scheduledAtUtc=DateTimeOffset.UtcNow,address="Origin",notes="Report"});
+        await Post($"/api/surveys/{Id(survey)}/expenses",new{category="FUEL",amount=40m,currency="INR",incurredAtUtc=now,paidByEmployeeId=sara,notes="Survey fuel"});
+        await Post($"/api/pickups/{f.Pickup}/expenses",new{category="TOLL",amount=15m,currency="INR",incurredAtUtc=now,paidByEmployeeId=sara,notes="Pickup toll"});
+        var packing=(await Post("/api/packing",new{customerName="Pack customer",phone="123",address="Origin",scheduledAtUtc=DateTimeOffset.UtcNow})).GetProperty("job").GetProperty("id").GetGuid();
+        var packed=await Post($"/api/packing/{packing}/transactions",new{type="EXPENSE",category="FUEL",amount=30m,paymentMethod="CASH",currency="INR",notes="Packing van",paidByEmployeeId=omar});
+        Assert.Equal("Omar Driver",packed.GetProperty("transactions")[0].GetProperty("paidByName").GetString());
+        var delivery=(await Post("/api/delivery",new{scheduledAtUtc=DateTimeOffset.UtcNow,durationMinutes=60})).GetProperty("job").GetProperty("id").GetGuid();
+        await Post($"/api/delivery/{delivery}/transactions",new{type="EXPENSE",category="PARKING",amount=12m,paymentMethod="CASH",currency="INR",paidByEmployeeId=sara});
+        await Post($"/api/delivery/{delivery}/transactions",new{type="EXPENSE",category="FUEL",amount=99m,paymentMethod="CASH",currency="INR"}); // no payer: not an employee expense
+        Assert.Equal(HttpStatusCode.BadRequest,(await _client.PostAsJsonAsync($"/api/packing/{packing}/transactions",new{type="EXPENSE",category="FUEL",amount=1m,paymentMethod="CASH",currency="INR",paidByEmployeeId=Guid.NewGuid()})).StatusCode);
+
+        // Post Sara's survey expense so the report shows posted and pending parts.
+        var master=(await Post("/api/billing/charge-masters",new{name="Travel",unit="service",defaultRate=1m,expenseAccount="5200"})).GetGuid();
+        var surveyItem=(await Get("/api/billing/cash")).Single(x=>x.GetProperty("details").GetProperty("sourceKind").GetString()=="SURVEY");
+        await Post($"/api/billing/cash/{Id(surveyItem)}/post",new{requestId=Guid.NewGuid(),expectedVersion=surveyItem.GetProperty("version").GetString(),date=today,accountCode="1000",partyCode=f.Vendor1,chargeMasterId=master});
+
+        var q=$"from={today.AddDays(-1):yyyy-MM-dd}&to={today:yyyy-MM-dd}&currency=INR";
+        var all=await Get1($"/api/billing/reports/employee-expenses?{q}");
+        var rows=all.GetProperty("rows").EnumerateArray().ToList();
+        Assert.Equal(["Omar Driver","Sara Field"],rows.Select(r=>r.GetProperty("employeeName").GetString()));
+        var saraRow=rows.Single(r=>r.GetProperty("employeeId").GetGuid()==sara);
+        Assert.Equal(67m,saraRow.GetProperty("total").GetDecimal());
+        Assert.Equal(40m,saraRow.GetProperty("posted").GetDecimal());
+        Assert.Equal(27m,saraRow.GetProperty("pending").GetDecimal());
+        Assert.Equal(["SURVEY","PICKUP","DELIVERY"],saraRow.GetProperty("bySource").EnumerateArray().Select(x=>x.GetProperty("sourceKind").GetString()));
+        Assert.Equal(97m,all.GetProperty("totals").GetProperty("total").GetDecimal());
+        var onlySara=await Get1($"/api/billing/reports/employee-expenses?{q}&employeeId={sara}&status=PENDING");
+        Assert.Equal(27m,onlySara.GetProperty("totals").GetProperty("total").GetDecimal());
+        var packingOnly=await Get1($"/api/billing/reports/employee-expenses?{q}&sourceKind=PACKING");
+        Assert.Equal(30m,packingOnly.GetProperty("totals").GetProperty("total").GetDecimal());
+        var printed=await Get1($"/api/report-v2/data/ACCOUNTING_26?{q}&employeeId={sara}");
+        Assert.Equal(67m,printed.GetProperty("totals").GetProperty("total").GetDecimal());
+    }
+
+    [Fact]
     public async Task Existing_pickup_expense_enters_queue_and_cannot_change_after_posting()
     {
         var f=await Setup();var date=DateOnly.FromDateTime(DateTime.UtcNow);

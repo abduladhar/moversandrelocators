@@ -16,7 +16,7 @@ import { OperationsCostsPage } from '../pages/OperationsCostsPage'
 import { TransportTripsPage } from '../pages/TransportTripsPage'
 import { useState } from 'react'
 import { Avatar, Button, Grid, Layout, Menu, Modal, Select, Space, Tag, Typography, message } from 'antd'
-import { DownOutlined, RightOutlined, InboxOutlined, SendOutlined, AppstoreOutlined, ApartmentOutlined, AuditOutlined, BankOutlined, CarOutlined, CloudServerOutlined, DollarOutlined, FileDoneOutlined, FileSearchOutlined, HomeOutlined, IdcardOutlined, LogoutOutlined, MenuFoldOutlined, MenuUnfoldOutlined, RobotOutlined, SafetyCertificateOutlined, ShopOutlined, TagsOutlined, TeamOutlined, ToolOutlined, UserSwitchOutlined, ClusterOutlined } from '@ant-design/icons'
+import { DownOutlined, RightOutlined, InboxOutlined, SendOutlined, AppstoreOutlined, ApartmentOutlined, AuditOutlined, BankOutlined, CarOutlined, CloudServerOutlined, DollarOutlined, FileDoneOutlined, FileSearchOutlined, HomeOutlined, IdcardOutlined, LogoutOutlined, MenuFoldOutlined, MenuUnfoldOutlined, RobotOutlined, ExperimentOutlined, SafetyCertificateOutlined, ShopOutlined, TagsOutlined, TeamOutlined, ToolOutlined, UserSwitchOutlined, ClusterOutlined } from '@ant-design/icons'
 import { authApi } from '../api'
 import type { AuthSession, Tenant } from '../types'
 import { TenantsPage } from '../pages/TenantsPage'
@@ -31,6 +31,7 @@ import { SalesStatusMastersPage } from '../pages/SalesStatusMastersPage'
 import { MyTasksPage } from '../pages/MyTasksPage'
 import { AwsConfigurationPage } from '../pages/AwsConfigurationPage'
 import { OpenAiConfigurationPage } from '../pages/OpenAiConfigurationPage'
+import { ClaudeConfigurationPage } from '../pages/ClaudeConfigurationPage'
 import { SurveysPage } from '../pages/SurveysPage'
 import { SurveyMastersPage } from '../pages/SurveyMastersPage'
 import { QuotationsPage } from '../pages/QuotationsPage'
@@ -43,7 +44,7 @@ import { PickupMastersPage } from '../pages/PickupMastersPage'
 import { CompaniesPage } from '../pages/CompaniesPage'
 import { rememberCompany } from '../session'
 
-type PageKey = 'delivery' | 'report-designs' | 'accounting-reports' | `billing-${string}` | 'currency-settings' | 'posting' | 'billing' | 'customers' | 'vendors' | 'jobs' | 'warehouse' | 'master-data' | 'shipments' | 'costs' | 'trips' | 'dashboard' | 'tenants' | 'users' | 'roles' | 'designations' | 'employees' | 'crew' | 'sales' | 'sales-statuses' | 'surveys' | 'survey-masters' | 'quotations' | 'charge-masters' | 'tax-masters' | 'pickups' | 'packing' | 'pickup-masters' | 'vehicle-master' | 'warehouse-master' | 'box-type-master' | 'packing-material-master' | 'aws-settings' | 'openai-settings' | 'audit' | 'companies'
+type PageKey = 'delivery' | 'report-designs' | 'accounting-reports' | `billing-${string}` | 'currency-settings' | 'posting' | 'billing' | 'customers' | 'vendors' | 'jobs' | 'warehouse' | 'master-data' | 'shipments' | 'costs' | 'trips' | 'dashboard' | 'tenants' | 'users' | 'roles' | 'designations' | 'employees' | 'crew' | 'sales' | 'sales-statuses' | 'surveys' | 'survey-masters' | 'quotations' | 'charge-masters' | 'tax-masters' | 'pickups' | 'packing' | 'pickup-masters' | 'vehicle-master' | 'warehouse-master' | 'box-type-master' | 'packing-material-master' | 'aws-settings' | 'openai-settings' | 'claude-settings' | 'audit' | 'companies'
 
 export function WorkspaceLayout({ session, onSession }: { session: AuthSession; onSession: (session: AuthSession | null) => void }) {
   const isSystem = session.user.isSystemAdmin
@@ -51,6 +52,8 @@ export function WorkspaceLayout({ session, onSession }: { session: AuthSession; 
   const canManageCurrency = session.user.permissions.includes("billing.accounts")
   const canManageAws = session.user.permissions.includes('settings.aws.manage')
   const canManageOpenAi = session.user.permissions.includes('settings.openai.manage')
+  // Whoever manages OpenAI also manages Claude (same rule on the server), so no role change is needed.
+  const canManageClaude = canManageOpenAi || session.user.permissions.includes('settings.claude.manage')
   const canManageSurveys = session.user.permissions.includes('surveys.manage')
   const canManageQuotes = session.user.permissions.includes('quotes.manage')
   const canManageOperations = session.user.permissions.includes('operations.manage')
@@ -107,7 +110,7 @@ export function WorkspaceLayout({ session, onSession }: { session: AuthSession; 
     ...(canManageQuotes ? [{ key: 'quotation-group', icon: <FileDoneOutlined />, label: 'Quotation', disabled: !tenantReady, children: [{ key: 'quotations', icon: <FileDoneOutlined />, label: 'Quotations' }, { key: 'charge-masters', icon: <DollarOutlined />, label: 'Charge master' }, { key: 'tax-masters', icon: <TagsOutlined />, label: 'Tax configuration' }] }] : []),
     ...(canManageOperations ? [{ key: 'operations-group', icon: <CarOutlined />, label: 'Operations setup', disabled: !tenantReady, children: [{ key: 'pickup-masters', icon: <TagsOutlined />, label: 'Pickup statuses' }, { key: 'vehicle-master', icon: <CarOutlined />, label: 'Vehicles' }, { key: 'warehouse-master', icon: <HomeOutlined />, label: 'Warehouses' }, ...(canManageSurveys ? [{ key: 'box-type-master', icon: <AppstoreOutlined />, label: 'Box types' }, { key: 'packing-material-master', icon: <ToolOutlined />, label: 'Packing materials' }] : [])] }] : []),
     { key: 'administration', icon: <SafetyCertificateOutlined />, label: 'Administration', disabled: !tenantReady, children: [{ key: 'users', icon: <UserSwitchOutlined />, label: 'Users' }, { key: 'roles', icon: <SafetyCertificateOutlined />, label: 'Roles & permissions' }, { key: 'audit', icon: <AuditOutlined />, label: 'Audit trail' }] },
-    ...((canManageCurrency || canManageAws || canManageOpenAi || canManageCompanies) ? [{ key: 'settings', icon: <CloudServerOutlined />, label: 'Settings', disabled: !tenantReady, children: [...(canManageCompanies ? [{ key: 'companies', icon: <ClusterOutlined />, label: 'Companies' }] : []), ...(canManageCurrency ? [{ key: 'currency-settings', icon: <DollarOutlined />, label: 'System currency' }] : []), ...(canManageAws ? [{ key: 'aws-settings', icon: <CloudServerOutlined />, label: 'AWS configuration' }] : []), ...(canManageOpenAi ? [{ key: 'openai-settings', icon: <RobotOutlined />, label: 'OpenAI configuration' }] : [])] }] : []),
+    ...((canManageCurrency || canManageAws || canManageOpenAi || canManageClaude || canManageCompanies) ? [{ key: 'settings', icon: <CloudServerOutlined />, label: 'Settings', disabled: !tenantReady, children: [...(canManageCompanies ? [{ key: 'companies', icon: <ClusterOutlined />, label: 'Companies' }] : []), ...(canManageCurrency ? [{ key: 'currency-settings', icon: <DollarOutlined />, label: 'System currency' }] : []), ...(canManageAws ? [{ key: 'aws-settings', icon: <CloudServerOutlined />, label: 'AWS configuration' }] : []), ...(canManageOpenAi ? [{ key: 'openai-settings', icon: <RobotOutlined />, label: 'OpenAI configuration' }] : []), ...(canManageClaude ? [{ key: 'claude-settings', icon: <ExperimentOutlined />, label: 'Claude configuration' }] : [])] }] : []),
   ]
   const permissionByPage: Partial<Record<PageKey, string>> = {
     customers: 'operations.manage', vendors: 'operations.manage', employees: 'employees.view', designations: 'designations.manage', sales: 'sales.view',
@@ -202,6 +205,7 @@ export function WorkspaceLayout({ session, onSession }: { session: AuthSession; 
       {page === 'currency-settings' && tenantReady && canManageCurrency && <CurrencyConfigurationPage/>}
       {page === 'aws-settings' && tenantReady && canManageAws && <AwsConfigurationPage />}
       {page === 'openai-settings' && tenantReady && canManageOpenAi && <OpenAiConfigurationPage />}
+      {page === 'claude-settings' && tenantReady && canManageClaude && <ClaudeConfigurationPage />}
     </Layout.Content></Layout>
   </Layout></BillingPermissions.Provider>
 }

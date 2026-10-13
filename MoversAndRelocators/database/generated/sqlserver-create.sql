@@ -1019,6 +1019,7 @@ GO
 CREATE TABLE [DeliveryJobTransactions] (
     [SerialNo] int NOT NULL IDENTITY,
     [DeliveryJobId] uniqueidentifier NOT NULL,
+    [PaidByEmployeeId] uniqueidentifier NULL,
     [DeliveryNoteId] uniqueidentifier NULL,
     [TransactionNumber] nvarchar(60) NOT NULL,
     [Type] nvarchar(20) NOT NULL,
@@ -1796,6 +1797,7 @@ GO
 CREATE TABLE [PackingJobTransactions] (
     [SerialNo] int NOT NULL IDENTITY,
     [PackingJobId] uniqueidentifier NOT NULL,
+    [PaidByEmployeeId] uniqueidentifier NULL,
     [TransactionNumber] nvarchar(60) NOT NULL,
     [Type] nvarchar(20) NOT NULL,
     [Category] nvarchar(120) NOT NULL,

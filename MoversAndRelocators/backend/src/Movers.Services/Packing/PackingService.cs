@@ -23,7 +23,7 @@ public sealed record PackingBoxMaterialInput(Guid MaterialId, decimal Quantity);
 /// <param name="Materials">Materials actually used per box; null keeps the box type recipe.</param>
 public sealed record SavePackingBoxCommand(Guid BoxTypeId, string? RoomName, bool IsFragile, string? Notes, IReadOnlyList<PackingBoxItemInput> Items, int Copies = 1, IReadOnlyList<PackingBoxMaterialInput>? Materials = null);
 public sealed record PackingMaterialInput(Guid MaterialId, decimal Quantity, decimal? UnitCost);
-public sealed record AddPackingTransactionCommand(string Type, string Category, decimal Amount, string PaymentMethod, string? Notes, string? Currency, decimal? ExchangeRate);
+public sealed record AddPackingTransactionCommand(string Type, string Category, decimal Amount, string PaymentMethod, string? Notes, string? Currency, decimal? ExchangeRate, Guid? PaidByEmployeeId = null);
 
 public sealed record PackingJobModel(int SerialNo, Guid Id, string JobNumber, string Status, Guid? PickupId, string? PickupNumber, Guid? QuotationId, string? QuotationNumber, Guid? SalesLeadId, string? LeadNumber,
     string CustomerName, string Phone, string? Email, string Address, DateTimeOffset ScheduledAtUtc, string? Notes, DateTimeOffset? StartedAtUtc, DateTimeOffset? CompletedAtUtc, DateTimeOffset CreatedAtUtc, int BoxCount, int LabelsPending, DateTimeOffset? ScheduleConfirmedAtUtc,
@@ -34,7 +34,8 @@ public sealed record PackingBoxMaterialModel(Guid MaterialId, string MaterialNam
 public sealed record PackingBoxModel(int SerialNo, Guid Id, Guid BoxTypeId, string BoxTypeName, string TrackingNumber, string? RoomName, bool IsFragile, string? Notes, IReadOnlyList<PackingBoxItemModel> Items, DateTimeOffset? LabelPrintedAtUtc, int LabelPrintCount,
     bool CustomMaterials, IReadOnlyList<PackingBoxMaterialModel> Materials);
 public sealed record PackingMaterialModel(Guid MaterialId, string MaterialName, string Unit, decimal Quantity, decimal UnitCost, decimal TotalCost, bool IsBoxRecipe);
-public sealed record PackingTransactionModel(int SerialNo, Guid Id, string TransactionNumber, string Type, string Category, decimal Amount, string PaymentMethod, string? Notes, DateTimeOffset CreatedAtUtc, string? Currency, decimal? BaseAmount);
+public sealed record PackingTransactionModel(int SerialNo, Guid Id, string TransactionNumber, string Type, string Category, decimal Amount, string PaymentMethod, string? Notes, DateTimeOffset CreatedAtUtc, string? Currency, decimal? BaseAmount)
+{ public Guid? PaidByEmployeeId { get; init; } public string? PaidByName { get; init; } }
 public sealed record PackingCurrencyTotal(string Currency, decimal Income, decimal Expense);
 /// <summary>Accounting view of the job: material cost (posted as Dr 5100 Material expense / Cr 1300 Packing material stock when the job completes) and cash totals.</summary>
 public sealed record PackingAccountingModel(string BaseCurrency, decimal MaterialCost, bool MaterialPosted, string? MaterialJournalReference, decimal IncomeBase, decimal ExpenseBase, IReadOnlyList<PackingCurrencyTotal> Totals);
@@ -422,9 +423,11 @@ public sealed class PackingService(IPackingRepository r, BusinessMasterService m
         if (string.IsNullOrWhiteSpace(c.Category) || c.Category.Length > 120) throw new InvalidOperationException("Choose a category.");
         if (string.IsNullOrWhiteSpace(c.PaymentMethod) || c.PaymentMethod.Length > 40) throw new InvalidOperationException("Choose a payment method.");
         if (type == "EXPENSE") await masters.EnsureActive("expense-category", c.Category, t);
+        if (type == "EXPENSE" && c.PaidByEmployeeId is { } payer && !(await r.ActiveEmployees(t)).Any(e => e.Id == payer)) throw new InvalidOperationException("Select the active employee who paid.");
         var fx = await currencies.Resolve(c.Currency ?? (await currencies.Settings(t)).DefaultCurrency, DateOnly.FromDateTime(clock.GetUtcNow().UtcDateTime), c.ExchangeRate, t);
         CurrencyService.Amount(c.Amount, fx);
         var x = new PackingJobTransaction(tenant.TenantId, id, await numbers.Next("PKT", t), type, c.Category, c.Amount, c.PaymentMethod, c.Notes);
+        if (type == "EXPENSE") x.SetPaidBy(c.PaidByEmployeeId);
         await currencies.SaveSnapshot(x.Id, fx, t);
         r.Add(x); job.Touch(); await r.Save(t); return await Detail(job, t);
     }
@@ -644,7 +647,8 @@ public sealed class PackingService(IPackingRepository r, BusinessMasterService m
         foreach (var x in await r.Transactions(job.Id, t))
         {
             var fx = await currencies.Snapshot(x.Id, t);
-            transactions.Add(new(x.SerialNo, x.Id, x.TransactionNumber, x.Type, x.Category, x.Amount, x.PaymentMethod, x.Notes, x.CreatedAtUtc, fx?.Currency, fx is null ? null : CurrencyService.ToBase(x.Amount, fx)));
+            transactions.Add(new(x.SerialNo, x.Id, x.TransactionNumber, x.Type, x.Category, x.Amount, x.PaymentMethod, x.Notes, x.CreatedAtUtc, fx?.Currency, fx is null ? null : CurrencyService.ToBase(x.Amount, fx))
+                { PaidByEmployeeId = x.PaidByEmployeeId, PaidByName = x.PaidByEmployeeId is { } p ? names.GetValueOrDefault(p) : null });
         }
         var settings = await currencies.Settings(t);
         var posting = await billing.MaterialConsumption(SourceKind, job.Id, t);

@@ -36,6 +36,9 @@ public sealed class LeadUploadService(ILeadUploadRepository repository, ITenantC
     public async Task<PublicUploadInfoModel?> GetPublicInfoAsync(string token, CancellationToken cancellationToken)
     { var r = await Resolve(token, cancellationToken); return r is null ? null : new(tenantContext.Company?.Name ?? r.Tenant.Name, r.Lead.LeadNumber, r.Lead.CustomerName, r.Link.ExpiresAtUtc, r.Link.RequestedItems, r.Link.Description, r.Link.CustomerItems, r.Link.CustomerDescription); }
 
+    public async Task<PublicLinkLeadModel?> ResolveLeadAsync(string token, CancellationToken cancellationToken)
+    { var r = await Resolve(token, cancellationToken); return r is null ? null : new(r.Lead.Id, tenantContext.Company?.Name ?? r.Tenant.Name, r.Lead.LeadNumber, r.Lead.CustomerName, r.Link.ExpiresAtUtc); }
+
     public async Task<PresignedUploadModel> CreateUploadAsync(string token, UploadRequestModel request, CancellationToken cancellationToken)
     {
         var r = await Resolve(token, cancellationToken) ?? throw new InvalidOperationException("This upload link is invalid or expired.");

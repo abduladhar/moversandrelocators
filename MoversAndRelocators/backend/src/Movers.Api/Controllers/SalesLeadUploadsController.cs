@@ -20,7 +20,9 @@ public sealed class SalesLeadUploadsController(ILeadUploadService service, Publi
         {
             var generated = await service.GenerateLinkAsync(leadId, request.ValidDays, token, request.RequestedItems, request.Description);
             var baseUrl = links.BaseUrl;
-            return Ok(new { generated.Link, url = $"{baseUrl}/upload/{Uri.EscapeDataString(generated.Token)}" });
+            var escaped = Uri.EscapeDataString(generated.Token);
+            // One token, two pages: the customer uploads their video on /upload and reviews the inventory we built on /inventory.
+            return Ok(new { generated.Link, url = $"{baseUrl}/upload/{escaped}", inventoryUrl = $"{baseUrl}/inventory/{escaped}" });
         }
         catch (InvalidOperationException exception) { return BadRequest(new { message = exception.Message }); }
     }
@@ -34,13 +36,18 @@ public sealed class SalesLeadUploadsController(ILeadUploadService service, Publi
 
     [HttpPost("attachments/{id:guid}/extract"), Authorize(Policy = SecurityPermissions.SalesExtract), RequestSizeLimit(28_000_000)]
     public async Task<ActionResult> Extract(Guid leadId, Guid id, ExtractAttachmentRequest request, CancellationToken ct) {
-        try { var (r, inventory) = await extraction.Extract(leadId, id, request.Frames, request.Audio, ct); return Ok(new { r.Items, r.Boxes, r.Transcript, r.FramesAnalysed, r.Warning, r.Usage, inventory }); }
+        var name = string.IsNullOrWhiteSpace(request.Provider) ? "The AI service" : AiProviders.Name(request.Provider.Trim().ToLowerInvariant());
+        try { var (r, inventory) = await extraction.Extract(leadId, id, request.Frames, request.Audio, ct, request.Provider, request.Pictures); return Ok(new { r.Items, r.Boxes, r.Transcript, r.FramesAnalysed, r.Warning, r.Usage, r.Provider, r.Model, inventory }); }
         catch (UnauthorizedAccessException) { return Forbid(); }
         catch (KeyNotFoundException) { return NotFound(); }
         catch (InvalidOperationException e) { return BadRequest(new { message = e.Message }); }
-        catch (HttpRequestException) { return StatusCode(502, new { message = "OpenAI is unavailable. Try again later." }); }
-        catch (TaskCanceledException) when (!ct.IsCancellationRequested) { return StatusCode(504, new { message = "OpenAI timed out. Try again later." }); }
+        catch (HttpRequestException) { return StatusCode(502, new { message = $"{name} is unavailable. Try again later." }); }
+        catch (TaskCanceledException) when (!ct.IsCancellationRequested) { return StatusCode(504, new { message = $"{name} timed out. Try again later." }); }
     }
+
+    /// <summary>The AIs (OpenAI, Claude) this tenant configured for item extraction, for the Extract items dialog.</summary>
+    [HttpGet("~/api/sales/extraction-providers"), Authorize(Policy = SecurityPermissions.SalesExtract)]
+    public async Task<ActionResult> ExtractionProviders(CancellationToken ct) => Ok(await extraction.Providers(ct));
 
     /// <summary>Staff capture: request an upload URL for a video, photo or file recorded on the lead.</summary>
     [HttpPost("attachments/upload-requests"), Authorize(Policy = SecurityPermissions.SalesManage)]

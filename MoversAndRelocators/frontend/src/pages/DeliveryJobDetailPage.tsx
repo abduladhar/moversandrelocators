@@ -254,7 +254,7 @@ function CrewTab({detail,masters,locked,act}:{detail:DeliveryDetail;masters:Deli
 }
 
 /* ---------------- money ---------------- */
-type MoneyForm={currency?:string;exchangeRate?:number;amount:number;paymentMethod:string;category:string;notes?:string;deliveryNoteId?:string}
+type MoneyForm={currency?:string;exchangeRate?:number;amount:number;paymentMethod:string;category:string;notes?:string;deliveryNoteId?:string;paidByEmployeeId?:string}
 function MoneyTab({detail,masters,act}:{detail:DeliveryDetail;masters:DeliveryMasters;act:Act}){
  const {data:currencyData}=useCurrencies()
  const [open,setOpen]=useState<'INCOME'|'EXPENSE'|null>(null),[receipt,setReceipt]=useState<string|null>(null),[form]=Form.useForm<MoneyForm>()
@@ -262,7 +262,7 @@ function MoneyTab({detail,masters,act}:{detail:DeliveryDetail;masters:DeliveryMa
  const receipts=useReceipts(detail.transactions.filter(t=>t.type==='EXPENSE').map(t=>t.id))
  const methods=masters.paymentMethods.length?masters.paymentMethods.map(m=>({value:m.code,label:m.name})):[{value:'CASH',label:'Cash'}]
  const cancelled=detail.job.status==='CANCELLED',cur=detail.accounting.baseCurrency
- const start=(type:'INCOME'|'EXPENSE')=>{form.resetFields();setPending([]);form.setFieldsValue({currency:currencyData?.settings.defaultCurrency,paymentMethod:methods[0]?.value,category:type==='INCOME'?masters.incomeCategories[0]?.name:masters.expenseCategories[0]?.code,deliveryNoteId:detail.notes.length===1?detail.notes[0].id:undefined});setOpen(type)}
+ const start=(type:'INCOME'|'EXPENSE')=>{form.resetFields();setPending([]);form.setFieldsValue({paidByEmployeeId:detail.job.driverEmployeeId??(detail.crew.length===1?detail.crew[0].employeeId:undefined),currency:currencyData?.settings.defaultCurrency,paymentMethod:methods[0]?.value,category:type==='INCOME'?masters.incomeCategories[0]?.name:masters.expenseCategories[0]?.code,deliveryNoteId:detail.notes.length===1?detail.notes[0].id:undefined});setOpen(type)}
  const save=async()=>{const v=await form.validateFields();const type=open!;const before=new Set(detail.transactions.map(t=>t.id))
   const d=await act(()=>deliveryApi.transaction(detail.job.id,{type,...v,deliveryNoteId:type==='INCOME'?v.deliveryNoteId??null:null}),type==='INCOME'?'Collection recorded':'Expense recorded')
   if(d){setOpen(null);const created=d.transactions.find(t=>!before.has(t.id))
@@ -275,6 +275,7 @@ function MoneyTab({detail,masters,act}:{detail:DeliveryDetail;masters:DeliveryMa
   {title:'Type',dataIndex:'type',render:(v:string)=><Tag color={v==='INCOME'?'green':'volcano'}>{v==='INCOME'?'Collected':'Paid'}</Tag>},
   {title:'Customer',dataIndex:'customerName',render:(v:string|null)=>v??'—'},
   {title:'Category',dataIndex:'category',render:(v:string)=>masters.expenseCategories.find(c=>c.code===v)?.name??v},
+  {title:'Paid by',dataIndex:'paidByName',render:(v:string|null|undefined,x:{type:string})=>x.type==='EXPENSE'?(v??'—'):''},
   {title:'Method',dataIndex:'paymentMethod',render:(v:string)=>methods.find(m=>m.value===v)?.label??v},
   {title:'Amount',align:'right' as const,render:(_:unknown,x:Tx)=><>{formatMoney(x.amount,x.currency||cur)}<br/><small style={{color:'#6b7686'}}>{formatMoney(x.baseAmount,cur)}</small></>},
   {title:'Date',dataIndex:'createdAtUtc',render:when},
@@ -304,6 +305,7 @@ function MoneyTab({detail,masters,act}:{detail:DeliveryDetail;masters:DeliveryMa
       {open==='INCOME'?<AutoComplete options={masters.incomeCategories.map(c=>({value:c.name}))} placeholder="Delivery charge, Balance…"/>:<Select options={masters.expenseCategories.map(c=>({value:c.code,label:c.name}))}/>}
      </Form.Item>
     </div>
+    {open==='EXPENSE'&&<Form.Item label="Paid by" name="paidByEmployeeId" extra="The employee who paid. Shown in Accounting › Employee expenses."><Select allowClear showSearch optionFilterProp="label" placeholder="Select employee" options={masters.employees.map(e=>({value:e.id,label:e.name}))}/></Form.Item>}
     <Form.Item label="Notes" name="notes"><Input maxLength={500} placeholder={open==='EXPENSE'?'Fuel, toll, parking…':undefined}/></Form.Item>
    {open==='EXPENSE'&&<Form.Item label="Receipt (optional)" extra="Take a photo of the bill or attach a PDF; it is uploaded when you save."><ReceiptPicker value={pending} onChange={setPending}/></Form.Item>}
    </Form>

@@ -17,6 +17,8 @@ public interface IQuotationService
     Task<QuotationModel?> UpdateAsync(Guid id, SaveQuotationCommand command, CancellationToken token);
     Task<QuotationDetailModel?> SaveLinesAsync(Guid id, IReadOnlyList<SaveQuotationLineCommand> lines, CancellationToken token);
     Task<QuotationDetailModel?> SaveItemsAsync(Guid id, IReadOnlyList<SaveQuotationItemCommand> items, CancellationToken token);
+    /// <summary>Replaces the quotation's items with the sales lead's inventory, leaving out what the customer said they do not need.</summary>
+    Task<LeadInventoryImportModel?> ImportLeadInventoryAsync(Guid id, CancellationToken token);
     Task<GeneratedQuotationLinkModel> GenerateLinkAsync(Guid id, int validDays, CancellationToken token);
     Task<QuotationDetailModel?> ApplyRequoteRequestAsync(Guid quotationId, Guid requestId, CancellationToken token);
     Task<PublicQuotationModel?> GetPublicAsync(string token, CancellationToken cancellationToken);

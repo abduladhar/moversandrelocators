@@ -324,6 +324,21 @@ The API key uses the same AES-GCM protection and production encryption key as AW
 
 Run `009_tenant_openai_configuration.sql` for the selected SQL Server or PostgreSQL provider after script `008`. It creates `TenantOpenAiConfigurations` with a database-generated serial number and a unique tenant constraint. On startup the default roles receive `settings.openai.manage`; existing users must sign in again to refresh their JWT permission claims.
 
+### Tenant Claude configuration
+
+Settings › **Claude configuration** holds one encrypted Anthropic API key per tenant, the Claude extraction model (default `claude-opus-5-5`; also Sonnet 5.5, Haiku 5.5, Fable 5.1), an effort level (low / medium / high) and optional prices. Picking a model fills in Anthropic's list prices. Whoever has `settings.openai.manage` may also manage Claude (`settings.claude.manage` exists for roles that need only Claude).
+
+| Method | Route | Permission | Description |
+| --- | --- | --- | --- |
+| `GET` | `/api/settings/claude` | `settings.claude.manage` (or `settings.openai.manage`) | Masked configuration |
+| `PUT` | `/api/settings/claude` | same | Create, change model/effort/prices, or rotate the key |
+| `GET` | `/api/settings/claude/usage` | same | Claude runs and approximate cost |
+| `GET` | `/api/sales/extraction-providers` | `sales.items.extract` | AIs configured for the Extract items dialog |
+
+In a lead's **Extract items** dialog, staff choose OpenAI or Claude for each run (`provider` on the extract request). Claude reads pictures, not video files: the browser takes still frames from the video, the server stores them in S3 next to it, and Claude receives short-lived presigned links (image URL blocks) and answers with the same JSON schema as OpenAI (structured outputs). Claude cannot listen to sound, so the narration is transcribed by OpenAI when OpenAI is configured; otherwise the run warns that only the pictures were used. On Opus 5.5, Opus 5, Sonnet 5.5 and Fable 5.1 the request opts into Anthropic's server-side refusal fallback (`fallbacks: "default"`). Script `036_claude_configuration.sql` creates `TenantClaudeConfigurations`; the API also applies it at startup.
+
+**Optional item pictures.** The Extract items dialog has an *Attach a picture to each item* switch (off by default). When on, the pictures are numbered for the AI (OpenAI or Claude) and each item returns `picture`, the number of the picture that shows it best, and `mark`, a box around the item in that picture (x, y, width, height in thousandths, 0–1000) so a frame with several items shows which one is meant. The mark is clamped to the picture and stored as `ImageMark` ("x,y,w,h"); the inventory thumbnail zooms into it and the enlarged view outlines it (the box is the AI's estimate). The inventory line keeps that picture (`ImageKey`: the lead photo, or the stored video frame `frames/frame-NN.jpg` next to the video; with local storage the frames are saved only when this switch is on). The inventory shows a thumbnail with preview and a remove button; links are 30-minute signed URLs. Staff edits keep a picture by sending the line's own id (`imageFromLineId`), never a storage key. Script `037_lead_inventory_images.sql` adds the column; the API also applies it at startup.
+
 ## 26. Sales-lead customer uploads
 
 Sales users can generate a secure customer upload link and share it through WhatsApp, email, SMS, or another channel. The mobile-first page requires no login and accepts multiple photos, videos, audio recordings, PDFs, office files, text files, archives, and other attachments up to 500 MB each.

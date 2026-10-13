@@ -60,6 +60,7 @@ public static class DataAccessRegistration
         services.AddScoped<Movers.Services.Delivery.IDeliveryRepository, Movers.DAL.Delivery.DeliveryRepository>();
         services.AddScoped<IAwsConfigurationRepository, AwsConfigurationRepository>();
         services.AddScoped<IOpenAiConfigurationRepository, OpenAiConfigurationRepository>();
+        services.AddScoped<Movers.Services.Claude.IClaudeConfigurationRepository, Movers.DAL.Configuration.ClaudeConfigurationRepository>();
         services.AddScoped<Movers.Services.Operations.IOperationsRepository, Movers.DAL.Operations.OperationsRepository>();
         services.AddScoped<Movers.Services.Operations.IShipmentRepository, Movers.DAL.Operations.ShipmentRepository>();
         services.AddScoped<Movers.Services.Masters.IBusinessMasterRepository, Movers.DAL.Masters.BusinessMasterRepository>();
@@ -132,7 +133,9 @@ public static class DataAccessRegistration
         await Movers.DAL.Persistence.ExpenseAttachmentSchema.Apply(db);
         await Movers.DAL.Persistence.LeadInventorySchema.Apply(db);
         await Movers.DAL.Persistence.AiUsageSchema.Apply(db);
+        await Movers.DAL.Persistence.ClaudeSchema.Apply(db);
         await Movers.DAL.Persistence.CompanySchema.Apply(db);
+        await Movers.DAL.Persistence.EmployeeExpenseSchema.Apply(db);
         await Movers.DAL.Numbering.NumberSequenceRepository.Initialize(db);
         var seeder = scope.ServiceProvider.GetRequiredService<SecuritySeeder>();
         await seeder.SeedAsync(systemAdminEmail, systemAdminPassword, resetSystemAdminPassword);

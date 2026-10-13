@@ -225,7 +225,7 @@ function MaterialsTab({detail,masters,locked,act}:{detail:PackingDetail;masters:
 }
 
 /* ---------------- income & expense ---------------- */
-type MoneyForm={currency?:string;exchangeRate?:number;amount:number;paymentMethod:string;category:string;notes?:string}
+type MoneyForm={currency?:string;exchangeRate?:number;amount:number;paymentMethod:string;category:string;notes?:string;paidByEmployeeId?:string}
 function MoneyTab({detail,masters,act}:{detail:PackingDetail;masters:PackingMasters;act:Act}){
  const {data:currencyData}=useCurrencies()
  const [open,setOpen]=useState<'INCOME'|'EXPENSE'|null>(null),[receipt,setReceipt]=useState<string|null>(null),[form]=Form.useForm<MoneyForm>()
@@ -233,7 +233,7 @@ function MoneyTab({detail,masters,act}:{detail:PackingDetail;masters:PackingMast
  const receipts=useReceipts(detail.transactions.filter(t=>t.type==='EXPENSE').map(t=>t.id))
  const methods=masters.paymentMethods.length?masters.paymentMethods.map(m=>({value:m.code,label:m.name})):[{value:'CASH',label:'Cash'}]
  const cancelled=detail.job.status==='CANCELLED',cur=detail.accounting.baseCurrency
- const start=(type:'INCOME'|'EXPENSE')=>{form.resetFields();setPending([]);form.setFieldsValue({currency:currencyData?.settings.defaultCurrency,paymentMethod:methods[0]?.value,category:type==='INCOME'?masters.incomeCategories[0]?.name:masters.expenseCategories[0]?.code});setOpen(type)}
+ const start=(type:'INCOME'|'EXPENSE')=>{form.resetFields();setPending([]);form.setFieldsValue({paidByEmployeeId:detail.crew.length===1?detail.crew[0].employeeId:undefined,currency:currencyData?.settings.defaultCurrency,paymentMethod:methods[0]?.value,category:type==='INCOME'?masters.incomeCategories[0]?.name:masters.expenseCategories[0]?.code});setOpen(type)}
  const save=async()=>{const v=await form.validateFields();const type=open!;const before=new Set(detail.transactions.map(t=>t.id))
   const d=await act(()=>packingApi.transaction(detail.job.id,{type,...v}),type==='INCOME'?'Payment recorded':'Expense recorded')
   if(d){setOpen(null);const created=d.transactions.find(t=>!before.has(t.id))
@@ -244,6 +244,7 @@ function MoneyTab({detail,masters,act}:{detail:PackingDetail;masters:PackingMast
   {title:'Number',dataIndex:'transactionNumber'},
   {title:'Type',dataIndex:'type',render:(v:string)=><Tag color={v==='INCOME'?'green':'volcano'}>{v==='INCOME'?'Received':'Paid'}</Tag>},
   {title:'Category',dataIndex:'category',render:(v:string)=>masters.expenseCategories.find(c=>c.code===v)?.name??v},
+  {title:'Paid by',dataIndex:'paidByName',render:(v:string|null|undefined,x:{type:string})=>x.type==='EXPENSE'?(v??'—'):''},
   {title:'Method',dataIndex:'paymentMethod',render:(v:string)=>methods.find(m=>m.value===v)?.label??v},
   {title:'Amount',align:'right' as const,render:(_:unknown,x:PackingDetail['transactions'][number])=><>{formatMoney(x.amount,x.currency||cur)}<br/><small style={{color:'#6b7686'}}>{formatMoney(x.baseAmount,cur)}</small></>},
   {title:'Date',dataIndex:'createdAtUtc',render:when},
@@ -272,6 +273,7 @@ function MoneyTab({detail,masters,act}:{detail:PackingDetail;masters:PackingMast
       {open==='INCOME'?<AutoComplete options={masters.incomeCategories.map(c=>({value:c.name}))} placeholder="Advance, Balance…"/>:<Select options={masters.expenseCategories.map(c=>({value:c.code,label:c.name}))}/>}
      </Form.Item>
     </div>
+    {open==='EXPENSE'&&<Form.Item label="Paid by" name="paidByEmployeeId" extra="The employee who paid. Shown in Accounting › Employee expenses."><Select allowClear showSearch optionFilterProp="label" placeholder="Select employee" options={masters.employees.map(e=>({value:e.id,label:e.name}))}/></Form.Item>}
     <Form.Item label="Notes" name="notes"><Input maxLength={500}/></Form.Item>
    {open==='EXPENSE'&&<Form.Item label="Receipt (optional)" extra="Take a photo of the bill or attach a PDF; it is uploaded when you save."><ReceiptPicker value={pending} onChange={setPending}/></Form.Item>}
    </Form>

@@ -24,7 +24,7 @@ public sealed record SaveDeliveryCrewCommand(IReadOnlyList<DeliveryCrewInput> Cr
 public sealed record SetDeliveryItemCommand(string Status, string? ReceivedBy, string? Notes);
 public sealed record UpdateDeliveryNoteCommand(string? ContactName, string? Phone, string? Address);
 public sealed record SignDeliveryNoteCommand(string SignerName, string SignaturePng, string? Remarks, IReadOnlyList<Guid> DeliveredItemIds);
-public sealed record AddDeliveryTransactionCommand(string Type, string Category, decimal Amount, string PaymentMethod, string? Notes, string? Currency, decimal? ExchangeRate, Guid? DeliveryNoteId);
+public sealed record AddDeliveryTransactionCommand(string Type, string Category, decimal Amount, string PaymentMethod, string? Notes, string? Currency, decimal? ExchangeRate, Guid? DeliveryNoteId, Guid? PaidByEmployeeId = null);
 
 public sealed record DeliveryJobModel(int SerialNo, Guid Id, string DeliveryNumber, string Status, DateTimeOffset ScheduledAtUtc, int DurationMinutes, string? Notes,
     Guid? VehicleId, string? VehicleName, Guid? DriverEmployeeId, string? DriverName, DateTimeOffset? StartedAtUtc, DateTimeOffset? CompletedAtUtc, bool IsPaused, decimal? DistanceKm,
@@ -47,7 +47,8 @@ public sealed record PublicDeliveryNoteModel(string Purpose, string TenantName, 
 public sealed record RespondDeliveryDateCommand(bool Confirmed, DateTimeOffset? PreferredAtUtc);
 public sealed record ShareDeliveryLocationCommand(decimal? Latitude, decimal? Longitude, string? Address, string? Notes);
 public sealed record DeliveryTransactionModel(int SerialNo, Guid Id, string TransactionNumber, string Type, string Category, decimal Amount, string PaymentMethod, string? Notes, DateTimeOffset CreatedAtUtc,
-    string? Currency, decimal? BaseAmount, Guid? DeliveryNoteId, string? CustomerName);
+    string? Currency, decimal? BaseAmount, Guid? DeliveryNoteId, string? CustomerName)
+{ public Guid? PaidByEmployeeId { get; init; } public string? PaidByName { get; init; } }
 public sealed record DeliveryCurrencyTotal(string Currency, decimal Income, decimal Expense);
 public sealed record DeliveryAccountingModel(string BaseCurrency, decimal IncomeBase, decimal ExpenseBase, IReadOnlyList<DeliveryCurrencyTotal> Totals);
 public sealed record DeliveryTimeEventModel(string Type, DateTimeOffset OccurredAtUtc, string? Reason, string RecordedBy);
@@ -398,9 +399,11 @@ public sealed class DeliveryService(IDeliveryRepository r, WarehouseService ware
         if (c.Notes?.Length > 500) throw new InvalidOperationException("Keep notes under 500 characters.");
         if (type == "EXPENSE") await masters.EnsureActive("expense-category", c.Category, t);
         if (c.DeliveryNoteId is { } noteId && (await r.Notes(id, false, t)).All(n => n.Id != noteId)) throw new InvalidOperationException("Select a customer on this delivery.");
+        if (type == "EXPENSE" && c.PaidByEmployeeId is { } payer && !(await r.ActiveEmployees(t)).Any(e => e.Id == payer)) throw new InvalidOperationException("Select the active employee who paid.");
         var fx = await currencies.Resolve(c.Currency ?? (await currencies.Settings(t)).DefaultCurrency, DateOnly.FromDateTime(clock.GetUtcNow().UtcDateTime), c.ExchangeRate, t);
         CurrencyService.Amount(c.Amount, fx);
         var x = new DeliveryJobTransaction(tenant.TenantId, id, type == "INCOME" ? c.DeliveryNoteId : null, await numbers.Next("DLT", t), type, c.Category, c.Amount, c.PaymentMethod, c.Notes);
+        if (type == "EXPENSE") x.SetPaidBy(c.PaidByEmployeeId);
         await currencies.SaveSnapshot(x.Id, fx, t);
         r.Add(x); job.Touch(); await r.Save(t); return await Detail(job, t);
     }
@@ -538,7 +541,8 @@ public sealed class DeliveryService(IDeliveryRepository r, WarehouseService ware
         {
             var fx = await currencies.Snapshot(x.Id, t);
             transactions.Add(new(x.SerialNo, x.Id, x.TransactionNumber, x.Type, x.Category, x.Amount, x.PaymentMethod, x.Notes, x.CreatedAtUtc, fx?.Currency, fx is null ? null : CurrencyService.ToBase(x.Amount, fx),
-                x.DeliveryNoteId, notes.SingleOrDefault(n => n.Id == x.DeliveryNoteId)?.CustomerName));
+                x.DeliveryNoteId, notes.SingleOrDefault(n => n.Id == x.DeliveryNoteId)?.CustomerName)
+                { PaidByEmployeeId = x.PaidByEmployeeId, PaidByName = x.PaidByEmployeeId is { } p ? names.GetValueOrDefault(p) : null });
         }
         var now = clock.GetUtcNow(); var links = (await r.Links(job.Id, false, t)).Where(l => l.ExpiresAtUtc > now).ToList();
         var noteModels = notes.OrderBy(n => n.SerialNo).Select(n => new DeliveryNoteModel(n.Id, n.NoteNumber, n.CustomerName, n.ContactName, n.Phone, n.Address,

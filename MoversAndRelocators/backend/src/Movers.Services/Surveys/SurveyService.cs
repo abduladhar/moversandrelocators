@@ -4,7 +4,7 @@ using Movers.Services.Tenancy;
 
 namespace Movers.Services.Surveys;
 
-public sealed class SurveyService(ISurveyRepository repository, ITenantContext tenantContext, TimeProvider timeProvider, Movers.Services.Numbering.IRecordNumbers numbers, Movers.Services.Tenants.ICompanyScope? companies = null) : ISurveyService
+public sealed class SurveyService(ISurveyRepository repository, ITenantContext tenantContext, TimeProvider timeProvider, Movers.Services.Numbering.IRecordNumbers numbers, Movers.Services.Tenants.ICompanyScope? companies = null, Movers.Services.OpenAi.AiUsageService? aiUsage = null) : ISurveyService
 {
     public async Task<IReadOnlyList<HouseholdItemModel>> ListItemsAsync(CancellationToken t) => (await repository.ListItemsAsync(t)).Select(Map).ToList();
     public async Task<HouseholdItemModel> CreateItemAsync(SaveHouseholdItemCommand c, CancellationToken t) { ValidateItem(c); await UniqueItem(c.Code, null, t); var x = new HouseholdItem(tenantContext.TenantId, c.Code, c.Name, c.VolumeCbm, c.Description); repository.AddItem(x); await repository.SaveChangesAsync(t); return Map(x); }
@@ -55,7 +55,6 @@ public sealed class SurveyService(ISurveyRepository repository, ITenantContext t
     public async Task<SurveyDetailModel?> SaveDetailsAsync(Guid id, SaveSurveyDetailsCommand c, CancellationToken t)
     {
         var survey = await repository.GetSurveyAsync(id, false, t); if (survey is null) return null;
-        if (c.Rooms.Count == 0) throw new InvalidOperationException("Add at least one room.");
         var itemMasters = await repository.ListItemsAsync(t); var itemMap = itemMasters.ToDictionary(x => x.Id);
         foreach (var room in c.Rooms) { if (string.IsNullOrWhiteSpace(room.Name)) throw new InvalidOperationException("Every room requires a name."); foreach (var item in room.Items) { if (item.Quantity <= 0) throw new InvalidOperationException("Item quantity must be greater than zero."); if (!itemMap.TryGetValue(item.HouseholdItemId, out var master) || !master.IsActive) throw new InvalidOperationException("Select an active household item."); if ((item.VolumePerUnitCbm ?? master.VolumeCbm) <= 0) throw new InvalidOperationException("Item volume must be greater than zero."); } }
         var materialMap = (await repository.ListMaterialsAsync(t)).ToDictionary(x => x.Id);
@@ -144,8 +143,10 @@ public sealed class SurveyService(ISurveyRepository repository, ITenantContext t
     {
         var survey = await repository.GetSurveyAsync(id, false, t); if (survey is null) return null; var employees = await repository.ListEmployeesAsync(t); var rooms = await repository.ListRoomsAsync(id, t); var lines = await repository.ListSurveyItemsAsync(id, t); var items = await repository.ListItemsAsync(t); var extras = await repository.ListExtraMaterialsAsync(id, t); var materials = await repository.ListMaterialsAsync(t); var boxes = await repository.ListBoxTypesAsync(t); var recipes = await repository.ListBoxMaterialsAsync(t);
         var roomModels = MapRooms(rooms, lines, items); var extraModels = extras.Join(materials, x => x.MaterialId, x => x.Id, (x, m) => new SurveyExtraMaterialModel(m.Id, m.Name, m.Unit, x.Quantity, m.CurrentUnitCost, x.Quantity * m.CurrentUnitCost)).ToList();
+        // The AI was paid for before this survey existed, on the lead it came from; the survey reports it, it does not own it.
+        var aiSpend = survey.SalesLeadId is { } leadId && aiUsage is not null ? await aiUsage.LeadSpend(leadId, t) : null;
         return new(Map(survey, employees.FirstOrDefault(x => x.Id == survey.AssignedEmployeeId)?.FullName ?? "Unknown"), roomModels, extraModels, Plan(roomModels, boxes.Where(x => x.IsActive).ToList(), recipes, materials, extraModels), ReadChanges(survey),
-            SurveyTrip.Build(survey, await repository.ListTimeEventsAsync(id, t), await repository.ListExpensesAsync(id, t), employees, timeProvider.GetUtcNow()));
+            SurveyTrip.Build(survey, await repository.ListTimeEventsAsync(id, t), await repository.ListExpensesAsync(id, t), employees, timeProvider.GetUtcNow()), aiSpend);
     }
     private async Task<PublicSurveyModel> MapPublic(Survey x, string tenantName, CancellationToken t) { var detail = await LoadDetail(x.Id, t) ?? throw new InvalidOperationException("Survey was not found."); return new(x.Id, tenantName, x.SurveyNumber, x.CustomerName, x.ScheduledAtUtc, x.Address, x.Status, x.ConfirmationExpiresAtUtc!.Value, x.ScheduleConfirmedAtUtc.HasValue, x.ItemsConfirmedAtUtc.HasValue, detail.Rooms, detail.PackingPlan.ItemsVolumeCbm, detail.CustomerChanges); }
     private static IReadOnlyList<SurveyRoomModel> MapRooms(IReadOnlyList<SurveyRoom> rooms, IReadOnlyList<SurveyItem> lines, IReadOnlyList<HouseholdItem> items) => rooms.Select(room => { var mapped = lines.Where(x => x.RoomId == room.Id).Join(items, x => x.HouseholdItemId, x => x.Id, (x, item) => new SurveyItemModel(x.SerialNo, x.Id, item.Id, item.Name, x.Quantity, x.VolumePerUnitCbm, x.Quantity * x.VolumePerUnitCbm, x.Notes)).ToList(); return new SurveyRoomModel(room.SerialNo, room.Id, room.Name, room.DisplayOrder, mapped, mapped.Sum(x => x.TotalVolumeCbm)); }).ToList();

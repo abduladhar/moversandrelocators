@@ -22,7 +22,7 @@ public interface ISurveyTripService
 /// The survey trip clock (leave office → pause/resume → back at office), distance, the surveyor who went, and travel expenses.
 /// Every step is time-stamped now unless a correction time is supplied; steps must stay in chronological order.
 /// </summary>
-public sealed class SurveyTripService(ISurveyRepository repository, ISurveyService surveys, ITenantContext tenantContext, IUserContext user, TimeProvider clock, CurrencyService currencies) : ISurveyTripService
+public sealed class SurveyTripService(ISurveyRepository repository, ISurveyService surveys, ITenantContext tenantContext, IUserContext user, TimeProvider clock, CurrencyService currencies, Movers.Services.Billing.IBillingRepository? billing = null) : ISurveyTripService
 {
     private const decimal MaxDistanceKm = 5000;
 
@@ -63,15 +63,24 @@ public sealed class SurveyTripService(ISurveyRepository repository, ISurveyServi
     public async Task<SurveyDetailModel?> UpdateExpenseAsync(Guid surveyId, Guid expenseId, SaveSurveyExpenseCommand c, CancellationToken t)
     {
         var expense = await repository.GetExpenseAsync(expenseId, true, t); if (expense is null || expense.SurveyId != surveyId) return null;
+        await EnsureNotPosted(expenseId, "changed", t);
         await ValidateExpense(c, t);
         var fx=await currencies.Resolve(c.Currency,DateOnly.FromDateTime(c.IncurredAtUtc.UtcDateTime),c.ExchangeRate,t);CurrencyService.Amount(c.Amount,fx);await currencies.SaveSnapshot(expense.Id,fx,t);
         expense.Update(c.Category, c.Amount, c.Currency, c.IncurredAtUtc, c.PaidByEmployeeId, c.Notes);
         await repository.SaveChangesAsync(t); return await surveys.GetSurveyAsync(surveyId, t);
     }
 
+    /// <summary>Once the accountant has posted an expense to the ledger it is locked, as for pickup expenses.</summary>
+    private async Task EnsureNotPosted(Guid expenseId, string action, CancellationToken t)
+    {
+        if (billing is not null && await billing.CashIsPosted(expenseId, t))
+            throw new InvalidOperationException($"This expense is posted to the ledger and cannot be {action}.");
+    }
+
     public async Task<SurveyDetailModel?> DeleteExpenseAsync(Guid surveyId, Guid expenseId, CancellationToken t)
     {
         var expense = await repository.GetExpenseAsync(expenseId, true, t); if (expense is null || expense.SurveyId != surveyId) return null;
+        await EnsureNotPosted(expenseId, "deleted", t);
         repository.RemoveExpense(expense); await repository.SaveChangesAsync(t); return await surveys.GetSurveyAsync(surveyId, t);
     }
 

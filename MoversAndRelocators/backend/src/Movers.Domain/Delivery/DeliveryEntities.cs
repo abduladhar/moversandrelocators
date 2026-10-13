@@ -233,6 +233,9 @@ public sealed class DeliveryJobTransaction : TenantOwnedEntity
         Amount = amount; PaymentMethod = method.Trim(); Notes = DeliveryJob.Clean(notes); CreatedAtUtc = DateTimeOffset.UtcNow;
     }
     public Guid DeliveryJobId { get; private set; }
+    /// <summary>The employee who paid an expense out of pocket or from a float (employee expense report).</summary>
+    public Guid? PaidByEmployeeId { get; private set; }
+    public void SetPaidBy(Guid? employeeId) => PaidByEmployeeId = employeeId;
     /// <summary>The customer (delivery note) the money was collected from; null for expenses or general income.</summary>
     public Guid? DeliveryNoteId { get; private set; }
     public string TransactionNumber { get; private set; } = "";

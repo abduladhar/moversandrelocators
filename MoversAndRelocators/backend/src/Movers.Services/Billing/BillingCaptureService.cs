@@ -90,6 +90,13 @@ public sealed partial class BillingService {
    var fx=await currencies.Snapshot(p.Id,ct);
    Append(p.Id,"Expense #"+p.SerialNo,new("PICKUP",p.PickupId,pickup.PickupNumber,"EXPENSE_PAID",null,"",p.Amount,p.Currency,DateOnly.FromDateTime(p.IncurredAtUtc.UtcDateTime),"Expense #"+p.SerialNo,null,p.Category+" · "+p.Notes,Fx:fx,BaseAmount:fx is null?null:CurrencyService.ToBase(p.Amount,fx)));
   }
+  // Survey trip expenses (source SURVEY): same flow as pickup crew expenses, with who paid in the notes.
+  var employees=(await unit.Employees(ct)).ToDictionary(x=>x.Id,x=>x.FullName);
+  foreach(var (p,survey) in await unit.SurveyExpenses(ct)){
+   var fx=await currencies.Snapshot(p.Id,ct);
+   var notes=string.Join(" · ",new[]{p.Category,p.Notes,p.PaidByEmployeeId is { } paidBy&&employees.TryGetValue(paidBy,out var name)?"Paid by "+name:null}.Where(x=>!string.IsNullOrWhiteSpace(x)));
+   Append(p.Id,"Survey expense #"+p.SerialNo,new("SURVEY",p.SurveyId,survey,"EXPENSE_PAID",null,"",p.Amount,p.Currency,DateOnly.FromDateTime(p.IncurredAtUtc.UtcDateTime),"Survey expense #"+p.SerialNo,null,notes,Fx:fx,BaseAmount:fx is null?null:CurrencyService.ToBase(p.Amount,fx)));
+  }
   return list;
  }
  public async Task<BillingView<CashData>> CaptureCash(CashCapture c,CancellationToken ct) {

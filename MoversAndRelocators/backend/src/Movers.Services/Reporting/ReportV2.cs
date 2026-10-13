@@ -21,7 +21,7 @@ public record ReportTemplateV2Flags(Guid Version, bool? IsDefault, bool? ListOnP
 public static class ReportTypesV2
 {
     public static readonly string[] Accounting = [
-        "Trial balance","General ledger","Journal register","Profit and loss","Balance sheet","Cash flow statement","Cash book & bank book","Customer statement","Vendor statement","Accounts receivable aging","Accounts payable aging","Invoice register","Bill register","Receipt register","Payment voucher register","Credit memo register","Debit memo register","Outstanding customer balances","Outstanding vendor balances","Customer advances","Expense analysis by account","Revenue analysis by account","Pickup / warehouse / job profitability","Currency exposure & exchange differences","Tax summary","Posting & reversal audit"];
+        "Trial balance","General ledger","Journal register","Profit and loss","Balance sheet","Cash flow statement","Cash book & bank book","Customer statement","Vendor statement","Accounts receivable aging","Accounts payable aging","Invoice register","Bill register","Receipt register","Payment voucher register","Credit memo register","Debit memo register","Outstanding customer balances","Outstanding vendor balances","Customer advances","Expense analysis by account","Revenue analysis by account","Pickup / warehouse / job profitability","Currency exposure & exchange differences","Tax summary","Posting & reversal audit","Employee expenses"];
     public static readonly IReadOnlyList<ReportTypeV2> All = [
         new("INVOICE","Invoice","Billing",SecurityPermissions.BillingView),
         new("BILL","Bill","Billing",SecurityPermissions.BillingView),
@@ -417,6 +417,7 @@ public sealed class ReportDataService(BillingService billing, IPickupService pic
                 22 => await billing.OperationProfitability(Date(q, "from"), Date(q, "to"), cur, Arg(q, "sourceKind", "ALL"), Opt(q, "sourceId") is { } s && Guid.TryParse(s, out var sid) ? sid : null, ct),
                 23 => await billing.CurrencyExposure(Date(q, "from"), Date(q, "to"), cur, ct),
                 24 => await billing.TaxSummary(Date(q, "from"), Date(q, "to"), cur, ct),
+                26 => await billing.EmployeeExpenses(Date(q, "from"), Date(q, "to"), cur, Opt(q, "employeeId") is { } e && Guid.TryParse(e, out var eid) ? eid : null, Arg(q, "sourceKind", "ALL"), status, ct),
                 25 => await billing.PostingAudit(Date(q, "from"), Date(q, "to"), cur, status, Opt(q, "userId") is { } u && Guid.TryParse(u, out var uid) ? uid : null, Opt(q, "document"), ct),
                 _ => throw new InvalidOperationException("Unknown accounting report.")
             };

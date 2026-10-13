@@ -6,7 +6,7 @@ export type PackingJob={serialNo:number;id:string;jobNumber:string;status:Packin
 export type PackingBoxItem={itemName:string;quantity:number;notes:string|null;householdItemId:string|null}
 export type PackingBox={serialNo:number;id:string;boxTypeId:string;boxTypeName:string;trackingNumber:string;roomName:string|null;isFragile:boolean;notes:string|null;items:PackingBoxItem[];labelPrintedAtUtc:string|null;labelPrintCount:number;customMaterials:boolean;materials:{materialId:string;materialName:string;unit:string;quantity:number}[]}
 export type PackingMaterialUse={materialId:string;materialName:string;unit:string;quantity:number;unitCost:number;totalCost:number;isBoxRecipe:boolean}
-export type PackingTransaction={serialNo:number;id:string;transactionNumber:string;type:'INCOME'|'EXPENSE';category:string;amount:number;paymentMethod:string;notes:string|null;createdAtUtc:string;currency:string|null;baseAmount:number|null}
+export type PackingTransaction={serialNo:number;id:string;transactionNumber:string;type:'INCOME'|'EXPENSE';category:string;amount:number;paymentMethod:string;notes:string|null;createdAtUtc:string;currency:string|null;baseAmount:number|null;paidByEmployeeId?:string|null;paidByName?:string|null}
 export type PackingAccounting={baseCurrency:string;materialCost:number;materialPosted:boolean;materialJournalReference:string|null;incomeBase:number;expenseBase:number;totals:{currency:string;income:number;expense:number}[]}
 /** Customer confirmation state; itemsResponseCurrent is false when boxes changed after the customer responded. */
 export type PackingLinkPurpose='SCHEDULE'|'LOCATION'|'ITEMS'
@@ -38,7 +38,7 @@ export const packingApi={
  materials:(id:string,materials:{materialId:string;quantity:number;unitCost?:number|null}[])=>send<PackingDetail>(base+'/'+id+'/materials','PUT',{materials}),
  createLink:(id:string,purpose:PackingLinkPurpose,validDays:number)=>send<{purpose:PackingLinkPurpose;url:string;expiresAtUtc:string}>(base+'/'+id+'/links','POST',{purpose,validDays}),
  revokeLink:(id:string,purpose:PackingLinkPurpose)=>send<PackingDetail>(base+'/'+id+'/links/'+purpose,'DELETE'),
- transaction:(id:string,v:{type:'INCOME'|'EXPENSE';category:string;amount:number;paymentMethod:string;notes?:string;currency?:string;exchangeRate?:number})=>send<PackingDetail>(base+'/'+id+'/transactions','POST',v)
+ transaction:(id:string,v:{type:'INCOME'|'EXPENSE';category:string;amount:number;paymentMethod:string;notes?:string;currency?:string;exchangeRate?:number;paidByEmployeeId?:string|null})=>send<PackingDetail>(base+'/'+id+'/transactions','POST',v)
 }
 
 export const STATUS_LABEL:Record<PackingStatus,{label:string;color:string}>={PLANNED:{label:'Planned',color:'blue'},IN_PROGRESS:{label:'Packing',color:'orange'},COMPLETED:{label:'Completed',color:'green'},CANCELLED:{label:'Cancelled',color:'default'}}

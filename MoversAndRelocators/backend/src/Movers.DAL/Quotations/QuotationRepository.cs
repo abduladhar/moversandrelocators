@@ -40,6 +40,7 @@ public sealed class QuotationRepository(MoversDbContext db) : IQuotationReposito
     public async Task<IReadOnlyList<SurveyItem>> ListSurveyItemsForUpdateAsync(Guid id, CancellationToken t) => await db.SurveyItems.Where(x => x.SurveyId == id).ToListAsync(t);
     public void RemoveSurveyItems(IEnumerable<SurveyItem> items) => db.SurveyItems.RemoveRange(items);
     public async Task<IReadOnlyList<HouseholdItem>> ListHouseholdItemsAsync(CancellationToken t) => await db.HouseholdItems.AsNoTracking().ToListAsync(t);
+    public async Task<IReadOnlyList<SalesLeadInventoryItem>> ListLeadInventoryAsync(Guid leadId, CancellationToken t) => await db.Set<SalesLeadInventoryItem>().AsNoTracking().Where(x => x.SalesLeadId == leadId).OrderBy(x => x.SerialNo).ToListAsync(t);
     public Task<SalesLead?> GetLeadAsync(Guid id, CancellationToken t) => db.SalesLeads.AsNoTracking().SingleOrDefaultAsync(x => x.Id == id, t);
     public async Task<IReadOnlyList<SalesLead>> ListLeadsAsync(CancellationToken t) => await db.SalesLeads.AsNoTracking().ToListAsync(t);
     public async Task<PublicQuotationResolution?> ResolvePublicAsync(string hash, CancellationToken t) { var quote = await db.Quotations.IgnoreQueryFilters().AsNoTracking().SingleOrDefaultAsync(x => x.ShareTokenHash == hash, t); if (quote is null) return null; var tenant = await db.Tenants.IgnoreQueryFilters().AsNoTracking().SingleOrDefaultAsync(x => x.Id == quote.TenantId && x.IsActive, t); return tenant is null ? null : new(quote, tenant); }

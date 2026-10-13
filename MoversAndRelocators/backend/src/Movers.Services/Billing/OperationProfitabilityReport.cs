@@ -4,13 +4,13 @@ public record OperationProfitEntry(string SourceKind,Guid SourceId,string Source
 public sealed partial class BillingService {
  public async Task<object> OperationProfitability(DateOnly from,DateOnly to,string currency,string sourceKind,Guid? sourceId,CancellationToken ct){
   if(from==default||to==default||from>to)throw new InvalidOperationException("Select a valid reporting period.");
-  if(!new[]{"ALL","PICKUP","PACKING","DELIVERY","WAREHOUSE","JOB"}.Contains(sourceKind))throw new InvalidOperationException("Select an operation type.");
-  if(sourceId.HasValue&&!(await Sources(ct)).Any(s=>s.Id==sourceId&&(sourceKind=="ALL"||s.Kind==sourceKind)))throw new InvalidOperationException("Select a valid operation.");
+  if(!new[]{"ALL","SURVEY","PICKUP","PACKING","DELIVERY","WAREHOUSE","JOB"}.Contains(sourceKind))throw new InvalidOperationException("Select an operation type.");
+  if(sourceId.HasValue&&sourceKind!="SURVEY"&&!(await Sources(ct)).Any(s=>s.Id==sourceId&&(sourceKind=="ALL"||s.Kind==sourceKind)))throw new InvalidOperationException("Select a valid operation.");
   var report=await currencies.ReportCurrency(currency,to,ct);var code=report.Code;
   var journals=await unit.Journals(ct);var rows=new List<OperationProfitEntry>();
   decimal Translate(decimal value)=>report.Translation is null?value:CurrencyService.FromBase(value,report.Translation);
   void Add(Guid? journalId,string kind,Guid id,string label,string description,string txn,decimal amount,decimal? baseAmount,bool income){
-   if(!journalId.HasValue||!new[]{"PICKUP","PACKING","DELIVERY","WAREHOUSE","JOB"}.Contains(kind)||(sourceKind!="ALL"&&kind!=sourceKind)||(sourceId.HasValue&&id!=sourceId)||(!report.Converted&&txn!=code))return;
+   if(!journalId.HasValue||!new[]{"SURVEY","PICKUP","PACKING","DELIVERY","WAREHOUSE","JOB"}.Contains(kind)||(sourceKind!="ALL"&&kind!=sourceKind)||(sourceId.HasValue&&id!=sourceId)||(!report.Converted&&txn!=code))return;
    foreach(var j in journals.Where(j=>(j.Id==journalId||j.ReversesId==journalId)&&j.PostingDate>=from&&j.PostingDate<=to)){
     var sign=j.ReversesId.HasValue?-1:1;
     var value=(report.Converted?Translate(baseAmount??throw new InvalidOperationException("Historical operation exchange value is missing.")):amount)*sign;

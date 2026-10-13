@@ -127,7 +127,7 @@ public sealed partial class BillingApiTests
  {
   await Setup();
   var types=await Get("/api/report-v2/types");
-  Assert.Equal(18+26,types.Count); // 18 documents (incl. the 2 delivery types) + 26 accounting reports
+  Assert.Equal(18+27,types.Count); // 18 documents (incl. the 2 delivery types) + 27 accounting reports
   foreach(var t in types){
    var type=t.GetProperty("type").GetString();
    var r=await _client.GetAsync($"/api/report-v2/sample/{type}");

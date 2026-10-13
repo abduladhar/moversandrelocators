@@ -65,6 +65,15 @@ public sealed class LocalObjectStorage(IConfiguration configuration, IWebHostEnv
         }
         finally { if (File.Exists(temporary)) File.Delete(temporary); }
     }
+    /// <summary>Writes a server-made file (for example a video frame kept for an inventory item), replacing an earlier one with the same key.</summary>
+    public async Task WriteAsync(string key, byte[] content, string contentType, CancellationToken ct)
+    {
+        var path = ObjectPath(key);
+        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+        var temporary = path + "." + Guid.NewGuid().ToString("N") + ".upload";
+        try { await File.WriteAllBytesAsync(temporary, content, ct); File.Move(temporary, path, true); }
+        finally { if (File.Exists(temporary)) File.Delete(temporary); }
+    }
     private string Url(Grant grant)
     {
         var token = protector.Protect(JsonSerializer.Serialize(grant), "private-local-file");

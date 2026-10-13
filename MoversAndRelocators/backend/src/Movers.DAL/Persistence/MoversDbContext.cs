@@ -68,7 +68,7 @@ public sealed class MoversDbContext(
     public static readonly IReadOnlySet<Type> SharedTypes = new HashSet<Type>
     {
         typeof(Company), typeof(Movers.Domain.Employees.TeamMembership), typeof(BoxTypeMaterial),
-        typeof(Movers.Domain.Operations.SavedReport), typeof(TenantAwsConfiguration), typeof(TenantOpenAiConfiguration)
+        typeof(Movers.Domain.Operations.SavedReport), typeof(TenantAwsConfiguration), typeof(TenantOpenAiConfiguration), typeof(TenantClaudeConfiguration)
     };
 
     /// <summary>
@@ -100,6 +100,7 @@ public sealed class MoversDbContext(
         Movers.DAL.Operations.ExpenseAttachmentMapping.Configure(modelBuilder);
         Movers.DAL.Sales.LeadInventoryMapping.Configure(modelBuilder);
         Movers.DAL.Configuration.AiUsageMapping.Configure(modelBuilder);
+        Movers.DAL.Configuration.ClaudeConfigurationMapping.Configure(modelBuilder);
         var tenant = modelBuilder.Entity<Tenant>();
         tenant.ToTable("Tenants");
         tenant.Property(x => x.Name).HasMaxLength(160).IsRequired();

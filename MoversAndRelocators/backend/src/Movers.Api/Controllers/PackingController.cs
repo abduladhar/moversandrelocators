@@ -22,8 +22,8 @@ public sealed record PackingShareRequest([Required] string Purpose, [Range(1, 30
 public sealed record ConfirmPackingScheduleRequest(DateTimeOffset ScheduledAtUtc);
 public sealed record SharePackingLocationRequest(decimal Latitude, decimal Longitude, [StringLength(500)] string? Address, [StringLength(500)] string? Notes);
 public sealed record RespondPackingItemsRequest([Required, StringLength(160)] string Name, bool Confirmed, [StringLength(2000)] string? Notes, [Required, StringLength(64)] string SnapshotHash);
-public sealed record AddPackingTransactionRequest([Required] string Type, [Required, StringLength(120)] string Category, [Range(.01, 999999999)] decimal Amount, [Required, StringLength(40)] string PaymentMethod, [StringLength(500)] string? Notes, string? Currency = null, decimal? ExchangeRate = null)
-{ public AddPackingTransactionCommand Command() => new(Type, Category, Amount, PaymentMethod, Notes, Currency, ExchangeRate); }
+public sealed record AddPackingTransactionRequest([Required] string Type, [Required, StringLength(120)] string Category, [Range(.01, 999999999)] decimal Amount, [Required, StringLength(40)] string PaymentMethod, [StringLength(500)] string? Notes, string? Currency = null, decimal? ExchangeRate = null, Guid? PaidByEmployeeId = null)
+{ public AddPackingTransactionCommand Command() => new(Type, Category, Amount, PaymentMethod, Notes, Currency, ExchangeRate, PaidByEmployeeId); }
 
 /// <summary>Packing module: jobs, crew, boxes and labels, materials, and income/expense.</summary>
 [ApiController, Authorize(Policy = SecurityPermissions.PackingManage), Route("api/packing")]

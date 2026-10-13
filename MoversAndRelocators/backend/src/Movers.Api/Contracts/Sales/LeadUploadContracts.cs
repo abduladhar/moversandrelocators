@@ -7,7 +7,9 @@ public sealed record GenerateUploadLinkRequest([Range(5, 30)] int ValidDays = 5,
 public sealed record CustomerMoveDetails([StringLength(4000)] string? Items, [StringLength(4000)] string? Description);
 /// <param name="Frames">JPEG data URLs: one for a local image, up to 20 stills for a video.</param>
 /// <param name="Audio">The video's sound as a WAV data URL (optional), transcribed and used with the pictures.</param>
-public sealed record ExtractAttachmentRequest(IReadOnlyList<string>? Frames, string? Audio = null);
+/// <param name="Provider">"openai" or "claude"; blank uses OpenAI when configured, otherwise Claude.</param>
+/// <param name="Pictures">Optional: attach to each extracted item the picture (photo or video frame) that shows it best.</param>
+public sealed record ExtractAttachmentRequest(IReadOnlyList<string>? Frames, string? Audio = null, string? Provider = null, bool Pictures = false);
 public sealed record CreateUploadRequest([Required, StringLength(255)] string FileName,
     [Required, StringLength(150)] string ContentType, [Range(1, 524288000)] long SizeBytes)
 { public UploadRequestModel ToModel() => new(FileName, ContentType, SizeBytes); }

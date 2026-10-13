@@ -2,7 +2,8 @@ import {ReportPrintButton} from '../reportingV2/ReportPrintButton'
 import {useCurrencies} from '../currency'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Alert, Button, Card, Descriptions, Empty, Form, Input, InputNumber, Modal, Popconfirm, Select, Space, Tabs, Tag, Typography, message } from 'antd'
-import { ArrowLeftOutlined, DollarOutlined, DeleteOutlined, EditOutlined, FileDoneOutlined, PlusOutlined, SyncOutlined } from '@ant-design/icons'
+import { ArrowLeftOutlined, DollarOutlined, DeleteOutlined, EditOutlined, FileDoneOutlined, ImportOutlined, PlusOutlined, SyncOutlined } from '@ant-design/icons'
+import { AiSpendCard } from '../components/AiSpendCard'
 import { quotationsApi, surveysApi } from '../api'
 import type { ChargeMaster, HouseholdItem, QuotationDetail, QuotationItemInput, QuotationLineInput, TaxMaster } from '../types'
 
@@ -39,6 +40,22 @@ export function QuotationDetailPage({ quotationId, onBack, onChanged, onOpenRevi
       setItems(updated.quotationItems.map(item => ({ householdItemId: item.householdItemId, roomName: item.roomName, quantity: item.quantity, volumePerUnitCbm: item.volumePerUnitCbm, notes: item.notes ?? '', displayOrder: item.displayOrder })))
       onChanged(); message.success('Quotation items saved'); return true
     } catch (error) { message.error(error instanceof Error ? error.message : 'Unable to save quotation items'); return false }
+    finally { mutationInFlight.current = false; setSaving(false) }
+  }
+  /* The sales lead's inventory is the list the customer themselves checked, so it is the honest starting point for
+     the quotation. Only names that match an active household item can be priced, so the rest are reported back. */
+  const importLeadInventory = async () => {
+    if (mutationInFlight.current) return
+    mutationInFlight.current = true; setSaving(true)
+    try {
+      const result = await quotationsApi.importLeadInventory(quotationId)
+      setDetail(result.detail)
+      setItems(result.detail.quotationItems.map(item => ({ householdItemId: item.householdItemId, roomName: item.roomName, quantity: item.quantity, volumePerUnitCbm: item.volumePerUnitCbm, notes: item.notes ?? '', displayOrder: item.displayOrder })))
+      onChanged()
+      const notes = [result.dropped ? `${result.dropped} the customer does not need` : '', result.unmatched.length ? `${result.unmatched.length} with no household item: ${result.unmatched.slice(0, 5).join(', ')}${result.unmatched.length > 5 ? '…' : ''}` : ''].filter(Boolean)
+      message.success(`${result.imported} item${result.imported === 1 ? '' : 's'} imported from the lead inventory${notes.length ? ` · left out: ${notes.join('; ')}` : ''}`)
+      if (result.unmatched.length) message.warning(`Add these to the household items master to quote them: ${result.unmatched.join(', ')}`, 8)
+    } catch (error) { message.error(error instanceof Error ? error.message : 'Unable to import the lead inventory') }
     finally { mutationInFlight.current = false; setSaving(false) }
   }
   const saveItem = async () => {
@@ -93,9 +110,10 @@ export function QuotationDetailPage({ quotationId, onBack, onChanged, onOpenRevi
       { key: 'overview', label: 'Overview', children: <>
 <Card><Descriptions size="small" bordered column={{ xs: 1, md: 3 }} items={[{ key: 'origin', label: 'Origin', children: q.origin }, { key: 'destination', label: 'Destination', children: q.destination }, { key: 'employee', label: 'Sales employee', children: q.assignedEmployeeName }, { key: 'lead', label: 'Sales lead', children: q.leadNumber ?? 'Independent' }, { key: 'survey', label: 'Survey', children: q.surveyNumber ?? 'No survey' }, { key: 'valid', label: 'Valid until', children: new Date(`${q.validUntil}T00:00:00`).toLocaleDateString() }, { key: 'volume', label: 'Survey volume', children: detail.surveyVolumeCbm === null ? '—' : `${detail.surveyVolumeCbm.toFixed(3)} CBM` }, { key: 'response', label: 'Customer response', children: q.rejectionReason ?? (q.respondedAtUtc ? new Date(q.respondedAtUtc).toLocaleString() : 'Pending') }]} /></Card>
         <Card title="Terms & notes"><Typography.Paragraph>{q.terms || 'No terms and conditions entered.'}</Typography.Paragraph>{q.notes && <><Typography.Text strong>Internal notes</Typography.Text><Typography.Paragraph>{q.notes}</Typography.Paragraph></>}</Card>
+        <AiSpendCard spend={detail.leadAiSpend} context="quotation" />
       </> },
       { key: 'items', label: `Quotation items (${items.length})`, children: <>
-<Card title="Quotation items" extra={!locked && <Space><Button disabled={saving} type="primary" icon={<PlusOutlined />} onClick={() => showItem()}>Add item</Button></Space>}>
+<Card title="Quotation items" extra={!locked && <Space>{q.salesLeadId && <Popconfirm title="Build the item list from the lead inventory?" description="This replaces the items below with what the customer confirmed on their moving list." onConfirm={() => void importLeadInventory()}><Button disabled={saving} icon={<ImportOutlined />}>From lead inventory</Button></Popconfirm>}<Button disabled={saving} type="primary" icon={<PlusOutlined />} onClick={() => showItem()}>Add item</Button></Space>}>
       {items.length ? <div className="quote-line-list">{items.map((item, index) => { const master = masters.find(x => x.id === item.householdItemId); const volume = item.volumePerUnitCbm ?? master?.volumeCbm ?? 0; return <Card size="small" key={`${item.householdItemId}-${index}`} className="quote-line-card quotation-item-card"><div className="quote-line-main"><div><strong>{master?.name ?? 'Item'}</strong><small>{item.roomName}{item.notes ? ` · ${item.notes}` : ''}</small></div><div className="quote-line-total"><small>VOLUME</small><strong>{(item.quantity * volume).toFixed(3)} CBM</strong></div>{!locked && <Space><Button disabled={saving} type="text" aria-label="Edit item" icon={<EditOutlined />} onClick={() => showItem(index)} /><Popconfirm disabled={saving} title="Remove this item?" onConfirm={async () => { await persistItems(items.filter((_, i) => i !== index)) }}><Button disabled={saving} type="text" danger aria-label="Remove" icon={<DeleteOutlined />} /></Popconfirm></Space>}</div><div className="quote-line-breakdown"><span>Room {item.roomName}</span><span>Count {item.quantity}</span><span>{volume.toFixed(3)} CBM each</span></div></Card> })}</div> : <Empty description="Add household items to this quotation" />}
     </Card>
       </> },

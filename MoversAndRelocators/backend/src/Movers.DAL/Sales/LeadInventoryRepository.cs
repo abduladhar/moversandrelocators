@@ -35,7 +35,12 @@ public static class LeadInventoryMapping
         x.Property(e => e.UnitCbm).HasPrecision(12, 3);
         x.Property(e => e.Handling).HasMaxLength(300);
         x.Property(e => e.Notes).HasMaxLength(1000);
+        x.Property(e => e.ImageKey).HasMaxLength(500);
+        x.Property(e => e.ImageMark).HasMaxLength(40);
+        x.Property(e => e.CustomerStatus).HasMaxLength(20).IsRequired();
+        x.Property(e => e.CustomerNote).HasMaxLength(500);
         x.Ignore(e => e.TotalCbm);
+        x.Ignore(e => e.ConfirmedCbm);
         x.HasIndex(e => e.SalesLeadId);
         x.HasOne<Tenant>().WithMany().HasForeignKey(e => e.TenantId).HasPrincipalKey(t => t.Id).OnDelete(DeleteBehavior.Restrict);
         x.HasOne<SalesLead>().WithMany().HasForeignKey(e => e.SalesLeadId).HasPrincipalKey(l => l.Id).OnDelete(DeleteBehavior.Cascade);

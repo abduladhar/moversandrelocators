@@ -130,14 +130,25 @@ export const salesApi = {
   createFollowUp: (leadId: string, input: FollowUpInput) => request<LeadFollowUp>(`/api/sales/leads/${leadId}/follow-ups`, { method: 'POST', body: JSON.stringify(input) }),
   updateFollowUp: (id: string, input: FollowUpInput) => request<LeadFollowUp>(`/api/sales/leads/follow-ups/${id}`, { method: 'PUT', body: JSON.stringify(input) }),
   uploadLinks: (leadId: string) => request<LeadUploadLink[]>(`/api/sales/leads/${leadId}/upload-links`),
-  generateUploadLink: (leadId: string, validDays: number, requestedItems?: string, description?: string) => request<{ link: LeadUploadLink; url: string }>(`/api/sales/leads/${leadId}/upload-links`, { method: 'POST', body: JSON.stringify({ validDays, requestedItems, description }) }),
+  generateUploadLink: (leadId: string, validDays: number, requestedItems?: string, description?: string) => request<{ link: LeadUploadLink; url: string; inventoryUrl: string }>(`/api/sales/leads/${leadId}/upload-links`, { method: 'POST', body: JSON.stringify({ validDays, requestedItems, description }) }),
   revokeUploadLink: (leadId: string, id: string) => request<LeadUploadLink>(`/api/sales/leads/${leadId}/upload-links/${id}/revoke`, { method: 'PATCH' }),
   attachments: (leadId: string) => request<LeadAttachment[]>(`/api/sales/leads/${leadId}/attachments`),
   attachmentDownload: (leadId: string, id: string) => request<{ url: string }>(`/api/sales/leads/${leadId}/attachments/${id}/download`),
+  extractionProviders: () => request<import('./types').ExtractionProviders>('/api/sales/extraction-providers'),
   /** Staff capture on the lead: video, photo or file recorded by the sales team (no customer link). */
   staffUpload: (leadId: string, file: File) => uploadFile<LeadAttachment>(file,
     () => request<PresignedUpload>(`/api/sales/leads/${leadId}/attachments/upload-requests`, { method: 'POST', body: uploadBody(file) }),
     id => request<LeadAttachment>(`/api/sales/leads/${leadId}/attachments/${id}/complete`, { method: 'POST' })),
+}
+
+/** The inventory as the customer sees it on the link their coordinator shared. */
+export type PublicInventoryLine = { id: string; kind: 'ITEM' | 'BOX'; room: string | null; name: string; quantity: number; fragile: boolean; notes: string | null; imageUrl: string | null; imageMark: { x: number; y: number; width: number; height: number } | null; customerStatus: 'PENDING' | 'NEEDED' | 'NOT_NEEDED'; customerNote: string | null }
+export type PublicLeadInventory = { tenantName: string; leadNumber: string; customerName: string; expiresAtUtc: string; lines: PublicInventoryLine[] }
+
+export const publicLeadInventoryApi = {
+  get: (token: string) => request<PublicLeadInventory>(`/api/public/lead-inventory/${encodeURIComponent(token)}`),
+  review: (token: string, lines: { lineId: string; needed: boolean; note?: string | null }[]) =>
+    request<PublicLeadInventory>(`/api/public/lead-inventory/${encodeURIComponent(token)}`, { method: 'PUT', body: JSON.stringify({ lines }) }),
 }
 
 export const publicUploadApi = {
@@ -211,6 +222,8 @@ export const quotationsApi = {
   update: (id: string, input: QuotationInput) => request<Quotation>(`/api/quotations/${id}`, { method: 'PUT', body: JSON.stringify(input) }),
   saveLines: (id: string, lines: QuotationLineInput[]) => request<QuotationDetail>(`/api/quotations/${id}/lines`, { method: 'PUT', body: JSON.stringify({ lines }) }),
   saveItems: (id: string, items: QuotationItemInput[]) => request<QuotationDetail>(`/api/quotations/${id}/items`, { method: 'PUT', body: JSON.stringify({ items }) }),
+  /** Replaces the quotation's items with the sales lead's inventory, minus whatever the customer said they do not need. */
+  importLeadInventory: (id: string) => request<{ detail: QuotationDetail; imported: number; dropped: number; unmatched: string[] }>(`/api/quotations/${id}/items/from-lead-inventory`, { method: 'POST' }),
   applyRequote: (id: string, requestId: string) => request<QuotationDetail>(`/api/quotations/${id}/requote-requests/${requestId}/apply`, { method: 'POST' }),
   share: (id: string, validDays = 7) => request<{ url: string; expiresAtUtc: string }>(`/api/quotations/${id}/share-link`, { method: 'POST', body: JSON.stringify({ validDays }) }),
 }
@@ -265,6 +278,9 @@ export const settingsApi = {
   openAi: () => request<OpenAiConfiguration | undefined>('/api/settings/openai'),
   openAiUsage: () => request<import('./types').AiUsageSummary>('/api/settings/openai/usage'),
   saveOpenAi: (input: OpenAiConfigurationInput) => request<OpenAiConfiguration>('/api/settings/openai', { method: 'PUT', body: JSON.stringify(input) }),
+  claude: () => request<import('./types').ClaudeConfiguration | undefined>('/api/settings/claude'),
+  claudeUsage: () => request<import('./types').AiUsageSummary>('/api/settings/claude/usage'),
+  saveClaude: (input: import('./types').ClaudeConfigurationInput) => request<import('./types').ClaudeConfiguration>('/api/settings/claude', { method: 'PUT', body: JSON.stringify(input) }),
 }
 
 export async function downloadFile(url: string, name: string): Promise<void> {

@@ -17,6 +17,7 @@ public sealed class SalesLeadApiTests : IAsyncLifetime
     private WebApplicationFactory<Program> _factory = null!;
     private HttpClient _client = null!;
     private readonly FakeGateway _gateway = new();
+    private readonly FakeClaudeGateway _claude = new();
     private readonly FakeUploader _uploader = new();
 
     public Task InitializeAsync()
@@ -30,6 +31,7 @@ public sealed class SalesLeadApiTests : IAsyncLifetime
             {
                 services.RemoveAll<IAwsObjectStorage>(); services.AddSingleton<IAwsObjectStorage, FakeStorage>();
                 services.RemoveAll<IInventoryVisionGateway>(); services.AddSingleton<IInventoryVisionGateway>(_gateway);
+                services.RemoveAll<IClaudeVisionGateway>(); services.AddSingleton<IClaudeVisionGateway>(_claude);
                 services.RemoveAll<IObjectUploader>(); services.AddSingleton<IObjectUploader>(_uploader);
             });
         });
@@ -208,7 +210,108 @@ public sealed class SalesLeadApiTests : IAsyncLifetime
         Assert.Equal(lead.LeadNumber, summary.GetProperty("recent")[0].GetProperty("leadNumber").GetString());
     }
 
+    [Fact]
+    public async Task Claude_selected_in_the_dialog_reads_the_s3_frames_and_openai_transcribes_the_narration()
+    {
+        await LoginAndSelectTenantAsync();
+        var newStatus = (await _client.GetFromJsonAsync<List<StatusResponse>>("/api/sales/statuses/leads"))!.Single(x => x.Code == "NEW");
+        var household = (await _client.GetFromJsonAsync<List<MoveTypeResponse>>("/api/sales/statuses/move-types"))!.Single(x => x.Code == "HOUSEHOLD");
+        (await _client.PutAsJsonAsync("/api/settings/aws", new { region = "ap-south-1", bucketName = "movers-test-uploads", accessKey = "AKIAEXAMPLE123456789", secretKey = "example-secret-key-for-tests" })).EnsureSuccessStatusCode();
+        var lead = await CreateLeadAsync("LEAD-CLAUDE", "Claude customer", newStatus.Id, household.Id, await CreateAssignedEmployeeAsync());
+        var upload = await (await _client.PostAsJsonAsync($"/api/sales/leads/{lead.Id}/attachments/upload-requests", new { fileName = "walkthrough.mp4", contentType = "video/mp4", sizeBytes = 1024 })).Content.ReadFromJsonAsync<System.Text.Json.JsonElement>();
+        var attachmentId = upload.GetProperty("attachmentId").GetGuid();
+        (await _client.PostAsync($"/api/sales/leads/{lead.Id}/attachments/{attachmentId}/complete", null)).EnsureSuccessStatusCode();
+        var jpeg = "data:image/jpeg;base64," + Convert.ToBase64String([0xff, 0xd8, 0xff, 0xe0, 1, 2, 3]);
+        var wav = new byte[44 + 64000]; "RIFF"u8.CopyTo(wav); "WAVE"u8.CopyTo(wav.AsSpan(8)); BitConverter.GetBytes(32000).CopyTo(wav, 28);
+        var audio = "data:audio/wav;base64," + Convert.ToBase64String(wav);
+        var extractUrl = $"/api/sales/leads/{lead.Id}/attachments/{attachmentId}/extract";
+
+        // Nothing configured yet: no providers, and choosing Claude explains what to set up.
+        var none = await _client.GetFromJsonAsync<System.Text.Json.JsonElement>("/api/sales/extraction-providers");
+        Assert.Empty(none.GetProperty("providers").EnumerateArray());
+        var missing = await _client.PostAsJsonAsync(extractUrl, new { frames = new[] { jpeg }, provider = "claude" });
+        Assert.Equal(HttpStatusCode.BadRequest, missing.StatusCode);
+        Assert.Contains("Claude configuration", await missing.Content.ReadAsStringAsync());
+
+        // Claude settings: key required first time, model must be a Claude model, the key is never returned.
+        Assert.Equal(HttpStatusCode.BadRequest, (await _client.PutAsJsonAsync("/api/settings/claude", new { apiKey = (string?)null, extractionModel = "claude-opus-5-5", effort = "medium" })).StatusCode);
+        Assert.Equal(HttpStatusCode.BadRequest, (await _client.PutAsJsonAsync("/api/settings/claude", new { apiKey = "sk-ant-test-0123456789abcdefghij", extractionModel = "gpt-test-vision", effort = "medium" })).StatusCode);
+        var saved = await (await _client.PutAsJsonAsync("/api/settings/claude", new { apiKey = "sk-ant-test-0123456789abcdefghij", extractionModel = "claude-opus-5-5", effort = "high", inputPricePerMillion = 4m, cachedInputPricePerMillion = 0.4m, outputPricePerMillion = 20m })).Content.ReadFromJsonAsync<System.Text.Json.JsonElement>();
+        Assert.Equal("••••ghij", saved.GetProperty("maskedApiKey").GetString());
+        Assert.DoesNotContain("sk-ant-test", (await _client.GetStringAsync("/api/settings/claude")));
+
+        // Claude only: the narration cannot be heard, so the run says so and uses the pictures.
+        var picturesOnly = await (await _client.PostAsJsonAsync(extractUrl, new { frames = new[] { jpeg }, audio })).Content.ReadFromJsonAsync<System.Text.Json.JsonElement>();
+        Assert.Equal("claude", picturesOnly.GetProperty("provider").GetString());
+        Assert.Contains("speech-to-text", picturesOnly.GetProperty("warning").GetString());
+        Assert.Equal("sk-ant-test-0123456789abcdefghij", _claude.ApiKey);
+
+        // With OpenAI configured too, both are offered (OpenAI first) and OpenAI transcribes for Claude.
+        (await _client.PutAsJsonAsync("/api/settings/openai", new { apiKey = "sk-test-0123456789abcdefghijklmnop", extractionModel = "gpt-test-vision", transcriptionModel = "gpt-test-transcribe", transcriptionPricePerMinute = 0.003m })).EnsureSuccessStatusCode();
+        var providers = await _client.GetFromJsonAsync<System.Text.Json.JsonElement>("/api/sales/extraction-providers");
+        Assert.Equal(["openai", "claude"], providers.GetProperty("providers").EnumerateArray().Select(p => p.GetProperty("key").GetString()).ToArray());
+        Assert.True(providers.GetProperty("transcription").GetBoolean());
+        Assert.Equal(HttpStatusCode.BadRequest, (await _client.PostAsJsonAsync(extractUrl, new { frames = new[] { jpeg }, provider = "gemini" })).StatusCode);
+
+        var result = await (await _client.PostAsJsonAsync(extractUrl, new { frames = Enumerable.Repeat(jpeg, 8).ToArray(), audio, provider = "claude" })).Content.ReadFromJsonAsync<System.Text.Json.JsonElement>();
+        Assert.Equal("claude-opus-5-5", result.GetProperty("model").GetString());
+        Assert.Equal("Three boxes of books in the study", result.GetProperty("transcript").GetString());
+        Assert.Equal(("claude-opus-5-5", "high"), (_claude.Model, _claude.Effort));
+        Assert.Equal(8, _claude.Last!.Images.Count);
+        Assert.All(_claude.Last.Images, url => Assert.StartsWith("https://s3.example.test/", url));
+        Assert.Equal("Three boxes of books in the study", _claude.Last.Transcript);
+        Assert.Equal("gpt-test-transcribe", _gateway.TranscriptionModel);
+        Assert.Null(_gateway.Last); // OpenAI never saw the pictures
+        // Claude prices: (10,000 x 4 + 2,000 cached x 0.4 + 800 output x 20) / 1M = 0.0568, plus 2 s of sound at OpenAI's 0.003/min = 0.0001.
+        Assert.Equal(0.0569m, result.GetProperty("usage").GetProperty("cost").GetDecimal());
+        Assert.Equal(2, result.GetProperty("inventory").GetProperty("itemCount").GetInt32());
+
+        // Usage is split per provider on the two settings pages.
+        var claudeUsage = await _client.GetFromJsonAsync<System.Text.Json.JsonElement>("/api/settings/claude/usage");
+        Assert.Equal(2, claudeUsage.GetProperty("allTime").GetProperty("runs").GetInt32());
+        Assert.Equal(0, (await _client.GetFromJsonAsync<System.Text.Json.JsonElement>("/api/settings/openai/usage")).GetProperty("allTime").GetProperty("runs").GetInt32());
+        // Without the option no item has a picture.
+        Assert.All(result.GetProperty("inventory").GetProperty("lines").EnumerateArray(), l => Assert.Equal(System.Text.Json.JsonValueKind.Null, l.GetProperty("imageUrl").ValueKind));
+
+        // Optional item pictures: the AI is told the pictures are numbered, and the TV keeps frame 3 (stored next to the video).
+        var withPictures = await (await _client.PostAsJsonAsync(extractUrl, new { frames = Enumerable.Repeat(jpeg, 8).ToArray(), provider = "claude", pictures = true })).Content.ReadFromJsonAsync<System.Text.Json.JsonElement>();
+        Assert.True(_claude.Last!.Pictures);
+        Assert.Equal(3, withPictures.GetProperty("items").EnumerateArray().Single(i => i.GetProperty("name").GetString() == "Television").GetProperty("picture").GetInt32());
+        Assert.Equal(0, withPictures.GetProperty("items").EnumerateArray().Single(i => i.GetProperty("name").GetString() == "Sofa").GetProperty("picture").GetInt32());
+        var pictured = withPictures.GetProperty("inventory").GetProperty("lines").EnumerateArray().ToList();
+        var tvLine = pictured.Single(l => l.GetProperty("name").GetString() == "Television");
+        Assert.Matches("^https://s3.example.test/download/.*/frames/frame-03.jpg$", tvLine.GetProperty("imageUrl").GetString());
+        // The mark is kept inside the picture (600 + 500 is cut to the right edge); the sofa named no real picture, so no mark either.
+        var tvMark = tvLine.GetProperty("imageMark");
+        Assert.Equal((600, 250, 400, 300), (tvMark.GetProperty("x").GetInt32(), tvMark.GetProperty("y").GetInt32(), tvMark.GetProperty("width").GetInt32(), tvMark.GetProperty("height").GetInt32()));
+        Assert.Equal(System.Text.Json.JsonValueKind.Null, pictured.Single(l => l.GetProperty("name").GetString() == "Sofa").GetProperty("imageMark").ValueKind);
+        Assert.Equal(System.Text.Json.JsonValueKind.Null, pictured.Single(l => l.GetProperty("name").GetString() == "Sofa").GetProperty("imageUrl").ValueKind);
+
+        // Staff edits keep the picture (by the line's id) or drop it; the client cannot point a line at another picture.
+        object Line(System.Text.Json.JsonElement l, Guid? imageFrom) => new { kind = l.GetProperty("kind").GetString(), room = l.GetProperty("room").GetString(), name = l.GetProperty("name").GetString(), quantity = 2, unitCbm = l.GetProperty("unitCbm").GetDecimal(), fragile = l.GetProperty("fragile").GetBoolean(), sourceAttachmentId = (Guid?)attachmentId, imageFromLineId = imageFrom };
+        var sofaLine = pictured.Single(l => l.GetProperty("name").GetString() == "Sofa");
+        var kept = await (await _client.PutAsJsonAsync($"/api/sales/leads/{lead.Id}/inventory", new { lines = new[] { Line(tvLine, tvLine.GetProperty("id").GetGuid()), Line(sofaLine, Guid.NewGuid()) } })).Content.ReadFromJsonAsync<System.Text.Json.JsonElement>();
+        Assert.EndsWith("frame-03.jpg", kept.GetProperty("lines").EnumerateArray().Single(l => l.GetProperty("name").GetString() == "Television").GetProperty("imageUrl").GetString());
+        Assert.Equal(400, kept.GetProperty("lines").EnumerateArray().Single(l => l.GetProperty("name").GetString() == "Television").GetProperty("imageMark").GetProperty("width").GetInt32());
+        Assert.Equal(System.Text.Json.JsonValueKind.Null, kept.GetProperty("lines").EnumerateArray().Single(l => l.GetProperty("name").GetString() == "Sofa").GetProperty("imageUrl").ValueKind);
+        var removed = await (await _client.PutAsJsonAsync($"/api/sales/leads/{lead.Id}/inventory", new { lines = new[] { Line(kept.GetProperty("lines").EnumerateArray().First(), null) } })).Content.ReadFromJsonAsync<System.Text.Json.JsonElement>();
+        Assert.Equal(System.Text.Json.JsonValueKind.Null, removed.GetProperty("lines")[0].GetProperty("imageUrl").ValueKind);
+    }
+
     private const System.Text.Json.JsonValueKind JsonValueKindNull = System.Text.Json.JsonValueKind.Null;
+
+    private sealed class FakeClaudeGateway : IClaudeVisionGateway
+    {
+        public ExtractionInput? Last; public string? ApiKey, Model, Effort;
+        public Task<VisionResult> Extract(string apiKey, string model, string effort, ExtractionInput input, CancellationToken ct)
+        {
+            (Last, ApiKey, Model, Effort) = (input, apiKey, model, effort);
+            // With pictures requested the TV names picture 3; the sofa a picture that was never sent (ignored).
+            // The TV mark runs past the right edge (clamped to the picture).
+            var (tv, sofa) = input.Pictures ? (",\"picture\":3,\"mark\":{\"x\":600,\"y\":250,\"width\":500,\"height\":300}", ",\"picture\":99,\"mark\":{\"x\":10,\"y\":10,\"width\":100,\"height\":100}") : ("", "");
+            return Task.FromResult(new VisionResult("{\"items\":[{\"name\":\"Television\",\"quantity\":1,\"room\":\"Living room\",\"fragile\":true,\"volumeCbm\":0.9,\"handling\":\"\",\"notes\":\"\"" + tv + "},{\"name\":\"Sofa\",\"quantity\":1,\"room\":\"\",\"fragile\":false,\"volumeCbm\":2.0,\"handling\":\"\",\"notes\":\"\"" + sofa + "}],\"boxes\":[]}", 12000, 2000, 800));
+        }
+    }
 
     private sealed class FakeGateway : IInventoryVisionGateway
     {
@@ -312,7 +415,7 @@ public sealed class SalesLeadApiTests : IAsyncLifetime
     private sealed class FakeStorage : IAwsObjectStorage
     {
         public Task<string> CreateUploadUrlAsync(AwsStorageCredentials credentials, string key, string contentType, DateTimeOffset expiresAtUtc, CancellationToken token) => Task.FromResult("https://s3.example.test/upload");
-        public Task<string> CreateDownloadUrlAsync(AwsStorageCredentials credentials, string key, string fileName, DateTimeOffset expiresAtUtc, CancellationToken token) => Task.FromResult("https://s3.example.test/download");
+        public Task<string> CreateDownloadUrlAsync(AwsStorageCredentials credentials, string key, string fileName, DateTimeOffset expiresAtUtc, CancellationToken token) => Task.FromResult("https://s3.example.test/download/" + key);
         public Task<StoredObjectInfo?> GetObjectInfoAsync(AwsStorageCredentials credentials, string key, CancellationToken token) => Task.FromResult<StoredObjectInfo?>(new(1024));
     }
 }

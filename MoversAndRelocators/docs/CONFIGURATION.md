@@ -18,7 +18,7 @@ Environment variable names use `__` for each `:` level.
 |---|---|---|---|
 | `ConnectionStrings:SqlServer` (or `:PostgreSql`, matching `Database:Provider`) | `ConnectionStrings__SqlServer` | Yes | Database connection string. |
 | `Jwt:SigningKey` | `Jwt__SigningKey` | Yes | At least 32 characters, random. Changing it signs everyone out. |
-| `CredentialEncryption:Key` | `CredentialEncryption__Key` | Yes | Base64 of 16, 24 or 32 random bytes. Encrypts the tenants' AWS/OpenAI keys; **keep it stable**, or stored keys can no longer be read. |
+| `CredentialEncryption:Key` | `CredentialEncryption__Key` | Yes | Base64 of 16, 24 or 32 random bytes. Encrypts the tenants' AWS/OpenAI/Claude keys; **keep it stable**, or stored keys can no longer be read. |
 | `Bootstrap:SystemAdminEmail` | `Bootstrap__SystemAdminEmail` | No | **Optional.** When set (with the password), this system administrator is created on startup. When unset, use first-time setup instead (below). |
 | `Bootstrap:SystemAdminPassword` | `Bootstrap__SystemAdminPassword` | Yes | Required only when `Bootstrap:SystemAdminEmail` is set. Used only when the account is **first created**; changing it later does not change an existing account's password (see `Bootstrap:ResetPassword`). |
 | `Bootstrap:ResetPassword` | `Bootstrap__ResetPassword` | No | Recovery switch. `true` sets the bootstrap administrator's password to `Bootstrap:SystemAdminPassword` (and reactivates the account) on every start. Turn it on, restart once, sign in, then **remove it**. The API logs a warning while it is on. |

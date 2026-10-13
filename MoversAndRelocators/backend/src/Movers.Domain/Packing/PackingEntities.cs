@@ -222,6 +222,9 @@ public sealed class PackingJobTransaction : TenantOwnedEntity
         Amount = amount; PaymentMethod = method.Trim(); Notes = PackingJob.Clean(notes); CreatedAtUtc = DateTimeOffset.UtcNow;
     }
     public Guid PackingJobId { get; private set; }
+    /// <summary>The employee who paid an expense out of pocket or from a float (employee expense report).</summary>
+    public Guid? PaidByEmployeeId { get; private set; }
+    public void SetPaidBy(Guid? employeeId) => PaidByEmployeeId = employeeId;
     public string TransactionNumber { get; private set; } = "";
     public string Type { get; private set; } = "";
     public string Category { get; private set; } = "";

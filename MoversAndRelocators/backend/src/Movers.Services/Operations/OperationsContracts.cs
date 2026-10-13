@@ -51,6 +51,10 @@ public interface IOperationsRepository
     /// <summary>Customer name per delivery note, for labelling money collected on a delivery.</summary>
     Task<IReadOnlyDictionary<Guid, string>> DeliveryNoteCustomers(CancellationToken ct);
     Task<IReadOnlyList<PickupExpense>> CrewExpenses(CancellationToken ct);
+    /// <summary>Survey trip expenses (fuel, taxi, toll…) with their survey's number and customer, for the accountant's posting queue.</summary>
+    Task<IReadOnlyList<(Movers.Domain.Surveys.SurveyExpense Expense, string SurveyLabel)>> SurveyExpenses(CancellationToken ct);
+    /// <summary>Expense ID → employee who paid it, for survey, pickup, packing and delivery expenses that record one.</summary>
+    Task<IReadOnlyDictionary<Guid, Guid>> ExpensePayers(CancellationToken ct);
     Task<IReadOnlyList<LabourEntry>> Labour(CancellationToken ct);
     Task<IReadOnlyList<TransportTrip>> Trips(CancellationToken ct);
     Task<TransportTrip?> Trip(Guid id, CancellationToken ct);

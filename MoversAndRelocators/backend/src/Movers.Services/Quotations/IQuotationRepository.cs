@@ -41,6 +41,7 @@ public interface IQuotationRepository
     void RemoveSurveyItems(IEnumerable<SurveyItem> items);
     Task<IReadOnlyList<HouseholdItem>> ListHouseholdItemsAsync(CancellationToken token);
     Task<SalesLead?> GetLeadAsync(Guid id, CancellationToken token);
+    Task<IReadOnlyList<SalesLeadInventoryItem>> ListLeadInventoryAsync(Guid leadId, CancellationToken token);
     Task<IReadOnlyList<SalesLead>> ListLeadsAsync(CancellationToken token);
     Task<PublicQuotationResolution?> ResolvePublicAsync(string tokenHash, CancellationToken token);
     Task<IReadOnlyList<QuotationRequoteRequest>> ListRequoteRequestsAsync(Guid quotationId, CancellationToken token);

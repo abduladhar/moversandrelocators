@@ -18,7 +18,11 @@ public sealed class OpenAiConfigurationController(IOpenAiConfigurationService se
 
     /// <summary>OpenAI usage and approximate cost: this month, all time and the latest runs.</summary>
     [HttpGet("usage")]
-    public async Task<ActionResult> Usage(CancellationToken token) => Ok(await usage.Summary(await configurations.GetAsync(false, token), token));
+    public async Task<ActionResult> Usage(CancellationToken token)
+    {
+        var configuration = await configurations.GetAsync(false, token);
+        return Ok(await usage.Summary(configuration is not null && AiPrices.Of(configuration).Configured, false, token));
+    }
 
     [HttpPut]
     public async Task<ActionResult> Save(SaveOpenAiConfigurationRequest request, CancellationToken token)

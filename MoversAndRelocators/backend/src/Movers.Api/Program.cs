@@ -86,9 +86,12 @@ builder.Services.AddScoped<ISalesService, SalesService>();
 builder.Services.AddScoped<ITaskService, TaskService>();
 builder.Services.AddScoped<IAwsConfigurationService, AwsConfigurationService>();
 builder.Services.AddScoped<IOpenAiConfigurationService, OpenAiConfigurationService>();
+builder.Services.AddScoped<Movers.Services.Claude.ClaudeConfigurationService>();
 builder.Services.AddScoped<ILeadUploadService, LeadUploadService>();
 builder.Services.AddScoped<LeadExtractionService>();
 builder.Services.AddHttpClient<IInventoryVisionGateway, OpenAiVisionGateway>(client => client.Timeout = TimeSpan.FromSeconds(180));
+// Claude: the SDK sets its own per-request timeout (5 minutes), so the HttpClient must not cut it shorter.
+builder.Services.AddHttpClient<IClaudeVisionGateway, ClaudeVisionGateway>(client => client.Timeout = Timeout.InfiniteTimeSpan);
 builder.Services.AddHttpClient<Movers.Services.Sales.IObjectUploader, Movers.Api.Storage.HttpObjectUploader>(client => client.Timeout = TimeSpan.FromSeconds(60));
 builder.Services.AddScoped<ISurveyService, SurveyService>();
 builder.Services.AddScoped<ISurveyFileService, SurveyFileService>();
@@ -133,6 +136,9 @@ builder.Services.AddAuthorization(options =>
     // Packing was split out of Pickup: operations users keep access without a role change or re-login.
     options.AddPolicy(SecurityPermissions.PackingManage, policy => policy.RequireClaim("permission",
         SecurityPermissions.PackingManage, SecurityPermissions.OperationsManage));
+    // Claude settings sit next to OpenAI's: whoever manages OpenAI manages Claude too, without a role change or re-login.
+    options.AddPolicy(SecurityPermissions.ClaudeConfigurationManage, policy => policy.RequireClaim("permission",
+        SecurityPermissions.ClaudeConfigurationManage, SecurityPermissions.OpenAiConfigurationManage));
     // Delivery is an operations module too: operations users get it without a role change or re-login.
     options.AddPolicy(SecurityPermissions.DeliveryManage, policy => policy.RequireClaim("permission",
         SecurityPermissions.DeliveryManage, SecurityPermissions.OperationsManage));

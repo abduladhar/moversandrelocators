@@ -19,7 +19,7 @@ export type DeliveryCustomer={links:{purpose:DeliveryLinkPurpose;expiresAtUtc:st
 export type PublicDeliveryNote={purpose:DeliveryLinkPurpose;tenantName:string;deliveryNumber:string;noteNumber:string;status:DeliveryStatus;isClosed:boolean;customerName:string;address:string|null;scheduledAtUtc:string;packageCount:number;
  dateResponse:'CONFIRMED'|'RESCHEDULE'|null;preferredAtUtc:string|null;dateRespondedAtUtc:string|null;dateResponseCurrent:boolean;latitude:number|null;longitude:number|null;locationNotes:string|null;locationSharedAtUtc:string|null;expiresAtUtc:string}
 export type DeliveryTransaction={serialNo:number;id:string;transactionNumber:string;type:'INCOME'|'EXPENSE';category:string;amount:number;paymentMethod:string;notes:string|null;createdAtUtc:string;
- currency:string|null;baseAmount:number|null;deliveryNoteId:string|null;customerName:string|null}
+ currency:string|null;baseAmount:number|null;deliveryNoteId:string|null;customerName:string|null;paidByEmployeeId?:string|null;paidByName?:string|null}
 export type DeliveryDetail={job:DeliveryJob;crew:{employeeId:string;employeeName:string;role:string}[];notes:DeliveryNote[];transactions:DeliveryTransaction[];
  accounting:{baseCurrency:string;incomeBase:number;expenseBase:number;totals:{currency:string;income:number;expense:number}[]};
  clock:{activeSeconds:number;pausedSeconds:number;events:{type:'STARTED'|'PAUSED'|'RESUMED'|'COMPLETED';occurredAtUtc:string;reason:string|null;recordedBy:string}[]}}
@@ -56,7 +56,7 @@ export const deliveryApi={
  cancel:(id:string)=>send<DeliveryDetail>(one(id)+'/cancel','POST'),
  createLink:(id:string,noteId:string,purpose:DeliveryLinkPurpose,validDays:number)=>send<{purpose:DeliveryLinkPurpose;url:string;expiresAtUtc:string}>(one(id)+'/notes/'+noteId+'/links','POST',{purpose,validDays}),
  revokeLink:(id:string,noteId:string,purpose:DeliveryLinkPurpose)=>send<DeliveryDetail>(one(id)+'/notes/'+noteId+'/links/'+purpose,'DELETE'),
- transaction:(id:string,v:{type:'INCOME'|'EXPENSE';category:string;amount:number;paymentMethod:string;notes?:string;currency?:string;exchangeRate?:number;deliveryNoteId?:string|null})=>send<DeliveryDetail>(one(id)+'/transactions','POST',v)
+ transaction:(id:string,v:{type:'INCOME'|'EXPENSE';category:string;amount:number;paymentMethod:string;notes?:string;currency?:string;exchangeRate?:number;deliveryNoteId?:string|null;paidByEmployeeId?:string|null})=>send<DeliveryDetail>(one(id)+'/transactions','POST',v)
 }
 
 export const DELIVERY_STATUS:Record<DeliveryStatus,{label:string;color:string}>={PLANNED:{label:'Planned',color:'blue'},OUT_FOR_DELIVERY:{label:'Out for delivery',color:'orange'},COMPLETED:{label:'Completed',color:'green'},CANCELLED:{label:'Cancelled',color:'default'}}

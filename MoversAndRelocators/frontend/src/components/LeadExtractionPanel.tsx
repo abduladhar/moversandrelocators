@@ -1,15 +1,17 @@
 import { useState } from 'react'
-import { Alert, Button, Collapse, Modal, Steps, Tag, message } from 'antd'
+import { Alert, Button, Checkbox, Collapse, Modal, Segmented, Steps, Tag, Tooltip, message } from 'antd'
 import { RobotOutlined } from '@ant-design/icons'
 import { request, salesApi } from '../api'
 import { readSession } from '../session'
-import type { LeadAttachment } from '../types'
+import type { ExtractionProviders, LeadAttachment } from '../types'
 import { DataGrid } from './DataGrid'
+import { ItemPicture, type PictureMark } from './ItemPicture'
 
-type InventoryItem = { name: string; quantity: number; notes: string; room?: string | null; fragile?: boolean; handling?: string | null }
+type InventoryItem = { name: string; quantity: number; notes: string; room?: string | null; fragile?: boolean; handling?: string | null; /** Number of the picture showing the item (when pictures were requested), 0 when none; mark = where it is in it. */ picture?: number; mark?: PictureMark | null }
 type InventoryBox = { boxType: string; quantity: number; contents: string; room?: string | null }
 type Usage = { inputTokens: number; cachedInputTokens: number; outputTokens: number; audioSeconds: number; cost: number | null; currency: string; pricesConfigured: boolean }
-type Inventory = { items: InventoryItem[]; boxes?: InventoryBox[]; transcript?: string | null; framesAnalysed?: number; warning?: string | null; usage?: Usage | null; inventory?: { expectedCbm: number; fragileItems: number; itemCount: number; boxCount: number } }
+type Inventory = { items: InventoryItem[]; boxes?: InventoryBox[]; transcript?: string | null; framesAnalysed?: number; warning?: string | null; usage?: Usage | null; provider?: string | null; model?: string | null; inventory?: { expectedCbm: number; fragileItems: number; itemCount: number; boxCount: number } }
+const providerName = (key?: string | null) => key === 'claude' ? 'Claude' : 'OpenAI'
 
 const FRAMES = 16, FRAME_SIZE = 1024, AUDIO_RATE = 16000, AUDIO_SECONDS = 6 * 60
 
@@ -17,11 +19,11 @@ const FRAMES = 16, FRAME_SIZE = 1024, AUDIO_RATE = 16000, AUDIO_SECONDS = 6 * 60
 function readSaved(json?: string): Inventory | null {
   try {
     const x = JSON.parse(json || 'null'); if (!x) return null
-    const items = (x.items ?? x.Items ?? []).map((i: any) => ({ name: i.name ?? i.Name, quantity: i.quantity ?? i.Quantity, notes: i.notes ?? i.Notes ?? '', room: i.room ?? i.Room, fragile: i.fragile ?? i.Fragile, handling: i.handling ?? i.Handling }))
+    const items = (x.items ?? x.Items ?? []).map((i: any) => ({ name: i.name ?? i.Name, quantity: i.quantity ?? i.Quantity, notes: i.notes ?? i.Notes ?? '', room: i.room ?? i.Room, fragile: i.fragile ?? i.Fragile, handling: i.handling ?? i.Handling, picture: i.picture ?? i.Picture ?? 0, mark: (m => m ? { x: m.x ?? m.X, y: m.y ?? m.Y, width: m.width ?? m.Width, height: m.height ?? m.Height } : null)(i.mark ?? i.Mark) }))
     const boxes = (x.boxes ?? x.Boxes ?? []).map((b: any) => ({ boxType: b.boxType ?? b.BoxType, quantity: b.quantity ?? b.Quantity, contents: b.contents ?? b.Contents ?? '', room: b.room ?? b.Room }))
     const u = x.usage ?? x.Usage
     const usage = u ? { inputTokens: u.inputTokens ?? u.InputTokens, cachedInputTokens: u.cachedInputTokens ?? u.CachedInputTokens ?? 0, outputTokens: u.outputTokens ?? u.OutputTokens, audioSeconds: u.audioSeconds ?? u.AudioSeconds ?? 0, cost: u.cost ?? u.Cost ?? null, currency: u.currency ?? u.Currency ?? 'USD', pricesConfigured: u.pricesConfigured ?? u.PricesConfigured ?? false } : null
-    return { items, boxes, transcript: x.transcript ?? x.Transcript, framesAnalysed: x.framesAnalysed ?? x.FramesAnalysed, warning: x.warning ?? x.Warning, usage }
+    return { items, boxes, transcript: x.transcript ?? x.Transcript, framesAnalysed: x.framesAnalysed ?? x.FramesAnalysed, warning: x.warning ?? x.Warning, usage, provider: x.provider ?? x.Provider, model: x.model ?? x.Model }
   } catch { return null }
 }
 
@@ -96,43 +98,72 @@ async function soundTrack(url: string): Promise<string | null> {
   } catch { return null }
 }
 
-const stepTitles = ['Pictures', 'Sound', 'OpenAI']
-
 export function LeadExtractionPanel({ leadId, attachment }: { leadId: string; attachment: LeadAttachment }) {
   const [open, setOpen] = useState(false), [busy, setBusy] = useState(false), [step, setStep] = useState(-1)
+  // Optional: attach the picture that shows each item best; shots are the pictures of the last run, for the thumbnails here.
+  const [pictures, setPictures] = useState(false), [shots, setShots] = useState<string[]>([])
   const [result, setResult] = useState<Inventory | null>(() => readSaved(attachment.extractionJson))
+  // The AIs the tenant configured (Settings › OpenAI / Claude); the user picks one per run.
+  const [available, setAvailable] = useState<ExtractionProviders>(), [provider, setProvider] = useState<string>()
   const allowed = readSession()?.user.permissions.includes('sales.items.extract')
   if (!allowed || !/^(image|video)\//.test(attachment.contentType)) return null
   const isVideo = attachment.contentType.startsWith('video/')
+  const name = providerName(provider)
+  const show = () => {
+    setOpen(true)
+    salesApi.extractionProviders().then(value => {
+      setAvailable(value)
+      setProvider(current => value.providers.some(p => p.key === current) ? current : value.providers[0]?.key)
+    }).catch(error => message.error(error instanceof Error ? error.message : 'Cannot load the AI settings'))
+  }
+  // Only OpenAI can transcribe sound; without it the narration is not sent at all.
+  const withSound = isVideo && (available?.transcription ?? true)
   const extract = async () => {
     setBusy(true)
     try {
       const { url } = await salesApi.attachmentDownload(leadId, attachment.id)
       setStep(0)
       const frames = isVideo || !url.startsWith('https://') ? await previews(url, isVideo) : undefined
+      setShots(frames ?? [url])
       setStep(1)
-      const audio = isVideo ? await soundTrack(url) : null
+      const audio = withSound ? await soundTrack(url) : null
       setStep(2)
-      const output = await request<Inventory>(`/api/sales/leads/${leadId}/attachments/${attachment.id}/extract`, { method: 'POST', body: JSON.stringify({ frames, audio }) })
+      const output = await request<Inventory>(`/api/sales/leads/${leadId}/attachments/${attachment.id}/extract`, { method: 'POST', body: JSON.stringify({ frames, audio, provider, pictures }) })
       setResult(output); setStep(3); message.success('Saved to the lead inventory')
     } catch (error) { setStep(-1); message.error(error instanceof Error ? error.message : 'Extraction failed') }
     finally { setBusy(false) }
   }
   const items = [...(result?.items ?? [])].sort((a, b) => (a.room ?? '~').localeCompare(b.room ?? '~'))
-  return <><Button size="small" icon={<RobotOutlined />} onClick={() => setOpen(true)}>Extract items</Button>
+  const noProvider = available !== undefined && available.providers.length === 0
+  return <><Button size="small" icon={<RobotOutlined />} onClick={show}>Extract items</Button>
     <Modal centered width={960} title={'Item extraction · ' + attachment.originalFileName} open={open} onCancel={() => !busy && setOpen(false)} footer={null}>
-      <Alert type="info" showIcon title="Review before using" description={isVideo
-        ? `OpenAI receives ${FRAMES} pictures taken from this video (stored in S3 and shared by a short-lived link) and a transcript of what is said in it. Say rooms and contents while recording for better results. Counts may be incomplete; this is a draft, not a confirmed packing list.`
-        : 'OpenAI receives this picture by a short-lived link. Counts may be incomplete; this is a draft, not a confirmed packing list.'} />
+      {noProvider
+        ? <Alert type="warning" showIcon title="No AI is configured" description="Ask an administrator to set up OpenAI or Claude in Settings before extracting items." />
+        : <Alert type="info" showIcon title="Review before using" description={isVideo
+          ? `${name} receives ${FRAMES} pictures taken from this video (stored in S3 and shared by a short-lived link)${withSound ? ' and a transcript of what is said in it' + (provider === 'claude' ? ' (speech-to-text by OpenAI)' : '') + '. Say rooms and contents while recording for better results' : ''}. Counts may be incomplete; this is a draft, not a confirmed packing list.`
+          : `${name} receives this picture by a short-lived link. Counts may be incomplete; this is a draft, not a confirmed packing list.`} />}
+      {!noProvider && <div className="lead-extract-options">
+        {(available?.providers.length ?? 0) > 1 && <div className="lead-extract-provider" style={{ marginTop: 0 }}>
+          <span>Extract with</span>
+          <Segmented disabled={busy} value={provider} onChange={value => setProvider(String(value))} options={available!.providers.map(p => ({ value: p.key, label: <span title={p.model}>{p.name} <small>{p.model}</small></span> }))} />
+        </div>}
+        <Tooltip title={isVideo ? 'The frame that shows each item best is kept with the item in the lead inventory.' : 'This photo is kept with each item found in it.'}>
+          <Checkbox disabled={busy} checked={pictures} onChange={e => setPictures(e.target.checked)}>Attach a picture to each item</Checkbox>
+        </Tooltip>
+      </div>}
       <div className="lead-extract-run">
-        <Button type="primary" icon={<RobotOutlined />} loading={busy} onClick={() => void extract()}>{result ? 'Extract again with OpenAI' : 'Extract with OpenAI'}</Button>
-        {busy && isVideo && <Steps size="small" current={step} items={stepTitles.map(title => ({ title }))} />}
+        <Button type="primary" icon={<RobotOutlined />} loading={busy} disabled={!provider} onClick={() => void extract()}>{result ? `Extract again with ${name}` : `Extract with ${name}`}</Button>
+        {busy && isVideo && <Steps size="small" current={step} items={['Pictures', withSound ? 'Sound' : 'No sound', name].map(title => ({ title }))} />}
       </div>
       {result && <>
         {result.inventory && <Alert style={{ marginBottom: 12 }} type="success" showIcon title={"Saved to the lead's inventory: " + result.inventory.expectedCbm.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' CBM expected, ' + result.inventory.fragileItems + ' fragile piece' + (result.inventory.fragileItems === 1 ? '' : 's')} description="Review and correct it with Inventory on the lead. Extracting this file again replaces only its own lines." />}
         {result.warning && <Alert style={{ marginBottom: 12 }} type="warning" showIcon title={result.warning} />}
         <h4 className="lead-extract-heading">Items {result.framesAnalysed ? <small>from {result.framesAnalysed} picture{result.framesAnalysed === 1 ? '' : 's'}{result.transcript ? ' and the narration' : ''}</small> : null}</h4>
         <DataGrid rowKey="key" dataSource={items.map((x, i) => ({ ...x, key: i }))} pagination={false} scroll={{ x: 760 }} columns={[
+          // Only when this run attached pictures; thumbnails come from the pictures taken in this browser, otherwise the number.
+          ...(items.some(x => x.picture) ? [{ title: 'Picture', width: 76, render: (_: unknown, x: InventoryItem) => !x.picture ? '—'
+            : shots[x.picture - 1] ? <ItemPicture src={shots[x.picture - 1]} mark={x.mark} alt={x.name} size={48} />
+            : <Tag>#{x.picture}</Tag> }] : []),
           { title: 'Room', dataIndex: 'room', width: 140, render: (v: string | null) => v || <span style={{ color: '#8a9892' }}>—</span> },
           { title: 'Item', dataIndex: 'name' },
           { title: 'Qty', dataIndex: 'quantity', width: 70, align: 'right' as const },
@@ -144,7 +175,7 @@ export function LeadExtractionPanel({ leadId, attachment }: { leadId: string; at
             { title: 'Box type', dataIndex: 'boxType' }, { title: 'Qty', dataIndex: 'quantity', width: 70, align: 'right' as const },
             { title: 'Contents', dataIndex: 'contents' }, { title: 'Room', dataIndex: 'room', render: (v: string | null) => v || '—' }]} />
         </>}
-        {result.usage && <p className="lead-extract-usage">OpenAI usage: {result.usage.inputTokens.toLocaleString()} input / {result.usage.outputTokens.toLocaleString()} output tokens{result.usage.audioSeconds ? ' · ' + Math.round(result.usage.audioSeconds) + ' s of sound' : ''} · {result.usage.cost != null ? <strong>approx. ${result.usage.cost.toLocaleString(undefined, { minimumFractionDigits: 4, maximumFractionDigits: 4 })}</strong> : 'cost not calculated (set prices in Settings › OpenAI)'}</p>}
+        {result.usage && <p className="lead-extract-usage">{providerName(result.provider)}{result.model ? ' (' + result.model + ')' : ''} usage: {result.usage.inputTokens.toLocaleString()} input / {result.usage.outputTokens.toLocaleString()} output tokens{result.usage.audioSeconds ? ' · ' + Math.round(result.usage.audioSeconds) + ' s of sound' : ''} · {result.usage.cost != null ? <strong>approx. ${result.usage.cost.toLocaleString(undefined, { minimumFractionDigits: 4, maximumFractionDigits: 4 })}</strong> : 'cost not calculated (set prices in Settings › ' + providerName(result.provider) + ' configuration)'}</p>}
         {result.transcript && <Collapse style={{ marginTop: 12 }} size="small" items={[{ key: 't', label: 'What was said in the video', children: <p className="lead-extract-transcript">{result.transcript}</p> }]} />}
       </>}
     </Modal></>

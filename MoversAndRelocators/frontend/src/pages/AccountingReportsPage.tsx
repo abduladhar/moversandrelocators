@@ -3,6 +3,7 @@ import {PostingAuditReport} from '../components/PostingAuditReport'
 import {TaxSummaryReport} from '../components/TaxSummaryReport'
 import {CurrencyExposureReport} from '../components/CurrencyExposureReport'
 import {OperationProfitabilityReport} from '../components/OperationProfitabilityReport'
+import {EmployeeExpensesReport} from '../components/EmployeeExpensesReport'
 import {RevenueAnalysisReport} from '../components/RevenueAnalysisReport'
 import {ExpenseAnalysisReport} from '../components/ExpenseAnalysisReport'
 import {CustomerAdvancesReport} from '../components/CustomerAdvancesReport'
@@ -25,16 +26,16 @@ import {JournalRegisterReport} from '../components/JournalRegisterReport'
 import {GeneralLedgerReport} from '../components/GeneralLedgerReport'
 import {useEffect,useState,type ReactNode} from 'react'
 import {Alert,Button,Card,Empty,Input,Select,Space,Tooltip} from 'antd'
-import {ArrowLeftOutlined,AuditOutlined,BankOutlined,BarChartOutlined,BookOutlined,CalculatorOutlined,CreditCardOutlined,DollarOutlined,FieldTimeOutlined,FileDoneOutlined,FileTextOutlined,GlobalOutlined,HistoryOutlined,IdcardOutlined,LineChartOutlined,MinusCircleOutlined,PercentageOutlined,PieChartOutlined,PlusCircleOutlined,ProfileOutlined,RiseOutlined,SearchOutlined,ShopOutlined,SwapOutlined,TeamOutlined,WalletOutlined} from '@ant-design/icons'
+import {UserOutlined,ArrowLeftOutlined,AuditOutlined,BankOutlined,BarChartOutlined,BookOutlined,CalculatorOutlined,CreditCardOutlined,DollarOutlined,FieldTimeOutlined,FileDoneOutlined,FileTextOutlined,GlobalOutlined,HistoryOutlined,IdcardOutlined,LineChartOutlined,MinusCircleOutlined,PercentageOutlined,PieChartOutlined,PlusCircleOutlined,ProfileOutlined,RiseOutlined,SearchOutlined,ShopOutlined,SwapOutlined,TeamOutlined,WalletOutlined} from '@ant-design/icons'
 import {lastBillingReportUrl,request} from '../api'
 import {localDate,useCurrencies,formatMoney} from '../currency'
 import {DataGrid} from '../components/DataGrid'
 
 export const accountingReports=[
- 'Trial balance','General ledger','Journal register','Profit and loss','Balance sheet','Cash flow statement','Cash book & bank book','Customer statement','Vendor statement','Accounts receivable aging','Accounts payable aging','Invoice register','Bill register','Receipt register','Payment voucher register','Credit memo register','Debit memo register','Outstanding customer balances','Outstanding vendor balances','Customer advances','Expense analysis by account','Revenue analysis by account','Pickup / warehouse / job profitability','Currency exposure & exchange differences','Tax summary','Posting & reversal audit'
+ 'Trial balance','General ledger','Journal register','Profit and loss','Balance sheet','Cash flow statement','Cash book & bank book','Customer statement','Vendor statement','Accounts receivable aging','Accounts payable aging','Invoice register','Bill register','Receipt register','Payment voucher register','Credit memo register','Debit memo register','Outstanding customer balances','Outstanding vendor balances','Customer advances','Expense analysis by account','Revenue analysis by account','Pickup / warehouse / job profitability','Currency exposure & exchange differences','Tax summary','Posting & reversal audit','Employee expenses'
 ]
 /** Endpoint of each accounting report, by index. Print sends the server the query of the report last run on screen. */
-const reportSlugs=['trial-balance','general-ledger','journal-register','profit-and-loss','balance-sheet','cash-flow','cash-book','customer-statement','vendor-statement','receivable-aging','payable-aging','invoice-register','bill-register','receipt-register','payment-voucher-register','credit-memo-register','debit-memo-register','outstanding-customers','outstanding-vendors','customer-advances','expense-analysis','revenue-analysis','operation-profitability','currency-exposure','tax-summary','posting-audit']
+const reportSlugs=['trial-balance','general-ledger','journal-register','profit-and-loss','balance-sheet','cash-flow','cash-book','customer-statement','vendor-statement','receivable-aging','payable-aging','invoice-register','bill-register','receipt-register','payment-voucher-register','credit-memo-register','debit-memo-register','outstanding-customers','outstanding-vendors','customer-advances','expense-analysis','revenue-analysis','operation-profitability','currency-exposure','tax-summary','posting-audit','employee-expenses']
 const printQuery=(index:number)=>{
  const [path,query]=lastBillingReportUrl().split('?')
  return path==='/api/billing/reports/'+reportSlugs[index]?query??'':null
@@ -48,7 +49,7 @@ const reportGroups:{key:string;title:string;icon:ReactNode;color:string;reports:
  {key:'ledgers',title:'Ledgers & books',icon:<BookOutlined/>,color:'#315ca8',reports:[1,2,6]},
  {key:'customers',title:'Customers & receivables',icon:<TeamOutlined/>,color:'#0f766e',reports:[7,9,11,13,15,17,19]},
  {key:'vendors',title:'Vendors & payables',icon:<ShopOutlined/>,color:'#a3640e',reports:[8,10,12,14,16,18]},
- {key:'analysis',title:'Analysis',icon:<PieChartOutlined/>,color:'#7a3f86',reports:[20,21,22,23,24]},
+ {key:'analysis',title:'Analysis',icon:<PieChartOutlined/>,color:'#7a3f86',reports:[20,21,22,26,23,24]},
  {key:'audit',title:'Audit',icon:<AuditOutlined/>,color:'#5f6b7a',reports:[25]},
 ]
 const reportDescriptions=[
@@ -78,11 +79,12 @@ const reportDescriptions=[
  'Balances by currency and realised exchange differences.',
  'Tax collected and paid, by tax code.',
  'Postings and reversals with who did them and when.',
+ 'What each employee paid on surveys, pickups, packing and deliveries, posted or pending.',
 ]
 /** Tile icon of each report (same order as accountingReports). */
 const reportIcons=[<CalculatorOutlined/>,<BookOutlined/>,<ProfileOutlined/>,<RiseOutlined/>,<BankOutlined/>,<SwapOutlined/>,<WalletOutlined/>,<IdcardOutlined/>,<ShopOutlined/>,<FieldTimeOutlined/>,<FieldTimeOutlined/>,
  <FileTextOutlined/>,<FileDoneOutlined/>,<DollarOutlined/>,<CreditCardOutlined/>,<MinusCircleOutlined/>,<PlusCircleOutlined/>,<TeamOutlined/>,<ShopOutlined/>,<WalletOutlined/>,
- <PieChartOutlined/>,<BarChartOutlined/>,<LineChartOutlined/>,<GlobalOutlined/>,<PercentageOutlined/>,<AuditOutlined/>]
+ <PieChartOutlined/>,<BarChartOutlined/>,<LineChartOutlined/>,<GlobalOutlined/>,<PercentageOutlined/>,<AuditOutlined/>,<UserOutlined/>]
 const groupOf=(index:number)=>reportGroups.find(g=>g.reports.includes(index))!
 
 /** The report component for an index (same order as accountingReports). */
@@ -91,7 +93,7 @@ const reportView=(index:number):ReactNode=>[
  <GeneralLedgerReport key="cash-book" cashBook/>,<CustomerStatementReport/>,<VendorStatementReport/>,<ReceivableAgingReport/>,<PayableAgingReport/>,
  <InvoiceRegisterReport/>,<BillRegisterReport/>,<ReceiptRegisterReport/>,<PaymentVoucherRegisterReport/>,<CreditMemoRegisterReport/>,<DebitMemoRegisterReport/>,
  <OutstandingCustomersReport/>,<OutstandingVendorsReport/>,<CustomerAdvancesReport/>,<ExpenseAnalysisReport/>,<RevenueAnalysisReport/>,
- <OperationProfitabilityReport/>,<CurrencyExposureReport/>,<TaxSummaryReport/>,<PostingAuditReport/>
+ <OperationProfitabilityReport/>,<CurrencyExposureReport/>,<TaxSummaryReport/>,<PostingAuditReport/>,<EmployeeExpensesReport/>
 ][index]
 
 const RECENT_KEY='movers.accountingReports.recent'

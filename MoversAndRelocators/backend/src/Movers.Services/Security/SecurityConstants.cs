@@ -24,6 +24,7 @@ public static class SecurityPermissions
     public const string SalesStatusesManage = "sales.statuses.manage";
     public const string AwsConfigurationManage = "settings.aws.manage";
     public const string OpenAiConfigurationManage = "settings.openai.manage";
+    public const string ClaudeConfigurationManage = "settings.claude.manage";
     public const string SurveysManage = "surveys.manage";
     public const string QuotesManage = "quotes.manage";
     public const string OperationsManage = "operations.manage";
@@ -50,12 +51,13 @@ public static class SecurityPermissions
         (EmployeesView, "View employees", "Employees"),
         (EmployeesManage, "Manage employees", "Employees"),
         (DesignationsManage, "Manage designations", "Employees"),
-        (SalesExtract, "Extract inventory with OpenAI", "Sales"),
+        (SalesExtract, "Extract inventory with AI (OpenAI or Claude)", "Sales"),
         (SalesView, "View sales leads", "Sales"), (SalesManage, "Manage sales leads and follow-ups", "Sales"),
         (SalesStatusesManage, "Manage sales status masters", "Sales"),
         (CompaniesManage, "Manage companies (tenant users only)", "Settings"),
         (AwsConfigurationManage, "Manage tenant AWS configuration", "Settings"), (SurveysManage, "Manage surveys", "Surveys"),
         (OpenAiConfigurationManage, "Manage tenant OpenAI configuration", "Settings"),
+        (ClaudeConfigurationManage, "Manage tenant Claude configuration", "Settings"),
         (QuotesManage, "Manage quotations", "Quotations"),
         (OperationsManage, "Manage pickup and operations", "Operations"),
         (PackingManage, "Manage packing jobs, crew, boxes, labels and materials", "Operations"),

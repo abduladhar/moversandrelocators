@@ -39,6 +39,19 @@ public sealed class OperationsRepository(MoversDbContext db) : IOperationsReposi
     public async Task<IReadOnlyList<Movers.Domain.Delivery.DeliveryJobTransaction>> DeliveryTransactions(CancellationToken ct) => await db.Set<Movers.Domain.Delivery.DeliveryJobTransaction>().AsNoTracking().ToListAsync(ct);
     public async Task<IReadOnlyDictionary<Guid, string>> DeliveryNoteCustomers(CancellationToken ct) => await db.Set<Movers.Domain.Delivery.DeliveryNote>().AsNoTracking().Select(x => new { x.Id, x.CustomerName }).ToDictionaryAsync(x => x.Id, x => x.CustomerName, ct);
     public async Task<IReadOnlyList<PickupExpense>> CrewExpenses(CancellationToken ct) => await db.Set<PickupExpense>().AsNoTracking().ToListAsync(ct);
+    public async Task<IReadOnlyDictionary<Guid, Guid>> ExpensePayers(CancellationToken ct)
+    {
+        var payers = new Dictionary<Guid, Guid>();
+        void Add(IEnumerable<(Guid Id, Guid? PaidBy)> rows) { foreach (var (id, paidBy) in rows) if (paidBy is { } p) payers[id] = p; }
+        Add((await db.SurveyExpenses.AsNoTracking().Where(x => x.PaidByEmployeeId != null).Select(x => new { x.Id, x.PaidByEmployeeId }).ToListAsync(ct)).Select(x => (x.Id, x.PaidByEmployeeId)));
+        Add((await db.Set<PickupExpense>().AsNoTracking().Where(x => x.PaidByEmployeeId != null).Select(x => new { x.Id, x.PaidByEmployeeId }).ToListAsync(ct)).Select(x => (x.Id, x.PaidByEmployeeId)));
+        Add((await db.Set<Movers.Domain.Packing.PackingJobTransaction>().AsNoTracking().Where(x => x.PaidByEmployeeId != null).Select(x => new { x.Id, x.PaidByEmployeeId }).ToListAsync(ct)).Select(x => (x.Id, x.PaidByEmployeeId)));
+        Add((await db.Set<Movers.Domain.Delivery.DeliveryJobTransaction>().AsNoTracking().Where(x => x.PaidByEmployeeId != null).Select(x => new { x.Id, x.PaidByEmployeeId }).ToListAsync(ct)).Select(x => (x.Id, x.PaidByEmployeeId)));
+        return payers;
+    }
+    public async Task<IReadOnlyList<(Movers.Domain.Surveys.SurveyExpense Expense, string SurveyLabel)>> SurveyExpenses(CancellationToken ct) =>
+        (await (from e in db.SurveyExpenses.AsNoTracking() join s in db.Surveys.AsNoTracking() on e.SurveyId equals s.Id
+                select new { e, Label = s.SurveyNumber + " · " + s.CustomerName }).ToListAsync(ct)).Select(x => (x.e, x.Label)).ToList();
     public async Task<IReadOnlyList<LabourEntry>> Labour(CancellationToken ct) => await db.Set<LabourEntry>().OrderByDescending(x => x.SerialNo).ToListAsync(ct);
     public async Task<IReadOnlyList<TransportTrip>> Trips(CancellationToken ct) => await db.Set<TransportTrip>().OrderByDescending(x => x.SerialNo).ToListAsync(ct);
     public Task<TransportTrip?> Trip(Guid id, CancellationToken ct) => db.Set<TransportTrip>().SingleOrDefaultAsync(x => x.Id == id, ct);

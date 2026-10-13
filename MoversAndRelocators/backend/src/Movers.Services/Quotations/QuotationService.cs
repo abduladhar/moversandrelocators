@@ -2,13 +2,14 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using Movers.Domain.Quotations;
+using Movers.Domain.Sales;
 using Movers.Domain.Surveys;
 using Movers.Services.Security;
 using Movers.Services.Tenancy;
 
 namespace Movers.Services.Quotations;
 
-public sealed class QuotationService(IQuotationRepository repository, ITenantContext tenantContext, IUserContext userContext, TimeProvider timeProvider, Movers.Services.Numbering.IRecordNumbers numbers, Movers.Services.Currencies.CurrencyService currencies, Movers.Services.Tenants.ICompanyScope? companies = null) : IQuotationService
+public sealed class QuotationService(IQuotationRepository repository, ITenantContext tenantContext, IUserContext userContext, TimeProvider timeProvider, Movers.Services.Numbering.IRecordNumbers numbers, Movers.Services.Currencies.CurrencyService currencies, Movers.Services.Tenants.ICompanyScope? companies = null, Movers.Services.OpenAi.AiUsageService? aiUsage = null) : IQuotationService
 {
     public async Task<IReadOnlyList<ChargeModel>> ListChargesAsync(CancellationToken t) => (await repository.ListChargesAsync(t)).Select(Map).ToList();
     public async Task<ChargeModel> CreateChargeAsync(SaveChargeCommand c, CancellationToken t) { ValidateCharge(c); await UniqueCharge(c.Code, null, t); var x = new ChargeMaster(tenantContext.TenantId, c.Code, c.Name, c.Unit, c.DefaultRate, c.TaxPercent, c.Description); repository.AddCharge(x); await repository.SaveChangesAsync(t); return Map(x); }
@@ -90,6 +91,50 @@ public sealed class QuotationService(IQuotationRepository repository, ITenantCon
         foreach (var c in commands) { if (!masters.TryGetValue(c.HouseholdItemId, out var master) || !master.IsActive) throw new InvalidOperationException("Select an active household item."); if (string.IsNullOrWhiteSpace(c.RoomName) || c.Quantity <= 0) throw new InvalidOperationException("Room and a positive quantity are required."); var volume = c.VolumePerUnitCbm ?? master.VolumeCbm; if (volume <= 0) throw new InvalidOperationException("Item volume must be greater than zero."); items.Add(new QuotationItem(tenantContext.TenantId, id, master.Id, c.RoomName, master.Name, c.Quantity, volume, c.Notes, c.DisplayOrder)); }
         repository.RemoveQuotationItems(await repository.ListQuotationItemsAsync(id, t)); repository.AddQuotationItems(items); await repository.SaveChangesAsync(t); return await LoadDetail(id, restriction, t);
     }
+    /// <summary>
+    /// Builds the quotation's item list from the sales lead's expected inventory. Lines the customer marked as not
+    /// needed on the shared inventory link are left out, and a line is only quotable once its name matches an active
+    /// household item, which is what carries the volume the pricing is based on.
+    /// </summary>
+    public async Task<LeadInventoryImportModel?> ImportLeadInventoryAsync(Guid id, CancellationToken t)
+    {
+        var restriction = await EmployeeRestriction(t); var quote = await repository.GetQuotationAsync(id, true, restriction, t); if (quote is null) return null;
+        if (quote.Status is QuotationStatuses.Accepted or QuotationStatuses.Rejected) throw new InvalidOperationException("Customer-responded quotations cannot be changed.");
+        if (quote.SalesLeadId is not { } leadId) throw new InvalidOperationException("This quotation is not linked to a sales lead.");
+        var lines = await repository.ListLeadInventoryAsync(leadId, t);
+        if (lines.Count == 0) throw new InvalidOperationException("This sales lead has no expected inventory yet.");
+        var dropped = lines.Count(x => x.CustomerStatus == LeadInventoryCustomerStatuses.NotNeeded);
+        var wanted = lines.Where(x => x.CustomerStatus != LeadInventoryCustomerStatuses.NotNeeded).ToList();
+
+        var masters = (await repository.ListHouseholdItemsAsync(t)).Where(x => x.IsActive).ToList();
+        static string Norm(string x) => new(x.ToLowerInvariant().Where(char.IsLetterOrDigit).ToArray());
+        HouseholdItem? Match(string name)
+        {
+            var n = Norm(name);
+            // A longer inventory name may contain the master name ("Television 55 inch" -> Television), never the reverse.
+            return masters.FirstOrDefault(m => Norm(m.Name) == n)
+                ?? masters.Where(m => Norm(m.Name).Length >= 4 && n.Contains(Norm(m.Name))).OrderByDescending(m => m.Name.Length).FirstOrDefault();
+        }
+
+        var items = new List<QuotationItem>(); var unmatched = new List<string>(); var order = 0;
+        foreach (var line in wanted)
+        {
+            if (Match(line.Name) is not { } master) { if (!unmatched.Contains(line.Name)) unmatched.Add(line.Name); continue; }
+            var volume = line.UnitCbm > 0 ? line.UnitCbm : master.VolumeCbm;
+            if (volume <= 0) { if (!unmatched.Contains(line.Name)) unmatched.Add(line.Name); continue; }
+            var note = string.Join(" · ", new[] { line.Fragile ? "Fragile" : null, line.Handling, line.Notes, line.CustomerNote }.Where(x => !string.IsNullOrWhiteSpace(x)));
+            items.Add(new QuotationItem(tenantContext.TenantId, id, master.Id, line.Room ?? "Unspecified", master.Name, line.Quantity, volume, note.Length > 0 ? note[..Math.Min(note.Length, 500)] : null, ++order));
+        }
+        if (items.Count == 0) throw new InvalidOperationException(unmatched.Count > 0
+            ? "None of the inventory names match an active household item. Add them to the household items master first."
+            : "The customer marked every line as not needed, so there is nothing to quote.");
+
+        repository.RemoveQuotationItems(await repository.ListQuotationItemsAsync(id, t));
+        repository.AddQuotationItems(items);
+        await repository.SaveChangesAsync(t);
+        return new(await LoadDetail(id, restriction, t) ?? throw new InvalidOperationException("Quotation was not found."), items.Count, dropped, unmatched);
+    }
+
     public async Task<QuotationDetailModel?> ApplyRequoteRequestAsync(Guid quotationId, Guid requestId, CancellationToken t)
     {
         var restriction = await EmployeeRestriction(t); var quote = await repository.GetQuotationAsync(quotationId, true, restriction, t); if (quote is null) return null; if (quote.Status != QuotationStatuses.RequoteRequested || !quote.SurveyId.HasValue) throw new InvalidOperationException("This quotation does not have a pending customer requote request.");
@@ -125,7 +170,10 @@ public sealed class QuotationService(IQuotationRepository repository, ITenantCon
     }
     private async Task<QuotationDetailModel?> LoadDetail(Guid id, Guid? restriction, CancellationToken t)
     {
-        var quote = await repository.GetQuotationAsync(id, false, restriction, t); if (quote is null) return null; var model = (await MapQuotes([quote], t)).Single(); var charges = (await repository.ListChargesAsync(t)).ToDictionary(x => x.Id); var entities = await repository.ListLinesAsync(id, t); var taxRows = await repository.ListLineTaxesAsync(entities.Select(x => x.Id).ToList(), t); var lines = entities.Select(x => new QuotationLineModel(x.SerialNo, x.Id, x.ChargeMasterId, charges.GetValueOrDefault(x.ChargeMasterId)?.Name ?? x.Description, x.Description, x.Quantity, x.Unit, x.Rate, x.DiscountPercent, x.DiscountAmount, x.TaxPercent, x.TaxAmount, x.LineTotal, x.DisplayOrder, taxRows.Where(y => y.QuotationLineId == x.Id).Select(y => new QuotationLineTaxModel(y.TaxMasterId, y.Code, y.Name, y.Kind, y.CalculationBasis, y.Rate, y.TaxableBase, y.Amount)).ToList())).ToList(); var rooms = quote.SurveyId.HasValue ? await LoadSurveyRooms(quote.SurveyId.Value, t) : []; var quoteItems = (await repository.ListQuotationItemsAsync(id, t)).Select(x => new QuotationItemModel(x.SerialNo, x.Id, x.HouseholdItemId, x.RoomName, x.ItemName, x.Quantity, x.VolumePerUnitCbm, x.TotalVolumeCbm, x.Notes, x.DisplayOrder)).ToList(); decimal? volume = quoteItems.Count > 0 ? quoteItems.Sum(x => x.TotalVolumeCbm) : quote.SurveyId.HasValue ? rooms.Sum(x => x.TotalVolumeCbm) : null; var requests = (await repository.ListRequoteRequestsAsync(id, t)).Select(MapRequoteRequest).ToList(); return new(model, lines, volume, null, rooms, quoteItems, requests);
+        var quote = await repository.GetQuotationAsync(id, false, restriction, t); if (quote is null) return null; var model = (await MapQuotes([quote], t)).Single(); var charges = (await repository.ListChargesAsync(t)).ToDictionary(x => x.Id); var entities = await repository.ListLinesAsync(id, t); var taxRows = await repository.ListLineTaxesAsync(entities.Select(x => x.Id).ToList(), t); var lines = entities.Select(x => new QuotationLineModel(x.SerialNo, x.Id, x.ChargeMasterId, charges.GetValueOrDefault(x.ChargeMasterId)?.Name ?? x.Description, x.Description, x.Quantity, x.Unit, x.Rate, x.DiscountPercent, x.DiscountAmount, x.TaxPercent, x.TaxAmount, x.LineTotal, x.DisplayOrder, taxRows.Where(y => y.QuotationLineId == x.Id).Select(y => new QuotationLineTaxModel(y.TaxMasterId, y.Code, y.Name, y.Kind, y.CalculationBasis, y.Rate, y.TaxableBase, y.Amount)).ToList())).ToList(); var rooms = quote.SurveyId.HasValue ? await LoadSurveyRooms(quote.SurveyId.Value, t) : []; var quoteItems = (await repository.ListQuotationItemsAsync(id, t)).Select(x => new QuotationItemModel(x.SerialNo, x.Id, x.HouseholdItemId, x.RoomName, x.ItemName, x.Quantity, x.VolumePerUnitCbm, x.TotalVolumeCbm, x.Notes, x.DisplayOrder)).ToList(); decimal? volume = quoteItems.Count > 0 ? quoteItems.Sum(x => x.TotalVolumeCbm) : quote.SurveyId.HasValue ? rooms.Sum(x => x.TotalVolumeCbm) : null; var requests = (await repository.ListRequoteRequestsAsync(id, t)).Select(MapRequoteRequest).ToList();
+        // Carried over from the lead, like the survey does: the AI was paid for while this was still an enquiry.
+        var aiSpend = quote.SalesLeadId is { } aiLeadId && aiUsage is not null ? await aiUsage.LeadSpend(aiLeadId, t) : null;
+        return new(model, lines, volume, null, rooms, quoteItems, requests, aiSpend);
     }
     private async Task<IReadOnlyList<QuotationModel>> MapQuotes(IReadOnlyList<Quotation> quotes, CancellationToken t)
     {

@@ -1,7 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 namespace Movers.DAL.Persistence;
 
-/// <summary>Idempotent upgrade that adds the sales lead inventory to existing databases (script 032).</summary>
+/// <summary>Idempotent upgrade that adds the sales lead inventory to existing databases (script 032), the optional item picture (script 037) and the customer review of each line (script 038).</summary>
 public static class LeadInventorySchema
 {
     public static async Task Apply(MoversDbContext db)
@@ -20,6 +20,11 @@ public static class LeadInventorySchema
             CREATE INDEX [IX_SalesLeadInventoryItems_SalesLeadId] ON [dbo].[SalesLeadInventoryItems]([SalesLeadId]);
             CREATE INDEX [IX_SalesLeadInventoryItems_TenantId] ON [dbo].[SalesLeadInventoryItems]([TenantId]);
         END
+        IF COL_LENGTH(N'dbo.SalesLeadInventoryItems', N'ImageKey') IS NULL ALTER TABLE [dbo].[SalesLeadInventoryItems] ADD [ImageKey] NVARCHAR(500) NULL;
+        IF COL_LENGTH(N'dbo.SalesLeadInventoryItems', N'ImageMark') IS NULL ALTER TABLE [dbo].[SalesLeadInventoryItems] ADD [ImageMark] NVARCHAR(40) NULL;
+        IF COL_LENGTH(N'dbo.SalesLeadInventoryItems', N'CustomerStatus') IS NULL ALTER TABLE [dbo].[SalesLeadInventoryItems] ADD [CustomerStatus] NVARCHAR(20) NOT NULL CONSTRAINT [DF_SalesLeadInventoryItems_CustomerStatus] DEFAULT 'PENDING';
+        IF COL_LENGTH(N'dbo.SalesLeadInventoryItems', N'CustomerNote') IS NULL ALTER TABLE [dbo].[SalesLeadInventoryItems] ADD [CustomerNote] NVARCHAR(500) NULL;
+        IF COL_LENGTH(N'dbo.SalesLeadInventoryItems', N'CustomerDecidedAtUtc') IS NULL ALTER TABLE [dbo].[SalesLeadInventoryItems] ADD [CustomerDecidedAtUtc] DATETIMEOFFSET NULL;
         """;
 
     public const string PostgreSql = """
@@ -27,5 +32,10 @@ public static class LeadInventorySchema
         CREATE UNIQUE INDEX IF NOT EXISTS "IX_SalesLeadInventoryItems_Id" ON "SalesLeadInventoryItems"("Id");
         CREATE INDEX IF NOT EXISTS "IX_SalesLeadInventoryItems_SalesLeadId" ON "SalesLeadInventoryItems"("SalesLeadId");
         CREATE INDEX IF NOT EXISTS "IX_SalesLeadInventoryItems_TenantId" ON "SalesLeadInventoryItems"("TenantId");
+        ALTER TABLE "SalesLeadInventoryItems" ADD COLUMN IF NOT EXISTS "ImageKey" varchar(500) NULL;
+        ALTER TABLE "SalesLeadInventoryItems" ADD COLUMN IF NOT EXISTS "ImageMark" varchar(40) NULL;
+        ALTER TABLE "SalesLeadInventoryItems" ADD COLUMN IF NOT EXISTS "CustomerStatus" varchar(20) NOT NULL DEFAULT 'PENDING';
+        ALTER TABLE "SalesLeadInventoryItems" ADD COLUMN IF NOT EXISTS "CustomerNote" varchar(500) NULL;
+        ALTER TABLE "SalesLeadInventoryItems" ADD COLUMN IF NOT EXISTS "CustomerDecidedAtUtc" timestamp with time zone NULL;
         """;
 }

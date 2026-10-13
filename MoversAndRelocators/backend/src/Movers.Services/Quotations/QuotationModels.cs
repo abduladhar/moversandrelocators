@@ -17,7 +17,12 @@ public sealed record RequoteItemInput(Guid SurveyItemId, int RequestedQuantity, 
 public sealed record SubmitRequoteCommand(string? CustomerNotes, IReadOnlyList<RequoteItemInput> Items);
 public sealed record RequoteRequestedItemModel(Guid SurveyItemId, string RoomName, string ItemName, int OriginalQuantity, int RequestedQuantity, string? Notes);
 public sealed record QuotationRequoteRequestModel(int SerialNo, Guid Id, string? CustomerNotes, DateTimeOffset CreatedAtUtc, DateTimeOffset? AppliedAtUtc, IReadOnlyList<RequoteRequestedItemModel> Items);
-public sealed record QuotationDetailModel(QuotationModel Quotation, IReadOnlyList<QuotationLineModel> Lines, decimal? SurveyVolumeCbm, decimal? SurveyMaterialCost, IReadOnlyList<QuotationSurveyRoomModel> SurveyRooms, IReadOnlyList<QuotationItemModel> QuotationItems, IReadOnlyList<QuotationRequoteRequestModel> RequoteRequests);
+/// <param name="LeadAiSpend">What Claude or OpenAI cost on the sales lead behind this quotation; null when there is no lead.</param>
+public sealed record QuotationDetailModel(QuotationModel Quotation, IReadOnlyList<QuotationLineModel> Lines, decimal? SurveyVolumeCbm, decimal? SurveyMaterialCost, IReadOnlyList<QuotationSurveyRoomModel> SurveyRooms, IReadOnlyList<QuotationItemModel> QuotationItems, IReadOnlyList<QuotationRequoteRequestModel> RequoteRequests, Movers.Services.OpenAi.AiSpendModel? LeadAiSpend = null);
+/// <param name="Imported">Lines that became quotation items.</param>
+/// <param name="Dropped">Lines the customer marked as not needed on the shared inventory, which were left out.</param>
+/// <param name="Unmatched">Names with no active household item to price them against; they need a master before they can be quoted.</param>
+public sealed record LeadInventoryImportModel(QuotationDetailModel Detail, int Imported, int Dropped, IReadOnlyList<string> Unmatched);
 public sealed record GeneratedQuotationLinkModel(string Token, DateTimeOffset ExpiresAtUtc);
 public sealed record PublicQuotationModel(string TenantName, QuotationModel Quotation, IReadOnlyList<QuotationLineModel> Lines, IReadOnlyList<QuotationSurveyRoomModel> SurveyRooms, IReadOnlyList<QuotationItemModel> QuotationItems);
 public sealed record PublicQuotationResolutionModel(Guid QuotationId, string TenantName);
