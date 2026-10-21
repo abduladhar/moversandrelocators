@@ -1,8 +1,10 @@
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
+using Movers.Domain.CustomerLinks;
 using Movers.Domain.Employees;
 using Movers.Domain.Packing;
+using Movers.Services.CustomerLinks;
 using Movers.Domain.Pickups;
 using Movers.Domain.Quotations;
 using Movers.Domain.Sales;
@@ -18,6 +20,8 @@ namespace Movers.Services.Packing;
 
 public sealed record SavePackingJobCommand(string CustomerName, string Phone, string? Email, string Address, DateTimeOffset ScheduledAtUtc, string? Notes, Guid? PickupId = null, Guid? QuotationId = null, Guid? SalesLeadId = null);
 public sealed record PackingCrewInput(Guid EmployeeId, string Role);
+/// <summary>The register's filters besides the keyword: status and customer state (PENDING, REPLIED...).</summary>
+public sealed record PackingListFilter(string? Status = null, string? CustomerState = null);
 public sealed record PackingBoxItemInput(string ItemName, int Quantity, string? Notes, Guid? HouseholdItemId);
 public sealed record PackingBoxMaterialInput(Guid MaterialId, decimal Quantity);
 /// <param name="Materials">Materials actually used per box; null keeps the box type recipe.</param>
@@ -75,6 +79,8 @@ public sealed record PackingSourceOption(string Kind, Guid Id, string Number, st
 public interface IPackingRepository
 {
     Task<IReadOnlyList<PackingJob>> Jobs(CancellationToken t);
+    /// <summary>One page of the register: keyword (job, customer, address, pickup and quotation numbers), filters and sort.</summary>
+    Task<(IReadOnlyList<PackingJob> Items, int Total)> SearchJobs(PackingListFilter filter, Movers.Services.Common.ListQuery list, IReadOnlyCollection<Guid>? onlyIds, CancellationToken t);
     Task<PackingJob?> Job(Guid id, bool track, CancellationToken t);
     Task<(PackingJobLink Link, PackingJob Job, Movers.Domain.Tenants.Tenant Tenant)?> SharedJob(string tokenHash, CancellationToken t);
     Task<IReadOnlyList<PackingJobLink>> Links(Guid jobId, bool track, CancellationToken t);
@@ -88,6 +94,10 @@ public interface IPackingRepository
     Task<IReadOnlyList<PackingJobTransaction>> Transactions(Guid jobId, CancellationToken t);
     Task<IReadOnlyDictionary<Guid, int>> BoxCounts(CancellationToken t);
     Task<IReadOnlyDictionary<Guid, int>> PendingLabels(CancellationToken t);
+    Task<IReadOnlyDictionary<Guid, int>> BoxCounts(IReadOnlyCollection<Guid> jobIds, CancellationToken t);
+    Task<IReadOnlyDictionary<Guid, int>> PendingLabels(IReadOnlyCollection<Guid> jobIds, CancellationToken t);
+    Task<IReadOnlyList<Pickup>> PickupsById(IReadOnlyCollection<Guid> ids, CancellationToken t);
+    Task<IReadOnlyList<Quotation>> QuotationsById(IReadOnlyCollection<Guid> ids, CancellationToken t);
     Task<IReadOnlyList<Employee>> ActiveEmployees(CancellationToken t);
     Task<IReadOnlyList<BoxType>> ActiveBoxTypes(CancellationToken t);
     Task<IReadOnlyList<BoxTypeMaterial>> Recipes(CancellationToken t);
@@ -105,7 +115,7 @@ public interface IPackingRepository
 /// Packing jobs: crew, labelled boxes with items, packing materials (box recipes derived automatically plus extras),
 /// income and expenses (to the accountant's cash queue as source PACKING), and the material-consumption journal.
 /// </summary>
-public sealed class PackingService(IPackingRepository r, BusinessMasterService masters, BillingService billing, CurrencyService currencies, IRecordNumbers numbers, ITenantContext tenant, IUserContext user, TimeProvider clock, Movers.Services.Crew.ICrewRepository crewRepo, Movers.Services.Tenants.ICompanyScope? companies = null)
+public sealed class PackingService(IPackingRepository r, BusinessMasterService masters, BillingService billing, CurrencyService currencies, IRecordNumbers numbers, ITenantContext tenant, IUserContext user, TimeProvider clock, Movers.Services.Crew.ICrewRepository crewRepo, ICustomerReplies replies, ICustomerReplyQueries replyQueries, Movers.Services.Tenants.ICompanyScope? companies = null)
 {
     public const string SourceKind = "PACKING";
 
@@ -139,6 +149,20 @@ public sealed class PackingService(IPackingRepository r, BusinessMasterService m
         var jobs = await r.Jobs(t); var now = clock.GetUtcNow();
         var events = (await r.TimeEvents(jobs.Select(x => x.Id).ToList(), t)).ToLookup(x => x.PackingJobId);
         return jobs.OrderByDescending(x => x.SerialNo).Select(x => Model(x, refs, counts.GetValueOrDefault(x.Id), pending.GetValueOrDefault(x.Id), null, Durations(x, events[x.Id].ToList(), now))).ToList();
+    }
+
+    /// <summary>The register's advanced search: one page, with references, box counts, pending labels and time loaded for that page only.</summary>
+    public async Task<Movers.Services.Common.PagedResult<PackingJobModel>> Search(PackingListFilter filter, Movers.Services.Common.ListQuery query, CancellationToken t)
+    {
+        query = query.Normalized();
+        var only = string.IsNullOrWhiteSpace(filter.CustomerState) ? null : await replyQueries.RecordIdsInStateAsync(CustomerReplyRecordTypes.PackingJob, filter.CustomerState.Trim().ToUpperInvariant(), t);
+        var (jobs, total) = await r.SearchJobs(filter, query, only, t);
+        var ids = jobs.Select(x => x.Id).ToList(); var now = clock.GetUtcNow();
+        var refs = new Refs((await r.PickupsById(jobs.Where(x => x.PickupId.HasValue).Select(x => x.PickupId!.Value).Distinct().ToList(), t)).ToDictionary(x => x.Id),
+            (await r.QuotationsById(jobs.Where(x => x.QuotationId.HasValue).Select(x => x.QuotationId!.Value).Distinct().ToList(), t)).ToDictionary(x => x.Id));
+        var counts = await r.BoxCounts(ids, t); var pending = await r.PendingLabels(ids, t);
+        var events = (await r.TimeEvents(ids, t)).ToLookup(x => x.PackingJobId);
+        return new(jobs.Select(x => Model(x, refs, counts.GetValueOrDefault(x.Id), pending.GetValueOrDefault(x.Id), null, Durations(x, events[x.Id].ToList(), now))).ToList(), total);
     }
 
     public async Task<PackingJobDetailModel?> Get(Guid id, CancellationToken t) { var x = await r.Job(id, false, t); return x is null ? null : await Detail(x, t); }
@@ -446,6 +470,7 @@ public sealed class PackingService(IPackingRepository r, BusinessMasterService m
         var raw = Convert.ToHexString(RandomNumberGenerator.GetBytes(24)).ToLowerInvariant();
         var expires = clock.GetUtcNow().AddDays(days);
         r.Add(new PackingJobLink(tenant.TenantId, id, purpose, Sha256(raw), expires));
+        await replies.SharedAsync(CustomerReplyRecordTypes.PackingJob, id, expires, t);
         job.Touch(); await r.Save(t);
         return new(purpose, raw, expires);
     }
@@ -454,7 +479,9 @@ public sealed class PackingService(IPackingRepository r, BusinessMasterService m
     {
         purpose = Purpose(purpose);
         var job = await r.Job(id, true, t); if (job is null) return null;
-        foreach (var old in (await r.Links(id, true, t)).Where(x => x.Purpose == purpose)) r.Remove(old);
+        var links = await r.Links(id, true, t); var revoked = links.Where(x => x.Purpose == purpose).ToList();
+        foreach (var old in revoked) r.Remove(old);
+        if (revoked.Count == links.Count) await replies.WithdrawnAsync(CustomerReplyRecordTypes.PackingJob, id, t);
         job.Touch(); await r.Save(t); return await Detail(job, t);
     }
 
@@ -472,6 +499,7 @@ public sealed class PackingService(IPackingRepository r, BusinessMasterService m
         if (job.IsLocked) throw new InvalidOperationException("This packing job is closed. Please contact us to make changes.");
         if (c.ScheduledAtUtc < now.AddHours(-1) || c.ScheduledAtUtc > now.AddYears(1)) throw new InvalidOperationException("Choose a packing date and time from now on.");
         job.ConfirmSchedule(c.ScheduledAtUtc, now);
+        await replies.RepliedAsync(CustomerReplyRecordTypes.PackingJob, job.Id, CustomerReplyKinds.PackingSchedule, null, t);
         await r.Save(t); return await PublicModel(job, s.Value.Link, s.Value.TenantName, t);
     }
 
@@ -484,6 +512,7 @@ public sealed class PackingService(IPackingRepository r, BusinessMasterService m
         if (c.Latitude is < -90 or > 90 || c.Longitude is < -180 or > 180 || (c.Latitude == 0 && c.Longitude == 0)) throw new InvalidOperationException("The shared location is not valid.");
         if (c.Address?.Length > 500 || c.Notes?.Length > 500) throw new InvalidOperationException("Address or directions are too long.");
         job.ShareLocation(Math.Round(c.Latitude, 6), Math.Round(c.Longitude, 6), c.Address, c.Notes, clock.GetUtcNow());
+        await replies.RepliedAsync(CustomerReplyRecordTypes.PackingJob, job.Id, CustomerReplyKinds.PackingLocation, c.Notes, t);
         await r.Save(t); return await PublicModel(job, s.Value.Link, s.Value.TenantName, t);
     }
 
@@ -501,6 +530,7 @@ public sealed class PackingService(IPackingRepository r, BusinessMasterService m
         if (c.SnapshotHash != snap.Hash) throw new InvalidOperationException("The packing list changed while you were reviewing it. Reload the page to see the latest list.");
         if (job.ItemsSnapshotHash == snap.Hash) throw new InvalidOperationException("Your response to this packing list is already recorded.");
         job.RespondItems(c.Confirmed, c.Name, c.Notes, snap.Hash, snap.Json, clock.GetUtcNow());
+        await replies.RepliedAsync(CustomerReplyRecordTypes.PackingJob, job.Id, c.Confirmed ? CustomerReplyKinds.PackingItemsConfirmed : CustomerReplyKinds.PackingItemsCorrections, c.Notes, t);
         await r.Save(t); return await PublicModel(job, s.Value.Link, s.Value.TenantName, t);
     }
 

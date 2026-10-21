@@ -22,6 +22,24 @@ public sealed class SecurityService(ISecurityRepository repository, ITenantConte
         return result;
     }
 
+    /// <summary>One page of the Users register, with the same company rule as ListUsersAsync; only the page's users are mapped.</summary>
+    public async Task<Movers.Services.Common.PagedResult<UserModel>> SearchUsersAsync(UserListFilter filter, Movers.Services.Common.ListQuery query, CancellationToken cancellationToken)
+    {
+        query = query.Normalized(); var own = await RequesterCompanyAsync(cancellationToken);
+        var (items, total) = await repository.SearchUsersAsync(tenantContext.TenantId, own, filter, query, cancellationToken);
+        var result = new List<UserModel>();
+        foreach (var user in items) result.Add(await MapUserAsync(user, cancellationToken));
+        return new(result, total, new UserListSummary(await repository.LinkedEmployeeIdsAsync(tenantContext.TenantId, own, cancellationToken)));
+    }
+
+    public async Task<Movers.Services.Common.PagedResult<RoleModel>> SearchRolesAsync(RoleListFilter filter, Movers.Services.Common.ListQuery query, CancellationToken cancellationToken)
+    {
+        query = query.Normalized(); var (items, total) = await repository.SearchRolesAsync(tenantContext.TenantId, filter, query, cancellationToken);
+        var result = new List<RoleModel>();
+        foreach (var role in items) result.Add(await MapRoleAsync(role, cancellationToken));
+        return new(result, total);
+    }
+
     public async Task<UserModel> CreateUserAsync(CreateUserCommand command, CancellationToken cancellationToken) =>
         await CreateAsync(tenantContext.TenantId, command.FullName, command.Email, command.Password, command.RoleId, command.EmployeeId,
             await RequesterCompanyAsync(cancellationToken) ?? command.CompanyId, cancellationToken);

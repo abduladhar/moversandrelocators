@@ -31,7 +31,9 @@ function columnText<T extends object>(column: ColumnType<T>, row: T): string {
   return value == null ? '' : typeof value === 'boolean' ? (value ? `Active Yes ${translate('common.active')} ${translate('common.yes')}` : `Inactive No ${translate('common.inactive')} ${translate('common.no')}`) : String(value)
 }
 
-export function DataGrid<T extends object>(props: TableProps<T>) {
+/** serverPaged: the rows are one page of a server search (useServerList), so the per-column text filters are left out —
+ * they could only filter the loaded page. The list's Advanced Search searches those fields on the server instead. */
+export function DataGrid<T extends object>({ serverPaged, ...props }: TableProps<T> & { serverPaged?: boolean }) {
   const { t } = useT()
   const [filters, setFilters] = useState<Record<string, FilterValue | null>>({})
   const [matched, setMatched] = useState<number | null>(null)
@@ -42,7 +44,7 @@ export function DataGrid<T extends object>(props: TableProps<T>) {
     const money = !action && isAmount(title + ' ' + String(column.dataIndex ?? ''))
     const base: ColumnType<T> = { ...column, key: column.key ?? String(column.dataIndex ?? title ?? index),
       align: money ? 'right' : 'left', className: [column.className, money ? 'amount-column' : 'text-column'].filter(Boolean).join(' ') }
-    if (action || column.filters || column.filterDropdown) return base
+    if (action || serverPaged || column.filters || column.filterDropdown) return base
     return { ...base, filteredValue: filters[String(base.key)] ?? null, filterIcon: (filtered: boolean) => <SearchOutlined style={{ color: filtered ? '#247452' : undefined }} />,
       filterDropdown: ({ selectedKeys, setSelectedKeys, confirm, clearFilters }) => <div className="grid-column-filter" onKeyDown={e => e.stopPropagation()}>
         <Input aria-label={t('shell.grid.filterColumn', { column: title })} placeholder={t('shell.grid.filterColumn', { column: title })} value={String(selectedKeys[0] ?? '')}

@@ -14,7 +14,7 @@ public static class CompanySchema
     /// <summary>Tables of company records (everything tenant-owned except the shared masters). Kept in step with the model by a test.</summary>
     public static readonly string[] CompanyTables =
     [
-        "AiUsageRecords", "BillingRecords", "DeliveryItems", "DeliveryJobCrew", "DeliveryJobs", "DeliveryJobTimeEvents", "DeliveryJobTransactions",
+        "AiUsageRecords", "BillingRecords", "CustomerReplies", "CustomerReplyEvents", "DeliveryItems", "DeliveryJobCrew", "DeliveryJobs", "DeliveryJobTimeEvents", "DeliveryJobTransactions",
         "DeliveryNoteLinks", "DeliveryNotes", "ExpenseAttachments", "JobCargo", "JobExpenses", "JournalEntries", "JournalLines", "LabourEntries",
         "LeadFollowUps", "PackageHandovers", "PackingConfirmations", "PackingJobBoxes", "PackingJobBoxItems", "PackingJobBoxMaterials",
         "PackingJobCrew", "PackingJobLinks", "PackingJobMaterials", "PackingJobs", "PackingJobTimeEvents", "PackingJobTransactions",

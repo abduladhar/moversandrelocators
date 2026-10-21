@@ -8,6 +8,8 @@ using Movers.Domain.Quotations;
 using Movers.Domain.Sales;
 using Movers.Domain.Surveys;
 using Movers.Services.Pickups;
+using Movers.DAL.Common;
+using Movers.Services.Common;
 
 namespace Movers.DAL.Pickups;
 
@@ -39,6 +41,12 @@ public sealed class PickupWorkRepository(MoversDbContext db) : IPickupWorkReposi
     public async Task<IReadOnlyList<PickupSignoff>> SignoffsAsync(Guid pickupId, CancellationToken t) => await db.Set<PickupSignoff>().AsNoTracking().Where(x => x.PickupId == pickupId).OrderBy(x => x.SerialNo).ToListAsync(t);
     public async Task<IReadOnlyList<PackageHandover>> HandoversAsync(Guid pickupId, CancellationToken t) => await db.Set<PackageHandover>().AsNoTracking().Where(x => x.PickupId == pickupId).OrderBy(x => x.SerialNo).ToListAsync(t);
     public async Task<IReadOnlyList<Warehouse>> WarehousesAsync(CancellationToken t) => await db.Set<Warehouse>().AsNoTracking().OrderBy(x => x.Name).ToListAsync(t);
+    private static readonly SortMap<Warehouse> WarehouseSorts = new SortMap<Warehouse>("name", false, x => x.SerialNo).Add("name", x => x.Name);
+    public async Task<(IReadOnlyList<Warehouse> Items, int Total)> SearchWarehousesAsync(ListQuery list, CancellationToken t)
+    {
+        var (items, total) = await db.Set<Warehouse>().AsNoTracking().Search(list, w => x => x.Code.ToLower().Contains(w) || x.Name.ToLower().Contains(w) || (x.Address ?? "").ToLower().Contains(w)).Sort(list, WarehouseSorts).PageAsync(list, t);
+        return (items, total);
+    }
     public Task<Warehouse?> WarehouseAsync(Guid id, bool track, CancellationToken t) => (track ? db.Set<Warehouse>() : db.Set<Warehouse>().AsNoTracking()).SingleOrDefaultAsync(x => x.Id == id, t);
     public Task<bool> WarehouseCodeExistsAsync(string code, Guid? excludingId, CancellationToken t) => db.Set<Warehouse>().AnyAsync(x => x.Code == code && (!excludingId.HasValue || x.Id != excludingId), t);
     public Task<TenantAwsConfiguration?> AwsAsync(CancellationToken t) => db.TenantAwsConfigurations.AsNoTracking().SingleOrDefaultAsync(t);

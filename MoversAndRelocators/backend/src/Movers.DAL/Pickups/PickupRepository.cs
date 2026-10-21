@@ -1,4 +1,4 @@
-using Microsoft.EntityFrameworkCore; using Movers.DAL.Persistence; using Movers.Domain.Employees; using Movers.Domain.Pickups; using Movers.Domain.Quotations; using Movers.Domain.Surveys; using Movers.Domain.Tenants; using Movers.Services.Pickups;
+using Microsoft.EntityFrameworkCore; using Movers.DAL.Persistence; using Movers.Domain.Employees; using Movers.Domain.Pickups; using Movers.Domain.Quotations; using Movers.Domain.Surveys; using Movers.Domain.Tenants; using Movers.Services.Pickups; using Movers.DAL.Common; using Movers.Services.Common;
 namespace Movers.DAL.Pickups;
 public sealed class PickupRepository(MoversDbContext db):IPickupRepository {
  public async Task<IReadOnlyList<PickupStatus>> Statuses(CancellationToken t)=>await db.PickupStatuses.AsNoTracking().OrderBy(x=>x.DisplayOrder).ToListAsync(t); public Task<PickupStatus?> Status(Guid id,bool track,CancellationToken t)=>(track?db.PickupStatuses:db.PickupStatuses.AsNoTracking()).SingleOrDefaultAsync(x=>x.Id==id,t); public void Add(PickupStatus x)=>db.Add(x);
@@ -7,5 +7,25 @@ public sealed class PickupRepository(MoversDbContext db):IPickupRepository {
  public Task<Quotation?> Quotation(Guid id,CancellationToken t)=>db.Quotations.AsNoTracking().SingleOrDefaultAsync(x=>x.Id==id,t); public Task<Employee?> Employee(Guid id,CancellationToken t)=>db.Employees.AsNoTracking().SingleOrDefaultAsync(x=>x.Id==id&&x.IsActive,t); public Task<BoxType?> Box(Guid id,CancellationToken t)=>db.BoxTypes.AsNoTracking().SingleOrDefaultAsync(x=>x.Id==id&&x.IsActive,t); public Task<PackingMaterial?> Material(Guid id,CancellationToken t)=>db.PackingMaterials.AsNoTracking().SingleOrDefaultAsync(x=>x.Id==id&&x.IsActive,t);
  public async Task<IReadOnlyList<PickupAssignment>> Assignments(Guid id,CancellationToken t)=>await db.PickupAssignments.AsNoTracking().Where(x=>x.PickupId==id).ToListAsync(t); public async Task<IReadOnlyList<PickupPackage>> Packages(Guid id,CancellationToken t)=>await db.PickupPackages.AsNoTracking().Where(x=>x.PickupId==id).OrderBy(x=>x.SerialNo).ToListAsync(t); public async Task<IReadOnlyList<PickupPackageItem>> PackageItems(IReadOnlyList<Guid> ids,CancellationToken t)=>await db.PickupPackageItems.AsNoTracking().Where(x=>ids.Contains(x.PickupPackageId)).ToListAsync(t); public async Task<IReadOnlyList<PickupMaterialUsage>> Materials(Guid id,CancellationToken t)=>await db.PickupMaterialUsages.AsNoTracking().Where(x=>x.PickupId==id).ToListAsync(t); public async Task<IReadOnlyList<PickupTransaction>> Transactions(Guid id,CancellationToken t)=>await db.PickupTransactions.AsNoTracking().Where(x=>x.PickupId==id).OrderByDescending(x=>x.SerialNo).ToListAsync(t);
  public void Replace(IEnumerable<PickupAssignment> oa,IEnumerable<PickupPackage> op,IEnumerable<PickupMaterialUsage> om,IEnumerable<PickupAssignment> a,IEnumerable<PickupPackage> p,IEnumerable<PickupPackageItem> pi,IEnumerable<PickupMaterialUsage> m){db.RemoveRange(oa);db.RemoveRange(op);db.RemoveRange(om);db.AddRange(a);db.AddRange(p);db.AddRange(pi);db.AddRange(m);} public void Add(PickupTransaction x)=>db.Add(x);
+ private static readonly SortMap<PickupStatus> StatusSorts=new SortMap<PickupStatus>("displayOrder",false,x=>x.SerialNo).Add("displayOrder",x=>x.DisplayOrder).Add("serialNo",x=>x.SerialNo).Add("name",x=>x.Name);
+ private static readonly SortMap<Vehicle> VehicleSorts=new SortMap<Vehicle>("serialNo",true,x=>x.SerialNo).Add("serialNo",x=>x.SerialNo).Add("registrationNumber",x=>x.RegistrationNumber);
+ public Task<int> StatusCount(CancellationToken t)=>db.PickupStatuses.CountAsync(t);
+ public async Task<(IReadOnlyList<PickupStatus> Items,int Total)> SearchStatuses(ListQuery list,CancellationToken t){var (items,total)=await db.PickupStatuses.AsNoTracking().Search(list,w=>x=>x.Code.ToLower().Contains(w)||x.Name.ToLower().Contains(w)).Sort(list,StatusSorts).PageAsync(list,t);return (items,total);}
+ public async Task<(IReadOnlyList<Vehicle> Items,int Total)> SearchVehicles(ListQuery list,CancellationToken t){var (items,total)=await db.Vehicles.AsNoTracking().Search(list,w=>x=>x.RegistrationNumber.ToLower().Contains(w)||x.Name.ToLower().Contains(w)||x.Type.ToLower().Contains(w)||(x.DriverName??"").ToLower().Contains(w)).Sort(list,VehicleSorts).PageAsync(list,t);return (items,total);}
+ public async Task<(IReadOnlyList<Pickup> Items,int Total)> SearchPickups(PickupListFilter f,ListQuery list,IReadOnlyCollection<Guid>? onlyIds,CancellationToken t)
+ {
+  var q=db.Pickups.AsNoTracking();
+  if(f.StatusId is {} status)q=q.Where(x=>x.StatusId==status);
+  if(onlyIds is not null)q=q.Where(x=>onlyIds.Contains(x.Id));
+  q=q.Search(list,w=>x=>x.PickupNumber.ToLower().Contains(w)||x.CustomerName.ToLower().Contains(w)||x.Address.ToLower().Contains(w)
+   ||db.Vehicles.Any(v=>v.Id==x.VehicleId&&v.RegistrationNumber.ToLower().Contains(w))
+   ||db.Quotations.Any(z=>z.Id==x.QuotationId&&z.QuotationNumber.ToLower().Contains(w))
+   ||db.SalesLeads.Any(l=>l.Id==x.SalesLeadId&&l.LeadNumber.ToLower().Contains(w)));
+  // statusName reads the status table through this context, so the map is built per call.
+  var sorts=new SortMap<Pickup>("serialNo",true,x=>x.SerialNo).Add("serialNo",x=>x.SerialNo).Add("scheduledAtUtc",x=>x.ScheduledAtUtc).Add("customerName",x=>x.CustomerName).Add("pickupNumber",x=>x.PickupNumber)
+   .Add("statusName",x=>db.PickupStatuses.Where(s=>s.Id==x.StatusId).Select(s=>s.Name).FirstOrDefault());
+  var (items,total)=await q.Sort(list,sorts).PageAsync(list,t);
+  return (items,total);
+ }
  public async Task<(Pickup Pickup,Tenant Tenant)?> Public(string hash,CancellationToken t){var p=await db.Pickups.IgnoreQueryFilters().AsNoTracking().SingleOrDefaultAsync(x=>x.ConfirmationTokenHash==hash,t);if(p is null)return null;var tenant=await db.Tenants.IgnoreQueryFilters().AsNoTracking().SingleOrDefaultAsync(x=>x.Id==p.TenantId&&x.IsActive,t);return tenant is null?null:(p,tenant);} public async Task Save(CancellationToken t){try{await db.SaveChangesAsync(t);}catch(DbUpdateConcurrencyException){throw new InvalidOperationException("The pickup changed. Refresh before saving.");}}
 }

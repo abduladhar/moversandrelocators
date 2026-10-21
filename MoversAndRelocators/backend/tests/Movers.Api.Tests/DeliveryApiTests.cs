@@ -43,6 +43,12 @@ public sealed partial class BillingApiTests
   Assert.StartsWith("DN-",Str(billingNote,"noteNumber"));
   Assert.Equal(2,secondNote.GetProperty("items").GetArrayLength());
   Assert.Contains(secondNote.GetProperty("items").EnumerateArray(),i=>Str(i,"source")=="JOB"&&Str(i,"reference")==Str(road,"jobNumber"));
+  // The register's server search finds the run by a customer on it (from its notes) and returns the same row as the full list.
+  var fullRow=(await Get1("/api/delivery")).EnumerateArray().Single(x=>x.GetProperty("id").GetGuid()==id);
+  var found=await Get1("/api/delivery/search?search=second%20customer&status=PLANNED");
+  Assert.Equal(1,found.GetProperty("total").GetInt32());
+  Assert.Equal(fullRow.GetRawText(),found.GetProperty("items")[0].GetRawText());
+  Assert.Equal(0,(await Get1("/api/delivery/search?search=nobody")).GetProperty("total").GetInt32());
   // Loaded boxes leave warehouse stock and the job list, and cannot go on a second delivery.
   stock=await Get1("/api/delivery/available");
   Assert.DoesNotContain(Str(lamp,"trackingNumber"),StockTracking(stock));

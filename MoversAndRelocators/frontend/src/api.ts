@@ -1,5 +1,6 @@
 import type { AuditLog, PickupAttachment, PickupWork, Warehouse, SurveyExpenseInput, CatalogItem, CustomerChangesInput, SurveyAttachment, AuthSession, AwsConfiguration, AwsConfigurationInput, BoxType, ChargeMaster, TaxMaster, Designation, DesignationInput, Employee, EmployeeHierarchyNode, EmployeeInput, FollowUpInput, FollowUpStatus, HouseholdItem, LeadAttachment, LeadFollowUp, LeadStatus, LeadUploadLink, MoveType, MyTask, OpenAiConfiguration, OpenAiConfigurationInput, PackingMaterial, Permission, PresignedUpload, PublicQuotation, PublicSurvey, PublicUploadInfo, Quotation, QuotationDetail, QuotationInput, QuotationItemInput, QuotationLineInput, Role, SalesLead, SalesLeadInput, Survey, SurveyDetail, SurveyDetailsInput, SurveyInput, Tenant, TenantInput, User } from './types'
 import { apiUrl } from './apiBase'
+import { listQuery, type ListParams, type Paged } from './hooks/useServerList'
 import { serverMessage, t } from './i18n'
 import type { Pickup, PickupDetail, PickupStatus, PublicPickup, Vehicle, Company, CompanyInput, CompanyOption } from './types'
 
@@ -63,6 +64,8 @@ export const setupApi = {
 
 export const tenantsApi = {
   list: () => request<Tenant[]>('/api/platform/tenants'),
+  /** The register's advanced search (server-side): search, sort, desc, skip, take, isActive. */
+  search: (params: ListParams) => request<Paged<Tenant, { total: number; active: number; inactive: number }>>(`/api/platform/tenants/search?${listQuery(params)}`),
   /** Users of a tenant, managed from the platform without entering the tenant. */
   users: (tenantId: string) => request<User[]>(`/api/platform/tenants/${tenantId}/users`),
   roles: (tenantId: string) => request<Role[]>(`/api/platform/tenants/${tenantId}/roles`),
@@ -76,6 +79,12 @@ export const tenantsApi = {
 
 export const securityApi = {
   users: () => request<User[]>('/api/security/users'),
+  /** The Users register's advanced search (server-side): search, sort, desc, skip, take, isActive, roleId. */
+  searchUsers: (params: ListParams) => request<Paged<User, { linkedEmployeeIds: string[] }>>(`/api/security/users/search?${listQuery(params)}`),
+  /** The Roles register's advanced search (server-side): search, sort, desc, skip, take, isSystemRole. */
+  searchRoles: (params: ListParams) => request<Paged<Role>>(`/api/security/roles/search?${listQuery(params)}`),
+  /** Advanced search over the whole audit log (server-side): search, sort, desc, skip, take, action, entityType. */
+  searchAudit: (params: ListParams) => request<Paged<AuditLog, { actions: string[]; entityTypes: string[] }>>(`/api/security/audit/search?${listQuery(params)}`),
   createUser: (input: { fullName: string; email: string; password: string; roleId: string; employeeId: string; companyId?: string | null }) =>
     request<User>('/api/security/users', { method: 'POST', body: JSON.stringify(input) }),
   /** null: the user becomes a tenant user who can switch companies. */
@@ -94,6 +103,10 @@ export const securityApi = {
 
 export const employeesApi = {
   designations: () => request<Designation[]>('/api/designations'),
+  /** The Designations register's advanced search (server-side): search, sort, desc, skip, take, isActive, level. */
+  searchDesignations: (params: ListParams) => request<Paged<Designation, { total: number; active: number; levels: number[] }>>(`/api/designations/search?${listQuery(params)}`),
+  /** The Employees register's advanced search (server-side): search, sort, desc, skip, take, isActive, designationId, managerId. */
+  searchEmployees: (params: ListParams) => request<Paged<Employee, { total: number; active: number; teamLeads: number }>>(`/api/employees/search?${listQuery(params)}`),
   createDesignation: (input: DesignationInput) =>
     request<Designation>('/api/designations', { method: 'POST', body: JSON.stringify(input) }),
   updateDesignation: (id: string, input: DesignationInput) =>
@@ -124,6 +137,9 @@ export const salesApi = {
   updateMoveType: (id: string, input: Omit<MoveType, 'id' | 'serialNo' | 'isActive'>) => request<MoveType>(`/api/sales/statuses/move-types/${id}`, { method: 'PUT', body: JSON.stringify(input) }),
   setMoveTypeActive: (id: string, isActive: boolean) => request<MoveType>(`/api/sales/statuses/move-types/${id}/status`, { method: 'PATCH', body: JSON.stringify({ isActive }) }),
   leads: () => request<SalesLead[]>('/api/sales/leads'),
+  searchLeads: (params: ListParams) => request<Paged<SalesLead>>(`/api/sales/leads/search?${listQuery(params)}`),
+  /** One page of a sales master (leads = lead statuses); summary has the whole master's count and highest display order. */
+  searchMasters: <T,>(kind: 'leads' | 'follow-ups' | 'move-types', params: ListParams) => request<Paged<T, { count: number; maxDisplayOrder: number }>>(`/api/sales/statuses/${kind}/search?${listQuery(params)}`),
   createLead: (input: SalesLeadInput) => request<SalesLead>('/api/sales/leads', { method: 'POST', body: JSON.stringify(input) }),
   updateLead: (id: string, input: SalesLeadInput) => request<SalesLead>(`/api/sales/leads/${id}`, { method: 'PUT', body: JSON.stringify(input) }),
   setLeadActive: (id: string, isActive: boolean) => request<SalesLead>(`/api/sales/leads/${id}/status`, { method: 'PATCH', body: JSON.stringify({ isActive }) }),
@@ -176,6 +192,10 @@ export const surveysApi = {
   updateBoxType: (id: string, input: { code: string; name: string; capacityCbm: number; description: string; materials: { materialId: string; quantity: number }[] }) => request<BoxType>(`/api/surveys/masters/box-types/${id}`, { method: 'PUT', body: JSON.stringify(input) }),
   setMasterStatus: (kind: 'items' | 'materials' | 'box-types', id: string, isActive: boolean) => request(`${'/api/surveys/masters'}/${kind}/${id}/status`, { method: 'PATCH', body: JSON.stringify({ isActive }) }),
   surveys: () => request<Survey[]>('/api/surveys'),
+  /** The survey register's advanced search (server-side): search, sort, desc, skip, take, status, customerState; summary = the stats cards. */
+  search: (params: ListParams) => request<Paged<Survey, { all: number; awaitingConfirmation: number; inProgress: number; quotationReady: number }>>(`/api/surveys/search?${listQuery(params)}`),
+  /** A masters tab's advanced search (server-side): search, sort, desc, skip, take, active; summary = the counts of all three lists. */
+  searchMasters: <T,>(kind: 'items' | 'materials' | 'box-types', params: ListParams) => request<Paged<T, { items: number; materials: number; boxTypes: number }>>(`/api/surveys/masters/${kind}/search?${listQuery(params)}`),
   get: (id: string) => request<SurveyDetail>(`/api/surveys/${id}`),
   create: (input: SurveyInput) => request<Survey>('/api/surveys', { method: 'POST', body: JSON.stringify(input) }),
   update: (id: string, input: SurveyInput) => request<Survey>(`/api/surveys/${id}`, { method: 'PUT', body: JSON.stringify(input) }),
@@ -210,8 +230,12 @@ export const publicSurveyApi = {
 }
 
 export const quotationsApi = {
+  /** The register's advanced search (server-side): search, sort, desc, skip, take, status, employeeId, customerState. */
+  search: (params: ListParams) => request<Paged<Quotation>>(`/api/quotations/search?${listQuery(params)}`),
   revise: (id: string) => request<Quotation>(`/api/quotations/${id}/revisions`, { method: 'POST' }),
   charges: () => request<ChargeMaster[]>('/api/quotations/charges'),
+  searchCharges: (params: ListParams) => request<Paged<ChargeMaster>>(`/api/quotations/charges/search?${listQuery(params)}`),
+  searchTaxes: (params: ListParams) => request<Paged<TaxMaster>>(`/api/quotations/taxes/search?${listQuery(params)}`),
   createCharge: (input: Omit<ChargeMaster, 'id' | 'serialNo' | 'isActive' | 'createdAtUtc' | 'updatedAtUtc'>) => request<ChargeMaster>('/api/quotations/charges', { method: 'POST', body: JSON.stringify(input) }),
   updateCharge: (id: string, input: Omit<ChargeMaster, 'id' | 'serialNo' | 'isActive' | 'createdAtUtc' | 'updatedAtUtc'>) => request<ChargeMaster>(`/api/quotations/charges/${id}`, { method: 'PUT', body: JSON.stringify(input) }),
   setChargeStatus: (id: string, isActive: boolean) => request<ChargeMaster>(`/api/quotations/charges/${id}/status`, { method: 'PATCH', body: JSON.stringify({ isActive }) }),
@@ -248,6 +272,10 @@ export const pickupsApi = {
   updateVehicle: (id:string,input:object) => request<Vehicle>(`/api/pickups/vehicles/${id}`, { method:'PUT', body:JSON.stringify(input) }),
   setVehicleActive: (id:string,isActive:boolean) => request<Vehicle>(`/api/pickups/vehicles/${id}/status`, { method:'PATCH', body:JSON.stringify({isActive}) }),
   list: () => request<Pickup[]>('/api/pickups'),
+  search: (params: ListParams) => request<Paged<Pickup>>(`/api/pickups/search?${listQuery(params)}`),
+  searchStatuses: (params: ListParams) => request<Paged<PickupStatus, { count: number }>>(`/api/pickups/statuses/search?${listQuery(params)}`),
+  searchVehicles: (params: ListParams) => request<Paged<Vehicle>>(`/api/pickups/vehicles/search?${listQuery(params)}`),
+  searchWarehouses: (params: ListParams) => request<Paged<Warehouse>>(`/api/pickups/warehouses/search?${listQuery(params)}`),
   create: (input: object) => request<Pickup>('/api/pickups', { method: 'POST', body: JSON.stringify(input) }),
   update: (id: string, input: object) => request<Pickup>(`/api/pickups/${id}`, { method: 'PUT', body: JSON.stringify(input) }),
   get: (id: string) => request<PickupDetail>(`/api/pickups/${id}`),
@@ -307,3 +335,11 @@ export async function uploadFile<T>(file: File, create: () => Promise<PresignedU
   return complete(presigned.attachmentId)
 }
 
+
+export const customerRepliesApi = {
+  /** Records waiting on the customer, or with a reply the office has not handled yet. */
+  list: (type?: import('./types').CustomerReplyRecordType) => request<import('./types').CustomerReply[]>(`/api/customer-replies${type ? `?type=${type}` : ''}`),
+  /** Records that the office acted on the reply; the note says what was done. */
+  handled: (type: import('./types').CustomerReplyRecordType, id: string, note?: string) => request<import('./types').CustomerReply>(`/api/customer-replies/${type}/${id}/handled`, { method: 'POST', body: JSON.stringify({ note: note ?? null }) }),
+  history: (type: import('./types').CustomerReplyRecordType, id: string) => request<import('./types').CustomerReplyEvent[]>(`/api/customer-replies/${type}/${id}/history`),
+}

@@ -11,6 +11,8 @@ namespace Movers.Api.Controllers;
 public sealed class QuotationsController(IQuotationService service, PublicLinks links) : ControllerBase
 {
     [HttpGet] public async Task<ActionResult> List(CancellationToken t) => await Run(() => service.ListAsync(t));
+    /// <summary>Advanced search: ?search=&sort=&desc=&skip=&take= plus status, employeeId and customerState.</summary>
+    [HttpGet("search")] public async Task<ActionResult> Search([FromQuery] Movers.Services.Common.ListQuery query, [FromQuery] string? status, [FromQuery] Guid? employeeId, [FromQuery] string? customerState, CancellationToken t) => await Run(() => service.SearchAsync(new QuotationListFilter(status, employeeId, customerState), query, t));
     [HttpGet("{id:guid}")] public async Task<ActionResult> Get(Guid id, CancellationToken t) => await RunNullable(() => service.GetAsync(id, t));
     [HttpPost] public async Task<ActionResult> Create(SaveQuotationRequest r, CancellationToken t) => await Run(() => service.CreateAsync(r.ToCommand(), t));
     [HttpPost("{id:guid}/revisions")] public async Task<ActionResult> Revise(Guid id, CancellationToken t) => await RunNullable(() => service.CreateRevisionAsync(id, t));

@@ -47,7 +47,7 @@ public interface IShipmentService
 }
 
 public sealed class ShipmentService(IShipmentRepository repository, IOperationsRepository unit, IJobRepository jobs,
-    IPickupService pickups, IPickupRepository packaging, ITenantContext tenant, IUserContext user, TimeProvider clock, Movers.Services.Tenants.ICompanyScope? companies = null) : IShipmentService
+    IPickupService pickups, IPickupRepository packaging, ITenantContext tenant, IUserContext user, TimeProvider clock, Movers.Services.CustomerLinks.ICustomerReplies replies, Movers.Services.Tenants.ICompanyScope? companies = null) : IShipmentService
 {
     public async Task<ShipmentView> Get(Guid pickupId, CancellationToken ct)
     {
@@ -84,6 +84,7 @@ public sealed class ShipmentService(IShipmentRepository repository, IOperationsR
         confirmation.Response = "PENDING"; confirmation.ResponderName = null; confirmation.ResponseNotes = null;
         confirmation.RespondedAtUtc = null; confirmation.Version = Guid.NewGuid();
         if (previous is null) unit.Add(confirmation);
+        await replies.SharedAsync(Movers.Domain.CustomerLinks.CustomerReplyRecordTypes.Pickup, pickupId, confirmation.ExpiresAtUtc, ct);
         await unit.Save(ct); return new SharedPacking(token, confirmation.ExpiresAtUtc);
     }, ct);
     public async Task Revoke(Guid pickupId, CancellationToken ct) => await unit.Transaction(async () =>
@@ -94,7 +95,9 @@ public sealed class ShipmentService(IShipmentRepository repository, IOperationsR
             var pickup = await packaging.Pickup(pickupId, true, ct) ?? throw new KeyNotFoundException();
             pickup.SetPackagesLocked(false);
         }
-        confirmation.RevokedAtUtc = clock.GetUtcNow(); confirmation.Version = Guid.NewGuid(); await unit.Save(ct); return true;
+        confirmation.RevokedAtUtc = clock.GetUtcNow(); confirmation.Version = Guid.NewGuid();
+        await replies.WithdrawnAsync(Movers.Domain.CustomerLinks.CustomerReplyRecordTypes.Pickup, pickupId, ct);
+        await unit.Save(ct); return true;
     }, ct);
     public async Task<PublicPacking> Public(string token, CancellationToken ct)
     {
@@ -115,6 +118,8 @@ public sealed class ShipmentService(IShipmentRepository repository, IOperationsR
         }
         confirmation.Response = response; confirmation.ResponderName = name; confirmation.ResponseNotes = notes;
         confirmation.RespondedAtUtc = clock.GetUtcNow(); confirmation.Version = Guid.NewGuid();
+        await replies.RepliedAsync(Movers.Domain.CustomerLinks.CustomerReplyRecordTypes.Pickup, confirmation.PickupId,
+            c.Confirmed ? Movers.Services.CustomerLinks.CustomerReplyKinds.PackingListConfirmed : Movers.Services.CustomerLinks.CustomerReplyKinds.PackingListDisputed, notes, ct);
         await unit.Save(ct); return View(confirmation);
     }, ct);
     public Task<ShipmentView> Handover(Guid pickupId, HandoverInput c, CancellationToken ct) => unit.Transaction(async () =>

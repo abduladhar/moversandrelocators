@@ -18,6 +18,7 @@ import { PickupPaymentsTab } from '../components/pickup/PickupPaymentsTab'
 import { PickupStorageTab } from '../components/pickup/PickupStorageTab'
 import { PickupSignoffTab } from '../components/pickup/PickupSignoffTab'
 import { BoxLabels, PaymentReceipt, PrintPreview } from '../components/pickup/PrintDocuments'
+import { CustomerReplyBanner } from '../components/CustomerReplyTag'
 import { useT } from '../i18n'
 
 type Masters = { employees: Employee[]; statuses: PickupStatus[]; vehicles: Vehicle[]; boxTypes: BoxType[]; materials: PackingMaterial[]; warehouses: Warehouse[] }
@@ -69,6 +70,7 @@ export function PickupDetailPage({ pickupId, companyName, userName, onBack, onCh
   return <div className="survey-workspace pickup-workspace">
     <div className="survey-workspace-header"><div className="survey-heading"><Button icon={<ArrowLeftOutlined />} aria-label={t('pickups.detail.back')} onClick={onBack} /><div><Typography.Text className="eyebrow">{t('pickups.detail.eyebrow')}</Typography.Text><Typography.Title level={2}>{p.pickupNumber}<span className="survey-heading-customer">{p.customerName}</span></Typography.Title></div></div>
       <div className="survey-heading-actions"><Tag className="survey-status-tag" color={status?.color ?? 'blue'}>{status?.name ?? p.statusName}</Tag></div></div>
+    <CustomerReplyBanner type="PICKUP" id={p.id} refreshKey={detail} onChanged={onChanged} />
 
     <div className="survey-kpi-row">{kpis.map(k => <div key={k.key} className={`survey-kpi survey-kpi-${k.key}`}><span className="survey-kpi-icon">{k.icon}</span><div><small>{k.label}</small><strong>{k.value}</strong></div></div>)}</div>
     <Card className="survey-customer-strip"><div className="survey-facts pickup-facts">{facts.map(f => <div key={f.key} className="survey-fact"><span className="survey-fact-icon">{f.icon}</span><div><small>{f.label}</small><div className="survey-fact-value">{f.value}</div></div></div>)}</div></Card>

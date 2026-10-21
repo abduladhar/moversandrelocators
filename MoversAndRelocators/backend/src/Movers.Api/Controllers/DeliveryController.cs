@@ -32,6 +32,8 @@ public sealed class DeliveryController(DeliveryService service, PublicLinks link
     /// <summary>Packages that can be loaded: warehouse stock, and boxes on departed or arrived transport jobs.</summary>
     [HttpGet("available")] public Task<ActionResult> Available(CancellationToken t) => Run(() => service.Available(t));
     [HttpGet] public Task<ActionResult> List(CancellationToken t) => Run(() => service.List(t));
+    /// <summary>Advanced search: ?search=&amp;sort=&amp;desc=&amp;skip=&amp;take= plus status and customerState.</summary>
+    [HttpGet("search")] public Task<ActionResult> Search([FromQuery] Movers.Services.Common.ListQuery query, [FromQuery] string? status, [FromQuery] string? customerState, CancellationToken t) => Run(() => service.Search(new DeliveryListFilter(status, customerState), query, t));
     [HttpPost] public Task<ActionResult> Create(SaveDeliveryRequest r, CancellationToken t) => Run(() => service.Create(r.Command(), t));
     [HttpGet("{id:guid}")] public Task<ActionResult> Get(Guid id, CancellationToken t) => Run(() => service.Get(id, t));
     [HttpPut("{id:guid}")] public Task<ActionResult> Update(Guid id, SaveDeliveryRequest r, CancellationToken t) => Run(() => service.Update(id, r.Command(), t));

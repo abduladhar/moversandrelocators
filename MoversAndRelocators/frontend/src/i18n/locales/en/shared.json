@@ -8,5 +8,72 @@
     "noCustomerMaster": "No linked customer master.", "noVendorMaster": "No linked vendor master.",
     "noBaseAmount": "No saved base amount for conversion.", "noTransactionDate": "No transaction date for conversion.",
     "noRate": "No {currency} exchange rate valid on {date}."
+  },
+  "customerReplies": {
+    "title": "Customer response",
+    "filter": "Customer response",
+    "state": {
+      "PENDING": "Customer action pending",
+      "REPLIED": "Customer replied – action needed",
+      "EXPIRED": "Link expired – no reply",
+      "ACTION_TAKEN": "Action taken"
+    },
+    "banner": {
+      "PENDING": "Waiting for the customer: a link was shared and they have not answered yet.",
+      "REPLIED": "The customer replied. Review the reply, take the action needed, then mark it as handled.",
+      "EXPIRED": "The customer link expired without a reply. Share a new link or follow up with the customer.",
+      "ACTION_TAKEN": "Action taken on the customer’s reply."
+    },
+    "markHandled": "Mark action taken",
+    "handled": "Action recorded.",
+    "handleFailed": "Could not record the action.",
+    "repliedAt": "Replied {date}",
+    "sharedAt": "Link shared {date}",
+    "expiresAt": "Link expires {date}",
+    "expiredAt": "Link expired {date}",
+    "kind": {
+      "LEAD_DETAILS": "Sent move details",
+      "LEAD_FILES": "Uploaded a file",
+      "LEAD_INVENTORY": "Reviewed the inventory",
+      "QUOTATION_ACCEPTED": "Accepted the quotation",
+      "QUOTATION_REJECTED": "Rejected the quotation",
+      "QUOTATION_REQUOTE": "Asked for a requote",
+      "SURVEY_SCHEDULE": "Confirmed the survey date",
+      "SURVEY_ITEMS": "Confirmed the survey items",
+      "SURVEY_CHANGES": "Asked for item changes",
+      "SURVEY_FILES": "Uploaded a file",
+      "PICKUP_CONFIRMED": "Confirmed the pickup",
+      "PACKING_LIST_CONFIRMED": "Confirmed the packing list",
+      "PACKING_LIST_DISPUTED": "Disputed the packing list",
+      "PACKING_SCHEDULE": "Confirmed the packing date",
+      "PACKING_LOCATION": "Shared the packing location",
+      "PACKING_ITEMS_CONFIRMED": "Confirmed the packed items",
+      "PACKING_ITEMS_CORRECTIONS": "Asked for corrections to the packed items",
+      "DELIVERY_CONFIRMED": "Confirmed the delivery time",
+      "DELIVERY_RESCHEDULE": "Asked for another delivery time",
+      "DELIVERY_LOCATION": "Shared the delivery location"
+    },
+    "actionNote": "What was done",
+    "actionNotePlaceholder": "What was done? (optional) e.g. Called the customer and revised the price",
+    "actionBy": "By {name} on {date}",
+    "viewHistory": "View history",
+    "history": "History",
+    "historyTitle": "Customer history",
+    "historyFailed": "Could not load the history.",
+    "noHistory": "No history yet.",
+    "customer": "Customer",
+    "action": {
+      "MARKED": "Action taken",
+      "REQUOTE_APPLIED": "Requote applied",
+      "QUOTATION_REVISED": "Quotation revised",
+      "SURVEY_CHANGES_APPLIED": "Survey changes applied",
+      "SURVEY_CHANGES_DISMISSED": "Survey changes dismissed"
+    },
+    "event": {
+      "SHARED": "Link shared by {name}",
+      "REPLIED": "Customer: {what}",
+      "ACTION_TAKEN": "{what} by {name}",
+      "WITHDRAWN": "Links revoked by {name}"
+    }
   }
 }

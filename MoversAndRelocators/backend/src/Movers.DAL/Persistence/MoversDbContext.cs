@@ -40,6 +40,8 @@ public sealed class MoversDbContext(
     public DbSet<TenantAwsConfiguration> TenantAwsConfigurations => Set<TenantAwsConfiguration>();
     public DbSet<TenantOpenAiConfiguration> TenantOpenAiConfigurations => Set<TenantOpenAiConfiguration>();
     public DbSet<SalesLeadUploadLink> SalesLeadUploadLinks => Set<SalesLeadUploadLink>();
+    public DbSet<Movers.Domain.CustomerLinks.CustomerReply> CustomerReplies => Set<Movers.Domain.CustomerLinks.CustomerReply>();
+    public DbSet<Movers.Domain.CustomerLinks.CustomerReplyEvent> CustomerReplyEvents => Set<Movers.Domain.CustomerLinks.CustomerReplyEvent>();
     public DbSet<SalesLeadAttachment> SalesLeadAttachments => Set<SalesLeadAttachment>();
     public DbSet<HouseholdItem> HouseholdItems => Set<HouseholdItem>();
     public DbSet<PackingMaterial> PackingMaterials => Set<PackingMaterial>();
@@ -89,6 +91,13 @@ public sealed class MoversDbContext(
         "ACCOUNT", "CURRENCY", "FXRATE", "FXSETTINGS", "CHARGEMAP", "CASHFLOWMAP",
         "REPORT_TEMPLATE_V2", "REPORT_TEMPLATE_V2_DELETED", "REPORT_HISTORY_V2"
     };
+
+    // SQLite (test databases only) cannot compare or sort DateTimeOffset, which list sorts and filters need; there it is
+    // stored as a sortable number. SQL Server and PostgreSQL keep their native types.
+    protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
+    {
+        if (Database.IsSqlite()) configurationBuilder.Properties<DateTimeOffset>().HaveConversion<Microsoft.EntityFrameworkCore.Storage.ValueConversion.DateTimeOffsetToBinaryConverter>();
+    }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -234,6 +243,12 @@ public sealed class MoversDbContext(
         openAi.HasIndex(x => x.TenantId).IsUnique();
         openAi.HasOne<Tenant>().WithMany().HasForeignKey(x => x.TenantId).HasPrincipalKey(x => x.Id).OnDelete(DeleteBehavior.Restrict);
 
+        var customerReply = modelBuilder.Entity<Movers.Domain.CustomerLinks.CustomerReply>();
+        customerReply.ToTable("CustomerReplies"); customerReply.Property(x => x.RecordType).HasMaxLength(30).IsRequired(); customerReply.Property(x => x.ReplyKind).HasMaxLength(40); customerReply.Property(x => x.ReplyNote).HasMaxLength(500); customerReply.Property(x => x.HandledBy).HasMaxLength(320); customerReply.Property(x => x.HandledAction).HasMaxLength(40); customerReply.Property(x => x.HandledNote).HasMaxLength(500);
+        var customerReplyEvent = modelBuilder.Entity<Movers.Domain.CustomerLinks.CustomerReplyEvent>();
+        customerReplyEvent.ToTable("CustomerReplyEvents"); customerReplyEvent.Property(x => x.RecordType).HasMaxLength(30).IsRequired(); customerReplyEvent.Property(x => x.Event).HasMaxLength(20).IsRequired(); customerReplyEvent.Property(x => x.Detail).HasMaxLength(40); customerReplyEvent.Property(x => x.Note).HasMaxLength(500); customerReplyEvent.Property(x => x.Actor).HasMaxLength(200).IsRequired();
+        customerReplyEvent.HasIndex(x => new { x.TenantId, x.RecordType, x.RecordId }); customerReplyEvent.HasOne<Tenant>().WithMany().HasForeignKey(x => x.TenantId).HasPrincipalKey(x => x.Id).OnDelete(DeleteBehavior.Restrict);
+        customerReply.HasIndex(x => new { x.TenantId, x.RecordType, x.RecordId }).IsUnique(); customerReply.HasOne<Tenant>().WithMany().HasForeignKey(x => x.TenantId).HasPrincipalKey(x => x.Id).OnDelete(DeleteBehavior.Restrict);
         var uploadLink = modelBuilder.Entity<SalesLeadUploadLink>();
         uploadLink.ToTable("SalesLeadUploadLinks"); uploadLink.Property(x => x.TokenHash).HasMaxLength(64).IsRequired(); uploadLink.HasIndex(x => x.TokenHash).IsUnique();
         uploadLink.HasOne<Tenant>().WithMany().HasForeignKey(x => x.TenantId).HasPrincipalKey(x => x.Id).OnDelete(DeleteBehavior.Restrict); uploadLink.HasOne<SalesLead>().WithMany().HasForeignKey(x => x.SalesLeadId).HasPrincipalKey(x => x.Id).OnDelete(DeleteBehavior.Restrict);

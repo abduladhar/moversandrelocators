@@ -18,6 +18,14 @@ public sealed class PlatformTenantsController(ITenantService tenantService) : Co
         return Ok(tenants.Select(TenantResponse.From).ToList());
     }
 
+    /// <summary>The register's advanced search: search, sort, desc, skip, take, isActive. Summary: total, active, inactive.</summary>
+    [HttpGet("search")]
+    public async Task<ActionResult> Search([FromQuery] Movers.Services.Common.ListQuery query, [FromQuery] bool? isActive, CancellationToken cancellationToken)
+    {
+        var page = await tenantService.SearchAsync(new TenantListFilter(isActive), query, cancellationToken);
+        return Ok(new Movers.Services.Common.PagedResult<TenantResponse>(page.Items.Select(TenantResponse.From).ToList(), page.Total, page.Summary));
+    }
+
     [HttpGet("{id:guid}")]
     public async Task<ActionResult<TenantResponse>> Get(Guid id, CancellationToken cancellationToken)
     {

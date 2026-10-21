@@ -18,6 +18,10 @@ public interface ISalesRepository
     Task<bool> MoveTypeCodeExistsAsync(string code, Guid? excludingId, CancellationToken token);
     void AddMoveType(MoveType item);
     Task<IReadOnlyList<SalesLead>> ListLeadsAsync(CancellationToken token);
+    Task<(IReadOnlyList<SalesLead> Items, int Total)> SearchLeadsAsync(SalesLeadListFilter filter, Movers.Services.Common.ListQuery query, IReadOnlyCollection<Guid>? onlyIds, CancellationToken token);
+    Task<(IReadOnlyList<LeadStatus> Items, int Total, SalesMasterSummary Summary)> SearchLeadStatusesAsync(bool? active, Movers.Services.Common.ListQuery query, CancellationToken token);
+    Task<(IReadOnlyList<FollowUpStatus> Items, int Total, SalesMasterSummary Summary)> SearchFollowUpStatusesAsync(bool? active, Movers.Services.Common.ListQuery query, CancellationToken token);
+    Task<(IReadOnlyList<MoveType> Items, int Total, SalesMasterSummary Summary)> SearchMoveTypesAsync(bool? active, Movers.Services.Common.ListQuery query, CancellationToken token);
     Task<SalesLead?> GetLeadAsync(Guid id, bool track, CancellationToken token);
     Task<bool> LeadNumberExistsAsync(string number, Guid? excludingId, CancellationToken token);
     void AddLead(SalesLead lead);

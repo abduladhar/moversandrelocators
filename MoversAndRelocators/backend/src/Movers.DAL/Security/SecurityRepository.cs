@@ -3,6 +3,8 @@ using Movers.DAL.Persistence;
 using Movers.Domain.Security;
 using Movers.Services.Security;
 using Movers.Domain.Employees;
+using Movers.DAL.Common;
+using Movers.Services.Common;
 
 namespace Movers.DAL.Security;
 
@@ -73,4 +75,31 @@ public sealed class SecurityRepository(MoversDbContext db) : ISecurityRepository
     }
 
     public async Task SaveChangesAsync(CancellationToken cancellationToken) => await db.SaveChangesAsync(cancellationToken);
+
+    private IQueryable<User> TenantUsers(Guid tenantId, Guid? companyId) => db.Users.AsNoTracking().Where(x => x.TenantId == tenantId && (companyId == null || x.CompanyId == companyId));
+    private static readonly SortMap<User> UserSorts = new SortMap<User>("serialNo", true, x => x.SerialNo)
+        .Add("serialNo", x => x.SerialNo).Add("fullName", x => x.FullName).Add("email", x => x.Email).Add("lastLoginAtUtc", x => x.LastLoginAtUtc).Add("isActive", x => x.IsActive);
+    public async Task<(IReadOnlyList<User> Items, int Total)> SearchUsersAsync(Guid tenantId, Guid? companyId, UserListFilter filter, ListQuery list, CancellationToken t)
+    {
+        var q = TenantUsers(tenantId, companyId);
+        if (filter.IsActive is { } active) q = q.Where(x => x.IsActive == active);
+        if (filter.RoleId is { } roleId) q = q.Where(x => db.UserRoles.Any(r => r.UserId == x.Id && r.RoleId == roleId));
+        q = q.Search(list, w => x => x.FullName.ToLower().Contains(w) || x.Email.ToLower().Contains(w));
+        var (items, total) = await q.Sort(list, UserSorts).PageAsync(list, t);
+        return (items, total);
+    }
+    public async Task<IReadOnlyList<Guid>> LinkedEmployeeIdsAsync(Guid tenantId, Guid? companyId, CancellationToken t) =>
+        await TenantUsers(tenantId, companyId).Where(x => x.EmployeeId != null).Select(x => x.EmployeeId!.Value).Distinct().ToListAsync(t);
+
+    private static readonly SortMap<Role> RoleSorts = new SortMap<Role>("serialNo", true, x => x.SerialNo)
+        .Add("serialNo", x => x.SerialNo).Add("name", x => x.Name).Add("code", x => x.Code).Add("isSystemRole", x => x.IsSystemRole);
+    public async Task<(IReadOnlyList<Role> Items, int Total)> SearchRolesAsync(Guid tenantId, RoleListFilter filter, ListQuery list, CancellationToken t)
+    {
+        var q = db.Roles.AsNoTracking().Where(x => x.TenantId == tenantId || (x.TenantId == null && x.Code == RoleCodes.TenantAdmin));
+        if (filter.IsSystemRole is { } system) q = q.Where(x => x.IsSystemRole == system);
+        q = q.Search(list, w => x => x.Name.ToLower().Contains(w) || x.Code.ToLower().Contains(w)
+            || db.RolePermissions.Any(rp => rp.RoleId == x.Id && db.Permissions.Any(p => p.Id == rp.PermissionId && p.Code.ToLower().Contains(w))));
+        var (items, total) = await q.Sort(list, RoleSorts).PageAsync(list, t);
+        return (items, total);
+    }
 }

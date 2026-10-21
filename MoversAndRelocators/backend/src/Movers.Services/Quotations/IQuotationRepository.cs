@@ -15,10 +15,14 @@ public interface IQuotationRepository
     Task<bool> ChargeCodeExistsAsync(string code, Guid? excludingId, CancellationToken token);
     void AddCharge(ChargeMaster charge);
     Task<IReadOnlyList<TaxMaster>> ListTaxesAsync(CancellationToken token);
+    Task<(IReadOnlyList<ChargeMaster> Items, int Total)> SearchChargesAsync(bool? active, Movers.Services.Common.ListQuery query, CancellationToken token);
+    Task<(IReadOnlyList<TaxMaster> Items, int Total)> SearchTaxesAsync(string? kind, Movers.Services.Common.ListQuery query, CancellationToken token);
     Task<TaxMaster?> GetTaxAsync(Guid id, bool track, CancellationToken token);
     Task<bool> TaxCodeExistsAsync(string code, Guid? excludingId, CancellationToken token);
     void AddTax(TaxMaster tax);
     Task<IReadOnlyList<Quotation>> ListQuotationsAsync(Guid? assignedEmployeeId, CancellationToken token);
+    /// <summary>One page of the quotation register. onlyIds (when set) limits the rows to those records (customer-state filter).</summary>
+    Task<(IReadOnlyList<Quotation> Items, int Total)> SearchQuotationsAsync(Guid? assignedEmployeeId, QuotationListFilter filter, Movers.Services.Common.ListQuery query, IReadOnlyCollection<Guid>? onlyIds, CancellationToken token);
     Task<Quotation?> GetQuotationAsync(Guid id, bool track, Guid? assignedEmployeeId, CancellationToken token);
     Task<bool> QuotationNumberExistsAsync(string number, Guid? excludingId, CancellationToken token);
     void AddQuotation(Quotation quotation);

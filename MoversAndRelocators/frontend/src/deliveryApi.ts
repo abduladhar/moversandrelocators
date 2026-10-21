@@ -2,6 +2,7 @@ import { serverMessage, t } from './i18n'
 import {request} from './api'
 import {apiUrl} from './apiBase'
 import type {WarehouseStock} from './warehouseApi'
+import {listQuery,type ListParams,type Paged} from './hooks/useServerList'
 
 export type DeliveryStatus='PLANNED'|'OUT_FOR_DELIVERY'|'COMPLETED'|'CANCELLED'
 export type DeliveryItemStatus='LOADED'|'DELIVERED'|'RETURNED'
@@ -40,6 +41,8 @@ export const deliveryApi={
  masters:()=>request<DeliveryMasters>(base+'/masters'),
  available:()=>request<DeliveryAvailable>(base+'/available'),
  list:()=>request<DeliveryJob[]>(base),
+ /** The register's advanced search (server-side): search, sort, desc, skip, take, status, customerState. */
+ search:(params:ListParams)=>request<Paged<DeliveryJob>>(base+'/search?'+listQuery(params)),
  get:(id:string)=>request<DeliveryDetail>(one(id)),
  create:(v:SaveDelivery)=>send<DeliveryDetail>(base,'POST',v),
  update:(id:string,v:SaveDelivery)=>send<DeliveryDetail>(one(id),'PUT',v),

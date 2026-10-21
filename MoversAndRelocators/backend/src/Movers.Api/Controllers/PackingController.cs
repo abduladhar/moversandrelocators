@@ -32,6 +32,8 @@ public sealed class PackingController(PackingService service, PublicLinks links)
     [HttpGet("masters")] public Task<ActionResult> Masters(CancellationToken t) => Run(() => service.Masters(t));
     [HttpGet("sources")] public Task<ActionResult> Sources(CancellationToken t) => Run(() => service.Sources(t));
     [HttpGet] public Task<ActionResult> List(CancellationToken t) => Run(() => service.List(t));
+    /// <summary>Advanced search: ?search=&amp;sort=&amp;desc=&amp;skip=&amp;take= plus status and customerState.</summary>
+    [HttpGet("search")] public Task<ActionResult> Search([FromQuery] Movers.Services.Common.ListQuery query, [FromQuery] string? status, [FromQuery] string? customerState, CancellationToken t) => Run(() => service.Search(new PackingListFilter(status, customerState), query, t));
     [HttpPost] public Task<ActionResult> Create(SavePackingJobRequest r, CancellationToken t) => Run(() => service.Create(r.Command(), t));
     [HttpGet("{id:guid}")] public Task<ActionResult> Get(Guid id, CancellationToken t) => Run(() => service.Get(id, t));
     [HttpPut("{id:guid}")] public Task<ActionResult> Update(Guid id, SavePackingJobRequest r, CancellationToken t) => Run(() => service.Update(id, r.Command(), t));

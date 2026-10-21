@@ -10,6 +10,7 @@ namespace Movers.Api.Controllers;
 public sealed class TaxMastersController(IQuotationService service) : ControllerBase
 {
     [HttpGet] public async Task<ActionResult> List(CancellationToken t) => Ok(await service.ListTaxesAsync(t));
+    [HttpGet("search")] public async Task<ActionResult> Search([FromQuery] Movers.Services.Common.ListQuery query, [FromQuery] string? kind, CancellationToken t) => await Run(() => service.SearchTaxesAsync(kind, query, t));
     [HttpPost] public async Task<ActionResult> Create(SaveTaxRequest r, CancellationToken t) => await Run(() => service.CreateTaxAsync(r.ToCommand(), t));
     [HttpPut("{id:guid}")] public async Task<ActionResult> Update(Guid id, SaveTaxRequest r, CancellationToken t) => await RunNullable(() => service.UpdateTaxAsync(id, r.ToCommand(), t));
     [HttpPatch("{id:guid}/status")] public async Task<ActionResult> Status(Guid id, SetTaxStatusRequest r, CancellationToken t) => await RunNullable(() => service.SetTaxActiveAsync(id, r.IsActive, t));

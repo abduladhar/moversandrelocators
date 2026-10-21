@@ -1,8 +1,10 @@
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
+using Movers.Domain.CustomerLinks;
 using Movers.Domain.Delivery;
 using Movers.Domain.Employees;
+using Movers.Services.CustomerLinks;
 using Movers.Domain.Operations;
 using Movers.Domain.Pickups;
 using Movers.Domain.Surveys;
@@ -20,6 +22,8 @@ public sealed record SaveDeliveryCommand(DateTimeOffset ScheduledAtUtc, int Dura
 public sealed record DeliveryJobBoxInput(Guid JobId, Guid BoxId);
 public sealed record LoadDeliveryCommand(IReadOnlyList<Guid>? WarehouseBoxIds, IReadOnlyList<DeliveryJobBoxInput>? JobBoxes);
 public sealed record DeliveryCrewInput(Guid EmployeeId, string Role);
+/// <summary>The register's filters besides the keyword: status and customer state (PENDING, REPLIED...).</summary>
+public sealed record DeliveryListFilter(string? Status = null, string? CustomerState = null);
 public sealed record SaveDeliveryCrewCommand(IReadOnlyList<DeliveryCrewInput> Crew, Guid? DriverEmployeeId, Guid? VehicleId);
 public sealed record SetDeliveryItemCommand(string Status, string? ReceivedBy, string? Notes);
 public sealed record UpdateDeliveryNoteCommand(string? ContactName, string? Phone, string? Address);
@@ -71,6 +75,10 @@ public sealed record DeliveryAvailableModel(IReadOnlyList<WarehouseStock> Wareho
 public interface IDeliveryRepository
 {
     Task<IReadOnlyList<DeliveryJob>> Jobs(CancellationToken t);
+    /// <summary>One page of the register: keyword (delivery number, customers on its notes, vehicle, driver), filters and sort.</summary>
+    Task<(IReadOnlyList<DeliveryJob> Items, int Total)> SearchJobs(DeliveryListFilter filter, Movers.Services.Common.ListQuery list, IReadOnlyCollection<Guid>? onlyIds, CancellationToken t);
+    Task<IReadOnlyList<DeliveryItem>> ItemsOf(IReadOnlyCollection<Guid> jobIds, CancellationToken t);
+    Task<IReadOnlyList<DeliveryNoteSummary>> NoteSummaries(IReadOnlyCollection<Guid> jobIds, CancellationToken t);
     Task<DeliveryJob?> Job(Guid id, bool track, CancellationToken t);
     Task<IReadOnlyList<DeliveryJobCrew>> Crew(Guid jobId, bool track, CancellationToken t);
     Task<IReadOnlyList<DeliveryNote>> Notes(Guid jobId, bool track, CancellationToken t);
@@ -97,7 +105,7 @@ public interface IDeliveryRepository
 /// (to the accountant's cash queue as source DELIVERY). Package custody is kept in step through PackageHandover rows.
 /// </summary>
 public sealed class DeliveryService(IDeliveryRepository r, WarehouseService warehouse, IJobRepository jobs, BusinessMasterService masters, CurrencyService currencies,
-    IRecordNumbers numbers, ITenantContext tenant, IUserContext user, TimeProvider clock, Movers.Services.Crew.ICrewRepository crewRepo, Movers.Services.Tenants.ICompanyScope? companies = null)
+    IRecordNumbers numbers, ITenantContext tenant, IUserContext user, TimeProvider clock, Movers.Services.Crew.ICrewRepository crewRepo, ICustomerReplies replies, ICustomerReplyQueries replyQueries, Movers.Services.Tenants.ICompanyScope? companies = null)
 {
     public const string SourceKind = "DELIVERY";
     public const int MaxSignatureLength = 400_000;
@@ -136,6 +144,19 @@ public sealed class DeliveryService(IDeliveryRepository r, WarehouseService ware
         var notes = (await r.NoteSummaries(t)).ToLookup(x => x.DeliveryJobId);
         var names = await r.EmployeeNames(t); var vehicles = (await r.Vehicles(t)).ToDictionary(x => x.Id);
         return (await r.Jobs(t)).OrderByDescending(x => x.SerialNo).Select(x => Model(x, items[x.Id].ToList(), notes[x.Id].ToList(), names, vehicles)).ToList();
+    }
+
+    /// <summary>The register's advanced search: one page, with packages and notes loaded for that page only.</summary>
+    public async Task<Movers.Services.Common.PagedResult<DeliveryJobModel>> Search(DeliveryListFilter filter, Movers.Services.Common.ListQuery query, CancellationToken t)
+    {
+        query = query.Normalized();
+        var only = string.IsNullOrWhiteSpace(filter.CustomerState) ? null : await replyQueries.RecordIdsInStateAsync(CustomerReplyRecordTypes.DeliveryJob, filter.CustomerState.Trim().ToUpperInvariant(), t);
+        var (jobs, total) = await r.SearchJobs(filter, query, only, t);
+        var ids = jobs.Select(x => x.Id).ToList();
+        var items = (await r.ItemsOf(ids, t)).ToLookup(x => x.DeliveryJobId);
+        var notes = (await r.NoteSummaries(ids, t)).ToLookup(x => x.DeliveryJobId);
+        var names = await r.EmployeeNames(t); var vehicles = (await r.Vehicles(t)).ToDictionary(x => x.Id);
+        return new(jobs.Select(x => Model(x, items[x.Id].ToList(), notes[x.Id].ToList(), names, vehicles)).ToList(), total);
     }
 
     public async Task<DeliveryDetailModel?> Get(Guid id, CancellationToken t) { var x = await r.Job(id, false, t); return x is null ? null : await Detail(x, t); }
@@ -421,6 +442,7 @@ public sealed class DeliveryService(IDeliveryRepository r, WarehouseService ware
         var raw = Convert.ToHexString(RandomNumberGenerator.GetBytes(24)).ToLowerInvariant();
         var expires = clock.GetUtcNow().AddDays(days);
         r.Add(new DeliveryNoteLink(tenant.TenantId, id, noteId, purpose, Sha256(raw), expires));
+        await replies.SharedAsync(CustomerReplyRecordTypes.DeliveryJob, id, expires, t);
         job.Touch(); await r.Save(t);
         return new(purpose, raw, expires);
     }
@@ -429,7 +451,9 @@ public sealed class DeliveryService(IDeliveryRepository r, WarehouseService ware
     {
         purpose = Purpose(purpose);
         var job = await r.Job(id, true, t); if (job is null) return null;
-        foreach (var old in (await r.Links(id, true, t)).Where(x => x.DeliveryNoteId == noteId && x.Purpose == purpose)) r.Remove(old);
+        var links = await r.Links(id, true, t); var revoked = links.Where(x => x.DeliveryNoteId == noteId && x.Purpose == purpose).ToList();
+        foreach (var old in revoked) r.Remove(old);
+        if (revoked.Count == links.Count) await replies.WithdrawnAsync(CustomerReplyRecordTypes.DeliveryJob, id, t);
         job.Touch(); await r.Save(t); return await Detail(job, t);
     }
 
@@ -449,6 +473,7 @@ public sealed class DeliveryService(IDeliveryRepository r, WarehouseService ware
         if (!c.Confirmed && (c.PreferredAtUtc is not { } preferred || preferred < now.AddHours(-1) || preferred > now.AddYears(1)))
             throw new InvalidOperationException("Choose a delivery date and time from now on.");
         s.Note.RespondDate(c.Confirmed, c.PreferredAtUtc, s.Job.ScheduledAtUtc, now);
+        await replies.RepliedAsync(CustomerReplyRecordTypes.DeliveryJob, s.Job.Id, c.Confirmed ? CustomerReplyKinds.DeliveryConfirmed : CustomerReplyKinds.DeliveryReschedule, $"{s.Note.NoteNumber} · {s.Note.CustomerName}", t);
         await r.Save(t); return await PublicModel(s, t);
     }
 
@@ -462,6 +487,7 @@ public sealed class DeliveryService(IDeliveryRepository r, WarehouseService ware
         if (!c.Latitude.HasValue && string.IsNullOrWhiteSpace(c.Address)) throw new InvalidOperationException("Enter the delivery address, or use your current location.");
         if (c.Address?.Length > 500 || c.Notes?.Length > 500) throw new InvalidOperationException("Address or directions are too long.");
         s.Note.ShareLocation(c.Latitude is { } la ? Math.Round(la, 6) : null, c.Longitude is { } lo ? Math.Round(lo, 6) : null, c.Address, c.Notes, clock.GetUtcNow());
+        await replies.RepliedAsync(CustomerReplyRecordTypes.DeliveryJob, s.Job.Id, CustomerReplyKinds.DeliveryLocation, $"{s.Note.NoteNumber} · {s.Note.CustomerName}", t);
         await r.Save(t); return await PublicModel(s, t);
     }
 

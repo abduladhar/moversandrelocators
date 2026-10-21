@@ -15,6 +15,12 @@ public interface ISurveyService
     Task<BoxTypeModel?> UpdateBoxTypeAsync(Guid id, SaveBoxTypeCommand command, CancellationToken token);
     Task<BoxTypeModel?> SetBoxTypeActiveAsync(Guid id, bool active, CancellationToken token);
     Task<IReadOnlyList<SurveyModel>> ListSurveysAsync(CancellationToken token);
+    /// <summary>The survey register's advanced search; Summary is a SurveyListSummary over the whole list.</summary>
+    Task<Movers.Services.Common.PagedResult<SurveyModel>> SearchSurveysAsync(SurveyListFilter filter, Movers.Services.Common.ListQuery query, CancellationToken token);
+    /// <summary>The masters screens' advanced search (active = null for all); Summary is SurveyMasterCounts for the overview tiles.</summary>
+    Task<Movers.Services.Common.PagedResult<HouseholdItemModel>> SearchItemsAsync(bool? active, Movers.Services.Common.ListQuery query, CancellationToken token);
+    Task<Movers.Services.Common.PagedResult<MaterialModel>> SearchMaterialsAsync(bool? active, Movers.Services.Common.ListQuery query, CancellationToken token);
+    Task<Movers.Services.Common.PagedResult<BoxTypeModel>> SearchBoxTypesAsync(bool? active, Movers.Services.Common.ListQuery query, CancellationToken token);
     Task<SurveyModel> CreateSurveyAsync(SaveSurveyCommand command, CancellationToken token);
     Task<SurveyModel?> UpdateSurveyAsync(Guid id, SaveSurveyCommand command, CancellationToken token);
     Task<SurveyDetailModel?> GetSurveyAsync(Guid id, CancellationToken token);
@@ -30,3 +36,9 @@ public interface ISurveyService
     Task<SurveyDetailModel?> ApplyCustomerChangesAsync(Guid id, CancellationToken token);
     Task<SurveyDetailModel?> DismissCustomerChangesAsync(Guid id, CancellationToken token);
 }
+
+public sealed record SurveyListFilter(string? Status = null, string? CustomerState = null);
+/// <summary>The survey register's stats cards, over the whole list.</summary>
+public sealed record SurveyListSummary(int All, int AwaitingConfirmation, int InProgress, int QuotationReady);
+/// <summary>How many household items, packing materials and box types there are (the masters overview tiles).</summary>
+public sealed record SurveyMasterCounts(int Items, int Materials, int BoxTypes);

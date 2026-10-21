@@ -14,6 +14,12 @@ public sealed class TenantService(ITenantRepository repository, ITenantContext t
     public async Task<IReadOnlyList<TenantModel>> ListAsync(CancellationToken cancellationToken) =>
         (await repository.ListAsync(cancellationToken)).Select(Map).ToList();
 
+    public async Task<Movers.Services.Common.PagedResult<TenantModel>> SearchAsync(TenantListFilter filter, Movers.Services.Common.ListQuery query, CancellationToken cancellationToken)
+    {
+        query = query.Normalized(); var (items, total) = await repository.SearchAsync(filter, query, cancellationToken);
+        return new(items.Select(Map).ToList(), total, await repository.SummaryAsync(cancellationToken));
+    }
+
     public async Task<TenantModel?> GetAsync(Guid id, CancellationToken cancellationToken)
     {
         var tenant = await repository.GetAsync(id, false, cancellationToken);

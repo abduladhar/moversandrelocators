@@ -13,6 +13,7 @@ namespace Movers.Api.Controllers;
 public sealed class SurveysController(ISurveyService service, ISurveyFileService files, ISurveyTripService trips, PublicLinks links) : ControllerBase
 {
     [HttpGet] public async Task<ActionResult> List(CancellationToken t) => Ok(await service.ListSurveysAsync(t));
+    [HttpGet("search")] public async Task<ActionResult> Search([FromQuery] Movers.Services.Common.ListQuery query, [FromQuery] string? status, [FromQuery] string? customerState, CancellationToken t) => await Run(() => service.SearchSurveysAsync(new SurveyListFilter(status, customerState), query, t));
     [HttpGet("{id:guid}")] public async Task<ActionResult> Get(Guid id, CancellationToken t) { var x = await service.GetSurveyAsync(id, t); return x is null ? NotFound() : Ok(x); }
     [HttpPost] public async Task<ActionResult> Create(SaveSurveyRequest r, CancellationToken t) => await Run(() => service.CreateSurveyAsync(r.ToCommand(), t));
     [HttpPut("{id:guid}")] public async Task<ActionResult> Update(Guid id, SaveSurveyRequest r, CancellationToken t) => await RunNullable(() => service.UpdateSurveyAsync(id, r.ToCommand(), t));

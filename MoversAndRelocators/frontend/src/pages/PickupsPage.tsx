@@ -1,7 +1,8 @@
 import { nowLocal } from '../dates'
 import { ContactMasterPicker } from '../components/ContactMasterPicker'
 import { RowActions } from '../components/RowActions'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
+import { CustomerReplyTag, CustomerStateFilter, useCustomerReplies } from '../components/CustomerReplyTag'
 import { Button, Card, Form, Input, Modal, Segmented, Select, Tag, message } from 'antd'
 import { EnvironmentOutlined, MailOutlined, PhoneOutlined, UserOutlined } from '@ant-design/icons'
 import type { ColumnsType } from 'antd/es/table'
@@ -10,7 +11,7 @@ import type { Pickup, PickupStatus, Quotation, SalesLead, Vehicle } from '../typ
 import { PageHeader } from '../components/PageHeader'
 import { AdvancedSearch } from '../components/AdvancedSearch'
 import { ResponsiveDataView } from '../components/ResponsiveDataView'
-import { useInfiniteRows } from '../hooks/useInfiniteRows'
+import { useServerList } from '../hooks/useServerList'
 import { PickupDetailPage } from './PickupDetailPage'
 import { formatDateTime, useT } from '../i18n'
 
@@ -19,17 +20,21 @@ type CreateForm = { quotationId?: string; salesLeadId?: string; customerName: st
 
 /** Pickup register; each pickup opens in its own workspace. */
 export function PickupsPage({ companyName, userName, mode = 'pickup' }: { companyName: string; userName: string; mode?: 'pickup' | 'packing' }) {
-  const [pickups, setPickups] = useState<Pickup[]>([]), [statuses, setStatuses] = useState<PickupStatus[]>([]), [vehicles, setVehicles] = useState<Vehicle[]>([])
+  const [statuses, setStatuses] = useState<PickupStatus[]>([]), [vehicles, setVehicles] = useState<Vehicle[]>([])
   const [quotes, setQuotes] = useState<Quotation[]>([]), [leads, setLeads] = useState<SalesLead[]>([]), [query, setQuery] = useState(''), [statusFilter, setStatusFilter] = useState<string>()
   const [createOpen, setCreateOpen] = useState(false), [source, setSource] = useState<Source>('QUOTATION'), [saving, setSaving] = useState(false), [openId, setOpenId] = useState<string | null>(null)
   const [form] = Form.useForm<CreateForm>()
   const { t } = useT()
-  const load = () => Promise.all([pickupsApi.list(), pickupsApi.statuses(), pickupsApi.vehicles(), quotationsApi.list(), salesApi.leads()])
-    .then(([a, b, c, d, e]) => { setPickups(a); setStatuses(b); setVehicles(c); setQuotes(d); setLeads(e) }).catch(e => message.error(e instanceof Error ? e.message : t('pickups.list.loadFailed')))
-  useEffect(() => { void load() }, [])
-
-  const filtered = useMemo(() => pickups.filter(x => (!statusFilter || x.statusId === statusFilter) && `${x.pickupNumber} ${x.customerName} ${x.address} ${x.vehicleNumber ?? ''} ${x.quotationNumber ?? ''} ${x.leadNumber ?? ''}`.toLowerCase().includes(query.toLowerCase())), [pickups, query, statusFilter])
-  const { visibleRows, onScroll, hasMore } = useInfiniteRows(filtered, `${query}|${statusFilter}`)
+  const customer = useCustomerReplies('PICKUP'), [customerState, setCustomerState] = useState<string>()
+  const [sortField, setSortField] = useState('serialNo'), [direction, setDirection] = useState<'asc' | 'desc'>('desc')
+  const list = useServerList(pickupsApi.search, { search: query, statusId: statusFilter, customerState, sort: sortField, desc: direction === 'desc' }, { failMessage: t('pickups.list.loadFailed') })
+  // A handled reply can move the row out of the customer-state filter, so the list is fetched again then.
+  const customerChanged = () => { void customer.reload(); if (customerState) void list.reload() }
+  // The register comes from the server page by page; statuses, vehicles, quotations and leads are full lists for the filter and the create form.
+  const loadLookups = () => { void customer.reload(); return Promise.all([pickupsApi.statuses(), pickupsApi.vehicles(), quotationsApi.list(), salesApi.leads()])
+    .then(([b, c, d, e]) => { setStatuses(b); setVehicles(c); setQuotes(d); setLeads(e) }).catch(e => message.error(e instanceof Error ? e.message : t('pickups.list.loadFailed'))) }
+  const load = () => { void list.reload(); return loadLookups() }
+  useEffect(() => { void loadLookups() }, [])
 
   const openCreate = () => { form.resetFields(); setSource('QUOTATION'); form.setFieldsValue({ scheduledAtLocal: nowLocal(), statusId: statuses.find(s => s.isActive)?.id, email: '', notes: '' }); setCreateOpen(true) }
   const changeSource = (value: Source) => { setSource(value); form.setFieldsValue({ quotationId: undefined, salesLeadId: undefined }) }
@@ -51,16 +56,16 @@ export function PickupsPage({ companyName, userName, mode = 'pickup' }: { compan
     { title: t('pickups.list.colSchedule'), dataIndex: 'scheduledAtUtc', width: 190, render: (_, x) => formatDateTime(x.scheduledAtUtc) },
     { title: t('pickups.vehicle'), dataIndex: 'vehicleNumber', width: 150, render: (_, x) => x.vehicleNumber ?? <Tag>{t('pickups.notAssigned')}</Tag> },
     { title: t('pickups.list.colTrip'), key: 'trip', width: 150, render: (_, x) => x.endedAtUtc ? <Tag color="green">{t('pickups.list.tripBack')}</Tag> : x.isPaused ? <Tag color="orange">{t('pickups.list.tripPaused')}</Tag> : x.startedAtUtc ? <Tag color="blue">{t('pickups.list.tripInProgress')}</Tag> : <Tag>{t('pickups.list.tripNotStarted')}</Tag> },
-    { title: t('common.status'), dataIndex: 'statusName', width: 130, render: (_, x) => <Tag color={x.statusColor ?? 'blue'}>{x.statusName}</Tag> },
+    { title: t('common.status'), dataIndex: 'statusName', width: 130, render: (_, x) => <span className="status-stack"><Tag color={x.statusColor ?? 'blue'}>{x.statusName}</Tag><CustomerReplyTag reply={customer.get(x.id)} onChanged={customerChanged} /></span> },
     { title: t('common.actions'), key: 'actions', width: 80, render: (_, x) => <RowActions><Button size="small" onClick={() => setOpenId(x.id)}>{mode === 'packing' ? t('pickups.list.openPacking') : t('pickups.list.openPickup')}</Button></RowActions> },
   ]
 
   return <div className="pickup-register-page">
     <PageHeader onRefresh={load} eyebrow={t('pickups.list.eyebrow')} title={mode === 'packing' ? t('pickups.list.titlePacking') : t('pickups.list.title')} description={t('pickups.list.description')} action={t('pickups.list.create')} onAction={openCreate}
-      filters={<AdvancedSearch value={query} onChange={setQuery} active={Boolean(statusFilter)} onReset={() => { setQuery(''); setStatusFilter(undefined) }}><Select allowClear placeholder={t('common.status')} value={statusFilter} onChange={setStatusFilter} options={statuses.map(s => ({ value: s.id, label: s.name }))} /></AdvancedSearch>} />
-    <Card className="grid-card" title={mode === 'packing' ? t('pickups.list.registerPacking') : t('pickups.list.register')} extra={t('pickups.list.count', { count: filtered.length })}>
-      <ResponsiveDataView rowKey="id" columns={columns} data={visibleRows} onScroll={onScroll} hasMore={hasMore} total={filtered.length} label={t('pickups.list.rowsLabel')} scrollX={1160}
-        renderTile={x => <><div className="tile-heading"><div className="primary-cell"><strong>{x.pickupNumber}</strong><small>{x.customerName}</small></div><Tag color={x.statusColor ?? 'blue'}>{x.statusName}</Tag></div>
+      filters={<AdvancedSearch value={query} onChange={setQuery} active={Boolean(statusFilter) || Boolean(customerState) || sortField !== 'serialNo' || direction !== 'desc'} sortField={sortField} onSortField={setSortField} sortDirection={direction} onSortDirection={setDirection} sortOptions={[{ value: 'serialNo', label: t('common.createdAt') }, { value: 'scheduledAtUtc', label: t('pickups.list.colSchedule') }, { value: 'customerName', label: t('pickups.customerName') }, { value: 'pickupNumber', label: t('pickups.list.colPickup') }, { value: 'statusName', label: t('common.status') }]} onReset={() => { setQuery(''); setStatusFilter(undefined); setCustomerState(undefined); setSortField('serialNo'); setDirection('desc') }}><CustomerStateFilter value={customerState} onChange={setCustomerState} /><Select allowClear placeholder={t('common.status')} value={statusFilter} onChange={setStatusFilter} options={statuses.map(s => ({ value: s.id, label: s.name }))} /></AdvancedSearch>} />
+    <Card className="grid-card" title={mode === 'packing' ? t('pickups.list.registerPacking') : t('pickups.list.register')} extra={t('pickups.list.count', { count: list.total })}>
+      <ResponsiveDataView rowKey="id" columns={columns} data={list.rows} onScroll={list.onScroll} hasMore={list.hasMore} total={list.total} loading={list.loading}label={t('pickups.list.rowsLabel')} scrollX={1160}
+        renderTile={x => <><div className="tile-heading"><div className="primary-cell"><strong>{x.pickupNumber}</strong><small>{x.customerName}</small></div><span className="status-stack"><Tag color={x.statusColor ?? 'blue'}>{x.statusName}</Tag><CustomerReplyTag reply={customer.get(x.id)} onChanged={customerChanged} /></span></div>
           <div className="tile-details"><span>{formatDateTime(x.scheduledAtUtc)}</span><span>{x.vehicleNumber ?? t('pickups.list.vehicleNotAssigned')}</span><span>{x.quotationNumber ? t('pickups.quotationNumber', { number: x.quotationNumber }) : x.leadNumber ? t('pickups.leadNumber', { number: x.leadNumber }) : t('pickups.directPickup')}</span></div>
           <div className="tile-actions"><RowActions><Button size="small" onClick={() => setOpenId(x.id)}>{mode === 'packing' ? t('pickups.list.openPacking') : t('pickups.list.openPickup')}</Button></RowActions></div></>} />
     </Card>

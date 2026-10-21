@@ -9,6 +9,10 @@ public interface ISecurityRepository
     Task<IReadOnlyList<Role>> GetUserRolesAsync(Guid userId, CancellationToken cancellationToken);
     Task<IReadOnlyList<string>> GetUserPermissionsAsync(Guid userId, CancellationToken cancellationToken);
     Task<IReadOnlyList<User>> ListUsersAsync(Guid tenantId, CancellationToken cancellationToken);
+    /// <summary>One page of the tenant's users; companyId (when set) keeps only that company's users.</summary>
+    Task<(IReadOnlyList<User> Items, int Total)> SearchUsersAsync(Guid tenantId, Guid? companyId, UserListFilter filter, Movers.Services.Common.ListQuery query, CancellationToken cancellationToken);
+    Task<IReadOnlyList<Guid>> LinkedEmployeeIdsAsync(Guid tenantId, Guid? companyId, CancellationToken cancellationToken);
+    Task<(IReadOnlyList<Role> Items, int Total)> SearchRolesAsync(Guid tenantId, RoleListFilter filter, Movers.Services.Common.ListQuery query, CancellationToken cancellationToken);
     Task<bool> EmailExistsAsync(string normalizedEmail, CancellationToken cancellationToken);
     Task<Employee?> GetEmployeeAsync(Guid employeeId, CancellationToken cancellationToken);
     Task<bool> EmployeeHasUserAsync(Guid employeeId, Guid? excludingUserId, CancellationToken cancellationToken);

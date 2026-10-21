@@ -53,6 +53,10 @@ public sealed class BusinessMasterService(IBusinessMasterRepository repository, 
   foreach (var entity in await repository.List(kind, ct)) values[entity.Code] = Map(entity);
   return values.Values.OrderBy(x => x.Name).ToList();
  }
+ private static readonly Dictionary<string, Func<MasterModel, object?>> Sorts = new() { ["name"] = x => x.Name, ["code"] = x => x.Code };
+ /// <summary>One page of the list screen: rows exist only after merging defaults and JSON payloads, so search/sort/paging run in memory.</summary>
+ public async Task<Movers.Services.Common.PagedResult<MasterModel>> Search(string kind, bool? active, Movers.Services.Common.ListQuery query, CancellationToken ct) =>
+  Movers.Services.Common.Paging.Page((await List(kind, ct)).Where(x => active is null || x.IsActive == active), query, x => new[] { x.Name, x.Code, x.Phone, x.Email, x.VendorType, x.IsAgent ? "agent" : null }, Sorts, "name", false);
  public async Task<MasterModel> Save(string kind, string? code, MasterInput input, CancellationToken ct) {
   CheckKind(kind);
   if (string.IsNullOrWhiteSpace(input.Name) || input.Name.Trim().Length > 120) throw new InvalidOperationException("Enter a name up to 120 characters.");

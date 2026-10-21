@@ -15,6 +15,11 @@ public interface ISalesService
     Task<MoveTypeModel?> UpdateMoveTypeAsync(Guid id, SaveMoveTypeCommand command, CancellationToken token);
     Task<MoveTypeModel?> SetMoveTypeActiveAsync(Guid id, bool active, CancellationToken token);
     Task<IReadOnlyList<SalesLeadModel>> ListLeadsAsync(CancellationToken token);
+    Task<Movers.Services.Common.PagedResult<SalesLeadModel>> SearchLeadsAsync(SalesLeadListFilter filter, Movers.Services.Common.ListQuery query, CancellationToken token);
+    /// <summary>One page of a sales master; Summary is a SalesMasterSummary of the whole master (next display order default).</summary>
+    Task<Movers.Services.Common.PagedResult<LeadStatusModel>> SearchLeadStatusesAsync(bool? active, Movers.Services.Common.ListQuery query, CancellationToken token);
+    Task<Movers.Services.Common.PagedResult<FollowUpStatusModel>> SearchFollowUpStatusesAsync(bool? active, Movers.Services.Common.ListQuery query, CancellationToken token);
+    Task<Movers.Services.Common.PagedResult<MoveTypeModel>> SearchMoveTypesAsync(bool? active, Movers.Services.Common.ListQuery query, CancellationToken token);
     Task<SalesLeadModel> CreateLeadAsync(SaveSalesLeadCommand command, CancellationToken token);
     Task<SalesLeadModel?> UpdateLeadAsync(Guid id, SaveSalesLeadCommand command, CancellationToken token);
     Task<SalesLeadModel?> SetLeadActiveAsync(Guid id, bool active, CancellationToken token);

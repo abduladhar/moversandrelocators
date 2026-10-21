@@ -373,6 +373,47 @@ CREATE TABLE [Companies] (
 GO
 
 
+CREATE TABLE [CustomerReplies] (
+    [SerialNo] int NOT NULL IDENTITY,
+    [RecordType] nvarchar(30) NOT NULL,
+    [RecordId] uniqueidentifier NOT NULL,
+    [SharedAtUtc] datetimeoffset NULL,
+    [ExpiresAtUtc] datetimeoffset NULL,
+    [RepliedAtUtc] datetimeoffset NULL,
+    [ReplyKind] nvarchar(40) NULL,
+    [ReplyNote] nvarchar(500) NULL,
+    [HandledAtUtc] datetimeoffset NULL,
+    [HandledBy] nvarchar(320) NULL,
+    [HandledAction] nvarchar(40) NULL,
+    [HandledNote] nvarchar(500) NULL,
+    [Id] uniqueidentifier NOT NULL,
+    [TenantId] uniqueidentifier NOT NULL,
+    [CompanyId] uniqueidentifier NULL,
+    CONSTRAINT [PK_CustomerReplies] PRIMARY KEY ([SerialNo]),
+    CONSTRAINT [FK_CustomerReplies_Tenants_TenantId] FOREIGN KEY ([TenantId]) REFERENCES [Tenants] ([Id]) ON DELETE NO ACTION
+);
+GO
+
+
+CREATE TABLE [CustomerReplyEvents] (
+    [SerialNo] int NOT NULL IDENTITY,
+    [RecordType] nvarchar(30) NOT NULL,
+    [RecordId] uniqueidentifier NOT NULL,
+    [Event] nvarchar(20) NOT NULL,
+    [Detail] nvarchar(40) NULL,
+    [Note] nvarchar(500) NULL,
+    [Actor] nvarchar(200) NOT NULL,
+    [AtUtc] datetimeoffset NOT NULL,
+    [ExpiresAtUtc] datetimeoffset NULL,
+    [Id] uniqueidentifier NOT NULL,
+    [TenantId] uniqueidentifier NOT NULL,
+    [CompanyId] uniqueidentifier NULL,
+    CONSTRAINT [PK_CustomerReplyEvents] PRIMARY KEY ([SerialNo]),
+    CONSTRAINT [FK_CustomerReplyEvents_Tenants_TenantId] FOREIGN KEY ([TenantId]) REFERENCES [Tenants] ([Id]) ON DELETE NO ACTION
+);
+GO
+
+
 CREATE TABLE [Designations] (
     [SerialNo] int NOT NULL IDENTITY,
     [Code] nvarchar(40) NOT NULL,
@@ -575,6 +616,25 @@ CREATE TABLE [TenantAwsConfigurations] (
     [TenantId] uniqueidentifier NOT NULL,
     CONSTRAINT [PK_TenantAwsConfigurations] PRIMARY KEY ([SerialNo]),
     CONSTRAINT [FK_TenantAwsConfigurations_Tenants_TenantId] FOREIGN KEY ([TenantId]) REFERENCES [Tenants] ([Id]) ON DELETE NO ACTION
+);
+GO
+
+
+CREATE TABLE [TenantClaudeConfigurations] (
+    [SerialNo] int NOT NULL IDENTITY,
+    [EncryptedApiKey] nvarchar(1000) NOT NULL,
+    [ApiKeyLastFour] nvarchar(4) NOT NULL,
+    [ExtractionModel] nvarchar(120) NOT NULL,
+    [Effort] nvarchar(20) NOT NULL,
+    [InputPricePerMillion] decimal(18,6) NULL,
+    [CachedInputPricePerMillion] decimal(18,6) NULL,
+    [OutputPricePerMillion] decimal(18,6) NULL,
+    [CreatedAtUtc] datetimeoffset NOT NULL,
+    [UpdatedAtUtc] datetimeoffset NOT NULL,
+    [Id] uniqueidentifier NOT NULL,
+    [TenantId] uniqueidentifier NOT NULL,
+    CONSTRAINT [PK_TenantClaudeConfigurations] PRIMARY KEY ([SerialNo]),
+    CONSTRAINT [FK_TenantClaudeConfigurations_Tenants_TenantId] FOREIGN KEY ([TenantId]) REFERENCES [Tenants] ([Id]) ON DELETE NO ACTION
 );
 GO
 
@@ -879,7 +939,12 @@ CREATE TABLE [SalesLeadInventoryItems] (
     [Handling] nvarchar(300) NULL,
     [Notes] nvarchar(1000) NULL,
     [SourceAttachmentId] uniqueidentifier NULL,
+    [ImageKey] nvarchar(500) NULL,
+    [ImageMark] nvarchar(40) NULL,
     [CreatedAtUtc] datetimeoffset NOT NULL,
+    [CustomerStatus] nvarchar(20) NOT NULL,
+    [CustomerNote] nvarchar(500) NULL,
+    [CustomerDecidedAtUtc] datetimeoffset NULL,
     [Id] uniqueidentifier NOT NULL,
     [TenantId] uniqueidentifier NOT NULL,
     [CompanyId] uniqueidentifier NULL,
@@ -1505,7 +1570,7 @@ GO
 CREATE TABLE [PickupAttachments] (
     [SerialNo] int NOT NULL IDENTITY,
     [PickupId] uniqueidentifier NOT NULL,
-    [BoxSource] nvarchar(max) NULL,
+    [BoxSource] nvarchar(20) NULL,
     [BoxId] uniqueidentifier NULL,
     [Stage] nvarchar(20) NOT NULL,
     [RoomName] nvarchar(120) NULL,
@@ -2033,6 +2098,38 @@ GO
 
 
 CREATE UNIQUE INDEX [IX_Companies_TenantId_Code] ON [Companies] ([TenantId], [Code]);
+GO
+
+
+CREATE UNIQUE INDEX [IX_CustomerReplies_Id] ON [CustomerReplies] ([Id]);
+GO
+
+
+CREATE INDEX [IX_CustomerReplies_TenantId] ON [CustomerReplies] ([TenantId]);
+GO
+
+
+CREATE INDEX [IX_CustomerReplies_TenantId_CompanyId] ON [CustomerReplies] ([TenantId], [CompanyId]);
+GO
+
+
+CREATE UNIQUE INDEX [IX_CustomerReplies_TenantId_RecordType_RecordId] ON [CustomerReplies] ([TenantId], [RecordType], [RecordId]);
+GO
+
+
+CREATE UNIQUE INDEX [IX_CustomerReplyEvents_Id] ON [CustomerReplyEvents] ([Id]);
+GO
+
+
+CREATE INDEX [IX_CustomerReplyEvents_TenantId] ON [CustomerReplyEvents] ([TenantId]);
+GO
+
+
+CREATE INDEX [IX_CustomerReplyEvents_TenantId_CompanyId] ON [CustomerReplyEvents] ([TenantId], [CompanyId]);
+GO
+
+
+CREATE INDEX [IX_CustomerReplyEvents_TenantId_RecordType_RecordId] ON [CustomerReplyEvents] ([TenantId], [RecordType], [RecordId]);
 GO
 
 
@@ -3405,6 +3502,14 @@ GO
 
 
 CREATE UNIQUE INDEX [IX_TenantAwsConfigurations_TenantId] ON [TenantAwsConfigurations] ([TenantId]);
+GO
+
+
+CREATE UNIQUE INDEX [IX_TenantClaudeConfigurations_Id] ON [TenantClaudeConfigurations] ([Id]);
+GO
+
+
+CREATE UNIQUE INDEX [IX_TenantClaudeConfigurations_TenantId] ON [TenantClaudeConfigurations] ([TenantId]);
 GO
 
 

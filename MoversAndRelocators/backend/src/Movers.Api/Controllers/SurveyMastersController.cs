@@ -10,6 +10,9 @@ namespace Movers.Api.Controllers;
 public sealed class SurveyMastersController(ISurveyService service) : ControllerBase
 {
     [HttpGet("items")] public async Task<ActionResult> Items(CancellationToken t) => Ok(await service.ListItemsAsync(t));
+    [HttpGet("items/search")] public async Task<ActionResult> SearchItems([FromQuery] Movers.Services.Common.ListQuery query, [FromQuery] bool? active, CancellationToken t) => Ok(await service.SearchItemsAsync(active, query, t));
+    [HttpGet("materials/search")] public async Task<ActionResult> SearchMaterials([FromQuery] Movers.Services.Common.ListQuery query, [FromQuery] bool? active, CancellationToken t) => Ok(await service.SearchMaterialsAsync(active, query, t));
+    [HttpGet("box-types/search")] public async Task<ActionResult> SearchBoxes([FromQuery] Movers.Services.Common.ListQuery query, [FromQuery] bool? active, CancellationToken t) => Ok(await service.SearchBoxTypesAsync(active, query, t));
     [HttpPost("items")] public async Task<ActionResult> CreateItem(SaveHouseholdItemRequest r, CancellationToken t) => await Run(() => service.CreateItemAsync(r.ToCommand(), t));
     [HttpPut("items/{id:guid}")] public async Task<ActionResult> UpdateItem(Guid id, SaveHouseholdItemRequest r, CancellationToken t) => await RunNullable(() => service.UpdateItemAsync(id, r.ToCommand(), t));
     [HttpPatch("items/{id:guid}/status")] public async Task<ActionResult> ItemStatus(Guid id, SetSurveyMasterStatusRequest r, CancellationToken t) => await RunNullable(() => service.SetItemActiveAsync(id, r.IsActive, t));

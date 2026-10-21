@@ -6,6 +6,7 @@ import { ArrowLeftOutlined, DollarOutlined, DeleteOutlined, EditOutlined, FileDo
 import { AiSpendCard } from '../components/AiSpendCard'
 import { quotationsApi, surveysApi } from '../api'
 import type { ChargeMaster, HouseholdItem, QuotationDetail, QuotationItemInput, QuotationLineInput, TaxMaster } from '../types'
+import { CustomerReplyBanner } from '../components/CustomerReplyTag'
 import { formatDate, formatDateTime, formatNumber, useT } from '../i18n'
 
 const cbm3 = (value: number) => formatNumber(value, { minimumFractionDigits: 3, maximumFractionDigits: 3 })
@@ -109,6 +110,7 @@ export function QuotationDetailPage({ quotationId, onBack, onChanged, onOpenRevi
   if (!detail) return <Card loading />
   const q = detail.quotation; const locked = q.status === 'ACCEPTED' || q.status === 'REJECTED'
   return <div className="survey-workspace quotation-workspace"><div className="survey-workspace-header"><div className="survey-heading"><Button disabled={saving} icon={<ArrowLeftOutlined />} aria-label={t('quotations.detail.back')} onClick={onBack} /><div><Typography.Text className="eyebrow">{t('quotations.detail.eyebrow')}</Typography.Text><Typography.Title level={2}>{q.quotationNumber}<span className="survey-heading-customer">{q.customerName}</span></Typography.Title></div></div><Space wrap className="survey-heading-actions"><ReportPrintButton type="QUOTATION" title={q.quotationNumber} id={q.id}/><Button icon={<SyncOutlined />} loading={refreshing} disabled={saving || refreshingReview || open || itemOpen} onClick={() => void refreshQuotation()}>{t('common.refresh')}</Button><Tag className="survey-status-tag" color={statusColor[q.status]}>{statusLabel(q.status)}</Tag></Space></div>
+    <CustomerReplyBanner type="QUOTATION" id={q.id} refreshKey={q} onChanged={onChanged} />
     {q.revisedFromNumber && <Alert type="info" showIcon message={t('quotations.revisionOf', { number: q.revisedFromNumber })} description={<div style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>{t('quotations.detail.previousReason', { reason: q.revisionReason || t('quotations.detail.notRecorded') })}</div>} />}
     <div className="survey-kpi-row quotation-kpi-row">{[
       { key: 'subtotal', label: t('quotations.detail.subtotal'), value: totals.subtotal },

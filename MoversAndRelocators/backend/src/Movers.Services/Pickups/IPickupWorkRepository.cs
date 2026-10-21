@@ -27,6 +27,7 @@ public interface IPickupWorkRepository
     Task<IReadOnlyList<PickupSignoff>> SignoffsAsync(Guid pickupId, CancellationToken t);
     Task<IReadOnlyList<PackageHandover>> HandoversAsync(Guid pickupId, CancellationToken t);
     Task<IReadOnlyList<Warehouse>> WarehousesAsync(CancellationToken t);
+    Task<(IReadOnlyList<Warehouse> Items, int Total)> SearchWarehousesAsync(Movers.Services.Common.ListQuery query, CancellationToken t);
     Task<Warehouse?> WarehouseAsync(Guid id, bool track, CancellationToken t);
     Task<bool> WarehouseCodeExistsAsync(string code, Guid? excludingId, CancellationToken t);
     Task<TenantAwsConfiguration?> AwsAsync(CancellationToken t);

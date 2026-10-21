@@ -15,6 +15,7 @@ import {useBilling} from '../billingApi'
 import {CurrencyFields,formatMoney,useCurrencies} from '../currency'
 import {mapsUrl} from '../packingApi'
 import {formatDateTime,useT} from '../i18n'
+import { CustomerReplyBanner } from '../components/CustomerReplyTag'
 import {CustomerStatusTags,DeliveryCustomerLinks} from '../components/delivery/DeliveryCustomerLinks'
 
 const when=(v:string|null)=>v?formatDateTime(v):''
@@ -64,6 +65,7 @@ export function DeliveryJobDetailPage({jobId,onBack,onChanged}:{jobId:string;onB
   </div>
   {locked&&<Alert type={j.status==='COMPLETED'?'success':'warning'} showIcon title={j.status==='COMPLETED'?t('delivery.detail.completedAlert',{date:when(j.completedAtUtc)}):t('delivery.detail.cancelledAlert')}/>}
   {j.status==='PLANNED'&&!items.length&&<Alert type="info" showIcon title={t('delivery.detail.loadHint')}/>}
+  <CustomerReplyBanner type="DELIVERY_JOB" id={jobId} refreshKey={detail} onChanged={onChanged}/>
   <div className="survey-kpi-row packing-kpi-row">{kpis.map(k=><div key={k.key} className={'survey-kpi packing-kpi-'+k.key}><span className="survey-kpi-icon">{k.icon}</span><div><small>{k.label}</small><strong>{k.value}</strong></div></div>)}</div>
   <Card className="survey-customer-strip"><div className="survey-facts pickup-facts">{facts.map(f=><div key={f.key} className="survey-fact"><span className="survey-fact-icon">{f.icon}</span><div><small>{f.label}</small><div className="survey-fact-value">{f.value}</div></div></div>)}</div>
    {j.notes&&<div className="packing-notes"><small>{t('delivery.detail.notes')}</small>{j.notes}</div>}</Card>

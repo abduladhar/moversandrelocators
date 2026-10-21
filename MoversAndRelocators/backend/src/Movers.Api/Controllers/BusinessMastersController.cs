@@ -6,6 +6,7 @@ namespace Movers.Api.Controllers;
 [ApiController, Authorize, Route("api/business-masters/{kind}")]
 public sealed class BusinessMastersController(BusinessMasterService service, IAuthorizationService authorization) : ControllerBase {
  [HttpGet, Authorize(Policy = SecurityPermissions.OperationsManage)] public Task<ActionResult> List(string kind, CancellationToken ct) => Run(() => service.List(kind, ct));
+ [HttpGet("search"), Authorize(Policy = SecurityPermissions.OperationsManage)] public Task<ActionResult> Search(string kind, [FromQuery] Movers.Services.Common.ListQuery query, [FromQuery] bool? active, CancellationToken ct) => Run(() => service.Search(kind, active, query, ct));
  [HttpPost, Authorize(Policy = SecurityPermissions.OperationsManage)] public Task<ActionResult> Create(string kind, MasterInput input, CancellationToken ct) => Run(() => service.Save(kind, null, input, ct));
  [HttpPut("{code}"), Authorize(Policy = SecurityPermissions.OperationsManage)] public Task<ActionResult> Update(string kind, string code, MasterInput input, CancellationToken ct) => Run(() => service.Save(kind, code, input, ct));
  [HttpGet("choices")] public async Task<ActionResult> Choices(string kind, CancellationToken ct) {

@@ -1,7 +1,8 @@
 import { DataGrid as Table } from '../components/DataGrid'
 import { RowActions } from '../components/RowActions'
 import { useCompanyScopes } from '../companyScope'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
+import { useServerList } from '../hooks/useServerList'
 import { Button, Card, Form, Input, InputNumber, Modal, Popconfirm, Select, Space, Tag, message } from 'antd'
 import { ArrowLeftOutlined, EditOutlined, PlusOutlined } from '@ant-design/icons'
 import { surveysApi } from '../api'
@@ -24,16 +25,23 @@ const fixed = (value: number, digits: number) => formatNumber(value, { minimumFr
 export function SurveyMastersPage({ initialTab }: { initialTab?: MasterKind } = {}) {
   const { t } = useT()
   const masterLabel = (kind: MasterKind) => t(`surveys.masters.${masterKeys[kind]}.title`)
-  const [items, setItems] = useState<HouseholdItem[]>([]), [materials, setMaterials] = useState<PackingMaterial[]>([]), [boxes, setBoxes] = useState<BoxType[]>([])
+  const [materials, setMaterials] = useState<PackingMaterial[]>([])
   const [selectedKind, setSelectedKind] = useState<MasterKind | null>(initialTab ?? null)
   const [query, setQuery] = useState(''), [open, setOpen] = useState(false), [editing, setEditing] = useState<HouseholdItem | PackingMaterial | BoxType | null>(null), [saving, setSaving] = useState(false)
+  const [active, setActive] = useState<boolean>(), [sortField, setSortField] = useState('serialNo'), [direction, setDirection] = useState<'asc' | 'desc'>('desc')
   const [form] = Form.useForm()
-  const load = () => Promise.all([surveysApi.items(), surveysApi.materials(), surveysApi.boxTypes()]).then(([a, b, c]) => { setItems(a); setMaterials(b); setBoxes(c) }).catch(error => message.error(error.message))
-  useEffect(() => { void load() }, [])
   useEffect(() => { if (initialTab) setSelectedKind(initialTab) }, [initialTab])
   const tab = selectedKind ?? 'items'
+  // One page of the open tab from the server; its summary carries the counts of all three lists (overview tiles).
+  const list = useServerList(params => surveysApi.searchMasters<HouseholdItem | PackingMaterial | BoxType>(tab, params), { kind: tab, search: query, active, sort: sortField, desc: direction === 'desc' })
+  const resetSearch = () => { setQuery(''); setActive(undefined); setSortField('serialNo'); setDirection('desc') }
+  useEffect(() => { setActive(undefined); setSortField('serialNo'); setDirection('desc') }, [tab])
+  // The box type form picks from every active material, so that tab keeps the full materials list.
+  const loadMaterials = () => surveysApi.materials().then(setMaterials).catch(error => message.error(error.message))
+  useEffect(() => { if (tab === 'box-types') void loadMaterials() }, [tab])
+  const load = () => { void list.reload(); if (tab === 'box-types') void loadMaterials() }
   const scopes = useCompanyScopes(tab === 'items' ? 'household-item' : tab === 'materials' ? 'packing-material' : 'box-type')
-  const rows = useMemo(() => (tab === 'items' ? items : tab === 'materials' ? materials : boxes).filter(x => `${x.code} ${x.name} ${x.description ?? ''}`.toLowerCase().includes(query.toLowerCase())), [tab, items, materials, boxes, query])
+  const counts = list.summary
   const show = (record?: HouseholdItem | PackingMaterial | BoxType) => {
     setEditing(record ?? null)
     if (!record) form.resetFields()
@@ -48,17 +56,17 @@ export function SurveyMastersPage({ initialTab }: { initialTab?: MasterKind } = 
       if (tab === 'items') editing ? await surveysApi.updateItem(editing.id, values) : await surveysApi.createItem(values)
       else if (tab === 'materials') editing ? await surveysApi.updateMaterial(editing.id, values) : await surveysApi.createMaterial(values)
       else editing ? await surveysApi.updateBoxType(editing.id, values) : await surveysApi.createBoxType(values)
-      await load(); setOpen(false); message.success(t('surveys.masters.saved'))
+      load(); setOpen(false); message.success(t('surveys.masters.saved'))
     } catch (error) { message.error(error instanceof Error ? error.message : t('surveys.masters.saveFailed')) } finally { setSaving(false) }
   }
-  const toggle = async (record: HouseholdItem | PackingMaterial | BoxType) => { await surveysApi.setMasterStatus(tab, record.id, !record.isActive); await load() }
+  const toggle = async (record: HouseholdItem | PackingMaterial | BoxType) => { await surveysApi.setMasterStatus(tab, record.id, !record.isActive); load() }
   const columns = [
-    { title: t('surveys.masters.masterData'), key: 'name', sorter: (a: any, b: any) => a.name.localeCompare(b.name), render: (_: unknown, x: any) => <div className="primary-cell"><strong>{x.name}</strong><small>#{x.serialNo} · {x.code}</small></div> },
-    ...(tab === 'items' ? [{ title: t('surveys.masters.volume'), dataIndex: 'volumeCbm', sorter: (a: any, b: any) => a.volumeCbm - b.volumeCbm, render: (x: number) => <Tag color="blue">{t('surveys.cbmValue', { value: fixed(x, 3) })}</Tag> }] : []),
-    ...(tab === 'materials' ? [{ title: t('surveys.masters.currentCost'), key: 'cost', sorter: (a: any, b: any) => a.currentUnitCost - b.currentUnitCost, render: (_: unknown, x: any) => `${fixed(x.currentUnitCost, 2)} / ${x.unit}` }] : []),
-    ...(tab === 'box-types' ? [{ title: t('surveys.masters.capacity'), dataIndex: 'capacityCbm', sorter: (a: any, b: any) => a.capacityCbm - b.capacityCbm, render: (x: number) => t('surveys.cbmValue', { value: fixed(x, 3) }) }, { title: t('surveys.masters.buildCost'), dataIndex: 'buildCost', render: (x: number) => fixed(x, 2) }] : []),
+    { title: t('surveys.masters.masterData'), key: 'name', render: (_: unknown, x: any) => <div className="primary-cell"><strong>{x.name}</strong><small>#{x.serialNo} · {x.code}</small></div> },
+    ...(tab === 'items' ? [{ title: t('surveys.masters.volume'), dataIndex: 'volumeCbm', render: (x: number) => <Tag color="blue">{t('surveys.cbmValue', { value: fixed(x, 3) })}</Tag> }] : []),
+    ...(tab === 'materials' ? [{ title: t('surveys.masters.currentCost'), key: 'cost', render: (_: unknown, x: any) => `${fixed(x.currentUnitCost, 2)} / ${x.unit}` }] : []),
+    ...(tab === 'box-types' ? [{ title: t('surveys.masters.capacity'), dataIndex: 'capacityCbm', render: (x: number) => t('surveys.cbmValue', { value: fixed(x, 3) }) }, { title: t('surveys.masters.buildCost'), dataIndex: 'buildCost', render: (x: number) => fixed(x, 2) }] : []),
     ...scopes.column<any>(x => x.id),
-    { title: t('common.status'), dataIndex: 'isActive', width: 100, filters: [{ text: t('common.active'), value: true }, { text: t('common.inactive'), value: false }], onFilter: (value: any, x: any) => x.isActive === value, render: (x: boolean) => <StatusTag active={x} /> },
+    { title: t('common.status'), dataIndex: 'isActive', width: 100, render: (x: boolean) => <StatusTag active={x} /> },
     { title: t('common.actions'), key: 'actions', width: 210, align: 'right' as const, render: (_: unknown, x: any) => <RowActions><Space><Button size="small" icon={<EditOutlined />} onClick={() => show(x)}>{t('common.edit')}</Button><Popconfirm title={x.isActive ? t('surveys.masters.confirmDeactivate') : t('surveys.masters.confirmActivate')} onConfirm={() => void toggle(x)}><Button size="small">{x.isActive ? t('common.deactivate') : t('common.activate')}</Button></Popconfirm></Space></RowActions> },
   ]
   const overview = (
@@ -72,7 +80,7 @@ export function SurveyMastersPage({ initialTab }: { initialTab?: MasterKind } = 
           <div className="master-data-tiles">
             {(Object.keys(masterKeys) as MasterKind[]).map(kind => <button key={kind} type="button" className="master-data-tile" onClick={() => setSelectedKind(kind)}>
               <span className="master-data-icon" aria-hidden="true">{kind === 'items' ? '▣' : kind === 'materials' ? '▤' : '◫'}</span>
-              <span>{masterLabel(kind)} ({kind === 'items' ? items.length : kind === 'materials' ? materials.length : boxes.length})</span>
+              <span>{masterLabel(kind)} ({(kind === 'items' ? counts?.items : kind === 'materials' ? counts?.materials : counts?.boxTypes) ?? 0})</span>
             </button>)}
           </div>
         </section>
@@ -83,9 +91,11 @@ export function SurveyMastersPage({ initialTab }: { initialTab?: MasterKind } = 
   if (!selectedKind) return overview
 
   return <>
-    <PageHeader onRefresh={load} eyebrow={t('surveys.masters.eyebrow')} title={masterLabel(tab)} description={t(`surveys.masters.${masterKeys[tab]}.description`)} action={t('surveys.masters.addRecord')} onAction={() => show()} filters={<AdvancedSearch value={query} onChange={setQuery} onReset={() => setQuery('')} placeholder={t('surveys.masters.searchPlaceholder')} />} />
-    {!initialTab && <div style={{ marginBottom: 12 }}><Button icon={<ArrowLeftOutlined />} onClick={() => { setSelectedKind(null); setQuery('') }}>{t('surveys.masters.back')}</Button></div>}
-    <Card className="grid-card"><Table rowKey="id" dataSource={rows} columns={columns as any} pagination={false} scroll={{ y: 'calc(100vh - 310px)' }} /></Card>
+    <PageHeader onRefresh={load} eyebrow={t('surveys.masters.eyebrow')} title={masterLabel(tab)} description={t(`surveys.masters.${masterKeys[tab]}.description`)} action={t('surveys.masters.addRecord')} onAction={() => show()} filters={<AdvancedSearch value={query} onChange={setQuery} onReset={resetSearch} placeholder={t('surveys.masters.searchPlaceholder')} active={active !== undefined || sortField !== 'serialNo' || direction !== 'desc'} sortField={sortField} onSortField={setSortField} sortDirection={direction} onSortDirection={setDirection}
+      sortOptions={[{ value: 'serialNo', label: t('shell.search.createdSequence') }, { value: 'name', label: t('common.name') }, { value: 'code', label: t('common.code') }, ...(tab === 'items' ? [{ value: 'volumeCbm', label: t('surveys.masters.volume') }] : tab === 'materials' ? [{ value: 'currentUnitCost', label: t('surveys.masters.currentCost') }] : [{ value: 'capacityCbm', label: t('surveys.masters.capacity') }])]}>
+      <Select allowClear placeholder={t('common.status')} value={active} onChange={setActive} options={[{ value: true, label: t('common.active') }, { value: false, label: t('common.inactive') }]} /></AdvancedSearch>} />
+    {!initialTab && <div style={{ marginBottom: 12 }}><Button icon={<ArrowLeftOutlined />} onClick={() => { setSelectedKind(null); resetSearch() }}>{t('surveys.masters.back')}</Button></div>}
+    <Card className="grid-card"><Table serverPaged rowKey="id" dataSource={list.rows} loading={list.loading} onScroll={list.onScroll} columns={columns as any} pagination={false} scroll={{ y: 'calc(100vh - 310px)' }} footer={() => list.hasMore ? t('shell.dataView.scrollMore', { label: masterLabel(tab) }) : t('shell.dataView.showingAll', { total: list.total, label: masterLabel(tab) })} /></Card>
     <Modal centered width={680} title={t(`surveys.masters.${masterKeys[tab]}.${editing ? 'edit' : 'add'}`)} open={open} onCancel={() => setOpen(false)} onOk={save} confirmLoading={saving} destroyOnHidden>
       <Form form={form} layout="vertical" requiredMark="optional"><div className="master-form-grid"><Form.Item label={t('common.code')} name="code" rules={[{ required: true, message: t('common.required') }]}><Input /></Form.Item><Form.Item label={t('common.name')} name="name" rules={[{ required: true, message: t('common.required') }]}><Input /></Form.Item></div>
         {tab === 'items' && <Form.Item label={t('surveys.masters.individualVolume')} name="volumeCbm" rules={[{ required: true, message: t('common.required') }]}><InputNumber min={0.001} precision={3} style={{ width: '100%' }} /></Form.Item>}

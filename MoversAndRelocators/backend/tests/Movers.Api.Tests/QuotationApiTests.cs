@@ -65,6 +65,9 @@ public sealed class QuotationApiTests : IAsyncLifetime
 
         var link = await Post<LinkResponse>($"/api/quotations/{quote.Id}/share-link", new { validDays = 7 });
         var token = new Uri(link.Url).Segments.Last().Trim('/');
+        // Sharing the link puts the quotation on "customer action pending".
+        var pending = Assert.Single((await Replies())!);
+        Assert.Equal((quote.Id, "PENDING"), (pending.RecordId, pending.State));
         _client.DefaultRequestHeaders.Authorization = null;
         var publicQuote = await _client.GetFromJsonAsync<PublicQuotationResponse>($"/api/public/quotations/{token}");
         Assert.Equal(2363.60m, publicQuote!.Quotation.GrandTotal);
@@ -79,6 +82,9 @@ public sealed class QuotationApiTests : IAsyncLifetime
         Assert.Matches(@"^QT-\d{8}-\d{6}$", salesmanQuote.QuotationNumber);
         var requestedDetail = await _client.GetFromJsonAsync<QuotationDetailResponse>($"/api/quotations/{quote.Id}");
         var requoteRequest = Assert.Single(requestedDetail!.RequoteRequests);
+        // The customer's requote shows as a reply the office must act on.
+        var replied = Assert.Single((await Replies())!);
+        Assert.Equal(("REPLIED", "QUOTATION_REQUOTE", "One more chair"), (replied.State, replied.ReplyKind, replied.ReplyNote));
         Assert.Equal(3, Assert.Single(requoteRequest.Items).RequestedQuantity);
         var prematureShare = await _client.PostAsJsonAsync($"/api/quotations/{quote.Id}/share-link", new { validDays = 7 });
         Assert.Equal(System.Net.HttpStatusCode.BadRequest, prematureShare.StatusCode);
@@ -86,9 +92,13 @@ public sealed class QuotationApiTests : IAsyncLifetime
         Assert.Equal(3m, repriced.SurveyVolumeCbm);
         Assert.Equal(3m, Assert.Single(repriced.Lines).Quantity);
         Assert.Equal(3545.40m, repriced.Quotation.GrandTotal);
+        // Applying the request is the office's action on the reply.
+        var applied = Assert.Single((await Replies())!);
+        Assert.Equal(("ACTION_TAKEN", "REQUOTE_APPLIED", "Asha Rao"), (applied.State, applied.HandledAction, applied.HandledBy));
         if (rejectAndRevise)
             await Put<QuotationDetailResponse>($"/api/quotations/{quote.Id}/items", new { items = new[] { new { householdItemId = chair.Id, roomName = "Dining room", quantity = 4, volumePerUnitCbm = 1m, notes = "Carry into revision", displayOrder = 1 } } });
         var newLink = await Post<LinkResponse>($"/api/quotations/{quote.Id}/share-link", new { validDays = 7 });
+        Assert.Equal("PENDING", Assert.Single((await Replies())!).State);
         _client.DefaultRequestHeaders.Authorization = null;
         if (rejectAndRevise)
         {
@@ -122,7 +132,25 @@ public sealed class QuotationApiTests : IAsyncLifetime
         }
         var accepted = await Post<PublicQuotationResponse>($"/api/public/quotations/{new Uri(newLink.Url).Segments.Last().Trim('/')}/accept", new { });
         Assert.Equal("ACCEPTED", accepted.Quotation.Status);
+        SetToken(await Post<LoginResponse>("/api/auth/login", new { email = "asha.user@example.test", password = "SecurePass123!" }));
+        Assert.Equal(("REPLIED", "QUOTATION_ACCEPTED"), Assert.Single((await Replies())!) is var r ? (r.State, r.ReplyKind) : default);
+        var tasks = await _client.GetFromJsonAsync<List<System.Text.Json.JsonElement>>("/api/tasks/mine");
+        Assert.Contains(tasks!, x => x.GetProperty("type").GetString() == "customer-reply" && x.GetProperty("entityId").GetString() == quote.Id.ToString());
+        (await _client.PostAsJsonAsync($"/api/customer-replies/QUOTATION/{quote.Id}/handled", new { note = "Booked the move" })).EnsureSuccessStatusCode();
+        var taken = Assert.Single((await Replies())!);
+        Assert.Equal(("ACTION_TAKEN", "MARKED", "Booked the move"), (taken.State, taken.HandledAction, taken.HandledNote));
+        // Nothing is waiting any more, so a second "action taken" is refused.
+        Assert.Equal(System.Net.HttpStatusCode.BadRequest, (await _client.PostAsJsonAsync($"/api/customer-replies/QUOTATION/{quote.Id}/handled", new { note = "again" })).StatusCode);
+        var history = (await _client.GetFromJsonAsync<List<CustomerReplyEventResponse>>($"/api/customer-replies/QUOTATION/{quote.Id}/history"))!;
+        Assert.Equal(["ACTION_TAKEN", "REPLIED", "SHARED", "ACTION_TAKEN", "REPLIED", "SHARED"], history.Select(x => x.Event));
+        Assert.Equal(("MARKED", "Booked the move", "Asha Rao"), (history[0].Detail, history[0].Note, history[0].Actor));
+        Assert.Equal(("QUOTATION_ACCEPTED", "CUSTOMER"), (history[1].Detail, history[1].Actor));
+        Assert.Equal(("QUOTATION_REQUOTE", "One more chair"), (history[4].Detail, history[4].Note));
     }
+
+    private Task<List<CustomerReplyResponse>?> Replies() => _client.GetFromJsonAsync<List<CustomerReplyResponse>>("/api/customer-replies?type=QUOTATION");
+    private sealed record CustomerReplyResponse(Guid RecordId, string State, string? ReplyKind, string? ReplyNote, string? HandledAction, string? HandledBy, string? HandledNote);
+    private sealed record CustomerReplyEventResponse(string Event, string? Detail, string? Note, string Actor);
 
     [Fact]
     public async Task Lead_inventory_loads_every_line_and_creates_missing_household_items()
@@ -176,6 +204,42 @@ public sealed class QuotationApiTests : IAsyncLifetime
         Assert.Empty(imported.GetProperty("createdItems").EnumerateArray());
         Assert.Equal(1, (await _client.GetFromJsonAsync<List<System.Text.Json.JsonElement>>("/api/surveys/masters/items"))!.Count(m => m.GetProperty("name").GetString() == "Robot vacuum cleaner"));
     }
+
+    [Fact]
+    public async Task Register_search_runs_on_the_server_with_keyword_filters_sort_and_pages()
+    {
+        await LoginAndSelectTenant();
+        var designation = await Post<IdResponse>("/api/designations", new { code = "OPS", name = "Coordinator", level = 2, description = (string?)null, isSalesman = false });
+        var meera = await Post<IdResponse>("/api/employees", new { employeeNumber = "OPS-001", firstName = "Meera", lastName = "Nair", workEmail = "meera@example.test", phone = "102", joiningDate = "2026-01-01", designationId = designation.Id, reportsToEmployeeId = (Guid?)null });
+        var arun = await Post<IdResponse>("/api/employees", new { employeeNumber = "OPS-002", firstName = "Arun", lastName = "Das", workEmail = "arun@example.test", phone = "103", joiningDate = "2026-01-01", designationId = designation.Id, reportsToEmployeeId = (Guid?)null });
+        async Task<QuotationResponse> Quote(string customer, string origin, Guid employee) => await Post<QuotationResponse>("/api/quotations", new { quotationNumber = "X", surveyId = (Guid?)null, salesLeadId = (Guid?)null, customerName = customer, phone = "+910000000000", email = (string?)null, origin, destination = "Pune", assignedEmployeeId = employee, currency = "INR", validUntil = "2026-12-31", terms = (string?)null, notes = (string?)null });
+        var zara = await Quote("Zara Khan", "Kochi", meera.Id);
+        await Quote("Anil Menon", "Chennai", arun.Id);
+        await Quote("Bina Kochar", "Mumbai", meera.Id);
+
+        Task<PageResponse> Search(string query) => _client.GetFromJsonAsync<PageResponse>("/api/quotations/search?" + query)!;
+        // Every word must match some field: "koch" finds Kochi (origin) and Kochar (name); adding "zara" narrows to one.
+        Assert.Equal(2, (await Search("search=KOCH")).Total);
+        Assert.Equal(["Zara Khan"], (await Search("search=koch%20zara")).Items.Select(x => x.CustomerName));
+        // Joined names are searched too (assigned employee), and filters combine with the keyword.
+        Assert.Equal(2, (await Search("search=meera")).Total);
+        Assert.Equal(["Anil Menon"], (await Search($"employeeId={arun.Id}")).Items.Select(x => x.CustomerName));
+        // Sorted and paged on the server: the total counts every match, the page holds only `take` rows.
+        var first = await Search("sort=customerName&desc=false&take=2");
+        Assert.Equal(3, first.Total);
+        Assert.Equal(["Anil Menon", "Bina Kochar"], first.Items.Select(x => x.CustomerName));
+        Assert.Equal(["Zara Khan"], (await Search("sort=customerName&desc=false&skip=2&take=2")).Items.Select(x => x.CustomerName));
+        Assert.Equal(3, (await Search("sort=grandTotal")).Items.Count);
+        Assert.Equal(3, (await Search("sort=validUntil&desc=true")).Items.Count);
+        // Customer state is filtered on the server as well.
+        await Put<QuotationDetailResponse>($"/api/quotations/{zara.Id}/lines", new { lines = new[] { new { chargeMasterId = (await Post<ChargeResponse>("/api/quotations/charges", new { code = "MOVE", name = "Move", unit = "TRIP", defaultRate = 100m, taxPercent = 0m, description = (string?)null })).Id, description = "Move", quantity = 1, rate = 100m, discountPercent = 0m, taxIds = Array.Empty<Guid>(), displayOrder = 1 } } });
+        await Post<LinkResponse>($"/api/quotations/{zara.Id}/share-link", new { validDays = 7 });
+        Assert.Equal(["Zara Khan"], (await Search("customerState=PENDING")).Items.Select(x => x.CustomerName));
+        Assert.Empty((await Search("customerState=REPLIED")).Items);
+    }
+
+    private sealed record PageResponse(List<PageRow> Items, int Total);
+    private sealed record PageRow(Guid Id, string CustomerName);
 
     private async Task LoginAndSelectTenant()
     {

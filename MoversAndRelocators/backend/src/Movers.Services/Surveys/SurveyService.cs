@@ -1,12 +1,22 @@
 using System.Text.Json;
+using Movers.Domain.CustomerLinks;
 using Movers.Domain.Surveys;
+using Movers.Services.CustomerLinks;
 using Movers.Services.Tenancy;
 
 namespace Movers.Services.Surveys;
 
-public sealed class SurveyService(ISurveyRepository repository, ITenantContext tenantContext, TimeProvider timeProvider, Movers.Services.Numbering.IRecordNumbers numbers, Movers.Services.Tenants.ICompanyScope? companies = null, Movers.Services.OpenAi.AiUsageService? aiUsage = null) : ISurveyService
+public sealed class SurveyService(ISurveyRepository repository, ITenantContext tenantContext, TimeProvider timeProvider, Movers.Services.Numbering.IRecordNumbers numbers, ICustomerReplies replies, ICustomerReplyQueries replyQueries, Movers.Services.Tenants.ICompanyScope? companies = null, Movers.Services.OpenAi.AiUsageService? aiUsage = null) : ISurveyService
 {
     public async Task<IReadOnlyList<HouseholdItemModel>> ListItemsAsync(CancellationToken t) => (await repository.ListItemsAsync(t)).Select(Map).ToList();
+    public async Task<Movers.Services.Common.PagedResult<HouseholdItemModel>> SearchItemsAsync(bool? active, Movers.Services.Common.ListQuery query, CancellationToken t) { query = query.Normalized(); var (rows, total) = await repository.SearchItemsAsync(active, query, t); return new(rows.Select(Map).ToList(), total, await repository.MasterCountsAsync(t)); }
+    public async Task<Movers.Services.Common.PagedResult<MaterialModel>> SearchMaterialsAsync(bool? active, Movers.Services.Common.ListQuery query, CancellationToken t) { query = query.Normalized(); var (rows, total) = await repository.SearchMaterialsAsync(active, query, t); return new(rows.Select(Map).ToList(), total, await repository.MasterCountsAsync(t)); }
+    public async Task<Movers.Services.Common.PagedResult<BoxTypeModel>> SearchBoxTypesAsync(bool? active, Movers.Services.Common.ListQuery query, CancellationToken t)
+    {
+        query = query.Normalized(); var (boxes, total) = await repository.SearchBoxTypesAsync(active, query, t);
+        var (recipes, materials) = await repository.ListBoxRecipesAsync(boxes.Select(x => x.Id).ToList(), t); // recipes joined for this page only
+        return new(boxes.Select(x => Map(x, recipes.Where(r => r.BoxTypeId == x.Id), materials)).ToList(), total, await repository.MasterCountsAsync(t));
+    }
     public async Task<HouseholdItemModel> CreateItemAsync(SaveHouseholdItemCommand c, CancellationToken t) { ValidateItem(c); await UniqueItem(c.Code, null, t); var x = new HouseholdItem(tenantContext.TenantId, c.Code, c.Name, c.VolumeCbm, c.Description); repository.AddItem(x); await repository.SaveChangesAsync(t); return Map(x); }
     public async Task<HouseholdItemModel?> UpdateItemAsync(Guid id, SaveHouseholdItemCommand c, CancellationToken t) { ValidateItem(c); var x = await repository.GetItemAsync(id, true, t); if (x is null) return null; await UniqueItem(c.Code, id, t); x.Update(c.Code, c.Name, c.VolumeCbm, c.Description); await repository.SaveChangesAsync(t); return Map(x); }
     public async Task<HouseholdItemModel?> SetItemActiveAsync(Guid id, bool active, CancellationToken t) { var x = await repository.GetItemAsync(id, true, t); if (x is null) return null; x.SetActive(active); await repository.SaveChangesAsync(t); return Map(x); }
@@ -42,6 +52,13 @@ public sealed class SurveyService(ISurveyRepository repository, ITenantContext t
         var rows = await repository.ListSurveysAsync(t); var employees = await repository.ListEmployeesAsync(t);
         return rows.Select(x => Map(x, employees.FirstOrDefault(e => e.Id == x.AssignedEmployeeId)?.FullName ?? "Unknown")).ToList();
     }
+    public async Task<Movers.Services.Common.PagedResult<SurveyModel>> SearchSurveysAsync(SurveyListFilter filter, Movers.Services.Common.ListQuery query, CancellationToken t)
+    {
+        query = query.Normalized();
+        var ids = string.IsNullOrWhiteSpace(filter.CustomerState) ? null : await replyQueries.RecordIdsInStateAsync(CustomerReplyRecordTypes.Survey, filter.CustomerState.Trim().ToUpperInvariant(), t);
+        var (rows, total) = await repository.SearchSurveysAsync(filter, query, ids, t); var employees = await repository.ListEmployeesAsync(rows.Select(x => x.AssignedEmployeeId).Distinct().ToList(), t);
+        return new(rows.Select(x => Map(x, employees.FirstOrDefault(e => e.Id == x.AssignedEmployeeId)?.FullName ?? "Unknown")).ToList(), total, await repository.SurveySummaryAsync(t));
+    }
     public async Task<SurveyModel> CreateSurveyAsync(SaveSurveyCommand c, CancellationToken t)
     {
         c = c with { SurveyNumber = await numbers.Next("SV", t) }; await ValidateSurvey(c, null, t); var x = new Survey(tenantContext.TenantId, c.SurveyNumber, c.SalesLeadId, c.CustomerName, c.Phone, c.Email, c.AssignedEmployeeId, c.ScheduledAtUtc, c.Address, c.Notes);
@@ -68,7 +85,7 @@ public sealed class SurveyService(ISurveyRepository repository, ITenantContext t
     public async Task<GeneratedSurveyLinkModel> GenerateConfirmationLinkAsync(Guid id, int validDays, CancellationToken t)
     {
         if (validDays is < 1 or > 30) throw new InvalidOperationException("Confirmation links must be valid for 1 to 30 days."); var x = await repository.GetSurveyAsync(id, true, t) ?? throw new InvalidOperationException("Survey was not found.");
-        var raw = SurveyLinkTokens.NewToken(); var expires = timeProvider.GetUtcNow().AddDays(validDays); x.SetConfirmationLink(SurveyLinkTokens.Hash(raw), expires); await repository.SaveChangesAsync(t); return new(raw, expires);
+        var raw = SurveyLinkTokens.NewToken(); var expires = timeProvider.GetUtcNow().AddDays(validDays); x.SetConfirmationLink(SurveyLinkTokens.Hash(raw), expires); await replies.SharedAsync(CustomerReplyRecordTypes.Survey, x.Id, expires, t); await repository.SaveChangesAsync(t); return new(raw, expires);
     }
     public async Task<PublicSurveyModel?> GetPublicAsync(string token, CancellationToken t)
     {
@@ -78,11 +95,11 @@ public sealed class SurveyService(ISurveyRepository repository, ITenantContext t
     {
         var resolved = await Resolve(token, t); if (resolved is null) return null; var x = await repository.GetSurveyAsync(resolved.Value.Survey.Id, true, t); if (x is null) return null;
         if (c.ScheduledAtUtc < timeProvider.GetUtcNow().AddMinutes(-5)) throw new InvalidOperationException("The survey date cannot be in the past."); if (string.IsNullOrWhiteSpace(c.Address)) throw new InvalidOperationException("Survey location is required.");
-        x.ConfirmSchedule(c.ScheduledAtUtc, c.Address, c.Latitude, c.Longitude, c.Notes); await repository.SaveChangesAsync(t); return await MapPublic(x, resolved.Value.TenantName, t);
+        x.ConfirmSchedule(c.ScheduledAtUtc, c.Address, c.Latitude, c.Longitude, c.Notes); await replies.RepliedAsync(CustomerReplyRecordTypes.Survey, x.Id, CustomerReplyKinds.SurveySchedule, c.Notes, t); await repository.SaveChangesAsync(t); return await MapPublic(x, resolved.Value.TenantName, t);
     }
     public async Task<PublicSurveyModel?> ConfirmItemsAsync(string token, string? notes, CancellationToken t)
     {
-        var resolved = await Resolve(token, t); if (resolved is null) return null; var x = await repository.GetSurveyAsync(resolved.Value.Survey.Id, true, t); if (x is null) return null; x.ConfirmItems(notes); await repository.SaveChangesAsync(t); return await MapPublic(x, resolved.Value.TenantName, t);
+        var resolved = await Resolve(token, t); if (resolved is null) return null; var x = await repository.GetSurveyAsync(resolved.Value.Survey.Id, true, t); if (x is null) return null; x.ConfirmItems(notes); await replies.RepliedAsync(CustomerReplyRecordTypes.Survey, x.Id, CustomerReplyKinds.SurveyItems, notes, t); await repository.SaveChangesAsync(t); return await MapPublic(x, resolved.Value.TenantName, t);
     }
 
     private async Task<(Survey Survey, string TenantName)?> Resolve(string token, CancellationToken t)
@@ -112,6 +129,7 @@ public sealed class SurveyService(ISurveyRepository repository, ITenantContext t
             return new CustomerAddedItemModel(a.RoomName.Trim(), m.Id, m.Name, a.Quantity, m.VolumeCbm, Clean(a.Notes));
         }).ToList();
         x.SubmitCustomerChanges(JsonSerializer.Serialize(new CustomerChangeRequestModel(timeProvider.GetUtcNow(), Clean(c.Notes), removed, added)));
+        await replies.RepliedAsync(CustomerReplyRecordTypes.Survey, x.Id, CustomerReplyKinds.SurveyChanges, c.Notes, t);
         await repository.SaveChangesAsync(t); return await MapPublic(x, resolved.Value.TenantName, t);
     }
     /// <summary>Applies the customer's pending request to the saved inventory: removes marked lines and adds requested items, creating rooms by name when needed.</summary>
@@ -131,11 +149,12 @@ public sealed class SurveyService(ISurveyRepository repository, ITenantContext t
             return new SurveyItem(tenantContext.TenantId, id, room.Id, a.HouseholdItemId, a.Quantity, a.VolumePerUnitCbm, a.Notes is null ? "Added at customer request" : $"Customer: {a.Notes}");
         }).ToList();
         repository.AddRooms(newRooms); repository.AddSurveyItems(newLines); x.ClearCustomerChanges();
+        await replies.HandledAsync(CustomerReplyRecordTypes.Survey, id, CustomerReplyActions.SurveyChangesApplied, t);
         await repository.SaveChangesAsync(t); return await LoadDetail(id, t);
     }
     public async Task<SurveyDetailModel?> DismissCustomerChangesAsync(Guid id, CancellationToken t)
     {
-        var x = await repository.GetSurveyAsync(id, true, t); if (x is null) return null; x.ClearCustomerChanges(); await repository.SaveChangesAsync(t); return await LoadDetail(id, t);
+        var x = await repository.GetSurveyAsync(id, true, t); if (x is null) return null; x.ClearCustomerChanges(); await replies.HandledAsync(CustomerReplyRecordTypes.Survey, id, CustomerReplyActions.SurveyChangesDismissed, t); await repository.SaveChangesAsync(t); return await LoadDetail(id, t);
     }
     /// <summary>
     /// Brings the sales lead's expected inventory into the survey. It adds, never replaces: a surveyor's own rooms

@@ -1,6 +1,7 @@
 import { serverMessage } from './i18n'
 import {request} from './api'
 import {apiUrl} from './apiBase'
+import {listQuery,type ListParams,type Paged} from './hooks/useServerList'
 
 export type PackingStatus='PLANNED'|'IN_PROGRESS'|'COMPLETED'|'CANCELLED'
 export type PackingJob={serialNo:number;id:string;jobNumber:string;status:PackingStatus;pickupId:string|null;pickupNumber:string|null;quotationId:string|null;quotationNumber:string|null;salesLeadId:string|null;leadNumber:string|null;customerName:string;phone:string;email:string|null;address:string;scheduledAtUtc:string;notes:string|null;startedAtUtc:string|null;completedAtUtc:string|null;createdAtUtc:string;boxCount:number;labelsPending:number;scheduleConfirmedAtUtc:string|null}
@@ -27,6 +28,8 @@ export const packingApi={
  masters:()=>request<PackingMasters>(base+'/masters'),
  sources:()=>request<PackingSource[]>(base+'/sources'),
  list:()=>request<PackingJob[]>(base),
+ /** The register's advanced search (server-side): search, sort, desc, skip, take, status, customerState. */
+ search:(params:ListParams)=>request<Paged<PackingJob>>(base+'/search?'+listQuery(params)),
  get:(id:string)=>request<PackingDetail>(base+'/'+id),
  create:(v:SavePackingJob)=>send<PackingDetail>(base,'POST',v),
  update:(id:string,v:SavePackingJob)=>send<PackingDetail>(base+'/'+id,'PUT',v),

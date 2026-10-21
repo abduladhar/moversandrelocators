@@ -27,6 +27,15 @@ public interface ISurveyRepository
     void AddBoxMaterial(BoxTypeMaterial material);
     void RemoveBoxMaterials(IEnumerable<BoxTypeMaterial> materials);
     Task<IReadOnlyList<Survey>> ListSurveysAsync(CancellationToken token);
+    Task<(IReadOnlyList<Survey> Items, int Total)> SearchSurveysAsync(SurveyListFilter filter, Movers.Services.Common.ListQuery query, IReadOnlyCollection<Guid>? onlyIds, CancellationToken token);
+    Task<SurveyListSummary> SurveySummaryAsync(CancellationToken token);
+    Task<(IReadOnlyList<HouseholdItem> Items, int Total)> SearchItemsAsync(bool? active, Movers.Services.Common.ListQuery query, CancellationToken token);
+    Task<(IReadOnlyList<PackingMaterial> Items, int Total)> SearchMaterialsAsync(bool? active, Movers.Services.Common.ListQuery query, CancellationToken token);
+    Task<(IReadOnlyList<BoxType> Items, int Total)> SearchBoxTypesAsync(bool? active, Movers.Services.Common.ListQuery query, CancellationToken token);
+    Task<SurveyMasterCounts> MasterCountsAsync(CancellationToken token);
+    /// <summary>The recipes of these box types and the materials they use (for mapping one page of box types).</summary>
+    Task<(IReadOnlyList<BoxTypeMaterial> Recipes, IReadOnlyList<PackingMaterial> Materials)> ListBoxRecipesAsync(IReadOnlyCollection<Guid> boxTypeIds, CancellationToken token);
+    Task<IReadOnlyList<Employee>> ListEmployeesAsync(IReadOnlyCollection<Guid> ids, CancellationToken token);
     Task<Survey?> GetSurveyAsync(Guid id, bool track, CancellationToken token);
     Task<bool> SurveyNumberExistsAsync(string number, Guid? excludingId, CancellationToken token);
     void AddSurvey(Survey survey);

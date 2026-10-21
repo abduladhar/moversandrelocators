@@ -4,6 +4,8 @@ using Movers.Domain.Employees;
 using Movers.Domain.Quotations;
 using Movers.Domain.Sales;
 using Movers.Domain.Surveys;
+using Movers.DAL.Common;
+using Movers.Services.Common;
 using Movers.Services.Quotations;
 
 namespace Movers.DAL.Quotations;
@@ -15,10 +17,46 @@ public sealed class QuotationRepository(MoversDbContext db) : IQuotationReposito
     public Task<bool> ChargeCodeExistsAsync(string code, Guid? excludingId, CancellationToken t) => db.ChargeMasters.AnyAsync(x => x.Code == code && (!excludingId.HasValue || x.Id != excludingId), t);
     public void AddCharge(ChargeMaster x) => db.ChargeMasters.Add(x);
     public async Task<IReadOnlyList<TaxMaster>> ListTaxesAsync(CancellationToken t) => await db.TaxMasters.AsNoTracking().OrderByDescending(x => x.SerialNo).ToListAsync(t);
+    private static readonly SortMap<ChargeMaster> ChargeSorts = new SortMap<ChargeMaster>("serialNo", true, x => x.SerialNo)
+        .Add("serialNo", x => x.SerialNo).Add("name", x => x.Name).Add("defaultRate", x => (double)x.DefaultRate);
+    public async Task<(IReadOnlyList<ChargeMaster> Items, int Total)> SearchChargesAsync(bool? active, ListQuery list, CancellationToken t)
+    {
+        var q = db.ChargeMasters.AsNoTracking();
+        if (active is { } isActive) q = q.Where(x => x.IsActive == isActive);
+        q = q.Search(list, w => x => x.Code.ToLower().Contains(w) || x.Name.ToLower().Contains(w) || x.Unit.ToLower().Contains(w) || (x.Description ?? "").ToLower().Contains(w));
+        var (items, total) = await q.Sort(list, ChargeSorts).PageAsync(list, t);
+        return (items, total);
+    }
+    private static readonly SortMap<TaxMaster> TaxSorts = new SortMap<TaxMaster>("serialNo", true, x => x.SerialNo)
+        .Add("serialNo", x => x.SerialNo).Add("name", x => x.Name).Add("code", x => x.Code).Add("rate", x => (double)x.Rate);
+    public async Task<(IReadOnlyList<TaxMaster> Items, int Total)> SearchTaxesAsync(string? kind, ListQuery list, CancellationToken t)
+    {
+        var q = db.TaxMasters.AsNoTracking();
+        if (!string.IsNullOrWhiteSpace(kind)) { var k = kind.Trim().ToUpperInvariant(); q = q.Where(x => x.Kind == k); }
+        q = q.Search(list, w => x => x.Code.ToLower().Contains(w) || x.Name.ToLower().Contains(w));
+        var (items, total) = await q.Sort(list, TaxSorts).PageAsync(list, t);
+        return (items, total);
+    }
     public Task<TaxMaster?> GetTaxAsync(Guid id, bool track, CancellationToken t) => (track ? db.TaxMasters : db.TaxMasters.AsNoTracking()).SingleOrDefaultAsync(x => x.Id == id, t);
     public Task<bool> TaxCodeExistsAsync(string code, Guid? excludingId, CancellationToken t) => db.TaxMasters.AnyAsync(x => x.Code == code && (!excludingId.HasValue || x.Id != excludingId), t);
     public void AddTax(TaxMaster x) => db.TaxMasters.Add(x);
     public async Task<IReadOnlyList<Quotation>> ListQuotationsAsync(Guid? employeeId, CancellationToken t) => await db.Quotations.AsNoTracking().Where(x => !employeeId.HasValue || x.AssignedEmployeeId == employeeId).OrderByDescending(x => x.SerialNo).ToListAsync(t);
+    private static readonly SortMap<Quotation> QuotationSorts = new SortMap<Quotation>("serialNo", true, x => x.SerialNo)
+        .Add("serialNo", x => x.SerialNo).Add("customerName", x => x.CustomerName).Add("quotationNumber", x => x.QuotationNumber)
+        .Add("validUntil", x => x.ValidUntil).Add("grandTotal", x => (double)x.GrandTotal).Add("status", x => x.Status);
+    public async Task<(IReadOnlyList<Quotation> Items, int Total)> SearchQuotationsAsync(Guid? employeeId, QuotationListFilter filter, ListQuery list, IReadOnlyCollection<Guid>? onlyIds, CancellationToken t)
+    {
+        var q = db.Quotations.AsNoTracking().Where(x => !employeeId.HasValue || x.AssignedEmployeeId == employeeId);
+        if (!string.IsNullOrWhiteSpace(filter.Status)) q = q.Where(x => x.Status == filter.Status);
+        if (filter.EmployeeId is { } assigned) q = q.Where(x => x.AssignedEmployeeId == assigned);
+        if (onlyIds is not null) q = q.Where(x => onlyIds.Contains(x.Id));
+        q = q.Search(list, w => x => x.QuotationNumber.ToLower().Contains(w) || x.CustomerName.ToLower().Contains(w) || x.Phone.ToLower().Contains(w)
+            || (x.Email ?? "").ToLower().Contains(w) || x.Origin.ToLower().Contains(w) || x.Destination.ToLower().Contains(w)
+            || db.SalesLeads.Any(l => l.Id == x.SalesLeadId && l.LeadNumber.ToLower().Contains(w))
+            || db.Employees.Any(e => e.Id == x.AssignedEmployeeId && (e.FirstName + " " + e.LastName).ToLower().Contains(w)));
+        var (items, total) = await q.Sort(list, QuotationSorts).PageAsync(list, t);
+        return (items, total);
+    }
     public Task<Quotation?> GetQuotationAsync(Guid id, bool track, Guid? employeeId, CancellationToken t) => (track ? db.Quotations : db.Quotations.AsNoTracking()).SingleOrDefaultAsync(x => x.Id == id && (!employeeId.HasValue || x.AssignedEmployeeId == employeeId), t);
     public Task<bool> QuotationNumberExistsAsync(string number, Guid? excludingId, CancellationToken t) => db.Quotations.AnyAsync(x => x.QuotationNumber == number && (!excludingId.HasValue || x.Id != excludingId), t);
     public void AddQuotation(Quotation x) => db.Quotations.Add(x);

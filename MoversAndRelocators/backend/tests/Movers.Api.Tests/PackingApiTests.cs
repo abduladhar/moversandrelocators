@@ -118,6 +118,11 @@ public sealed partial class BillingApiTests
 
   var list=await Get("/api/packing");
   Assert.Equal("COMPLETED",list.Single(x=>Id(x)==jobId).GetProperty("status").GetString());
+  // The register's server search returns the same row (references, box counts, labels, clock loaded for the page only).
+  var found=await GetOne("/api/packing/search?search=billing%20origin&status=COMPLETED");
+  Assert.Equal(1,found.GetProperty("total").GetInt32());
+  Assert.Equal(list.Single(x=>Id(x)==jobId).GetRawText(),found.GetProperty("items")[0].GetRawText());
+  Assert.Equal(0,(await GetOne("/api/packing/search?search=billing&status=PLANNED")).GetProperty("total").GetInt32());
  }
 
  [Fact]
@@ -237,6 +242,7 @@ public sealed partial class BillingApiTests
   Assert.Equal(new[]{"STARTED","PAUSED","RESUMED","COMPLETED"},c.GetProperty("events").EnumerateArray().Select(e=>e.GetProperty("type").GetString()).ToArray());
   Assert.Equal("Lunch break",c.GetProperty("events")[1].GetProperty("reason").GetString());
   Assert.Equal(3*3600,(await Get("/api/packing")).Single(x=>Id(x)==jobId).GetProperty("workingSeconds").GetInt64());
+  Assert.Equal(3*3600,(await GetOne("/api/packing/search?search=clock")).GetProperty("items")[0].GetProperty("workingSeconds").GetInt64());
 
   // Reopen continues the clock from the reopen time; the gap while completed is not counted.
   var reopened=await Put($"/api/packing/{jobId}/status",new{status="IN_PROGRESS",at=t0.AddHours(4.5)});

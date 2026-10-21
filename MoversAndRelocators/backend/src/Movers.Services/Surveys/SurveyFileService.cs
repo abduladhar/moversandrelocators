@@ -21,7 +21,7 @@ public interface ISurveyFileService
 
 /// <summary>Survey photos, videos and documents. Customers see and add only their own uploads; staff see all.</summary>
 public sealed class SurveyFileService(ISurveyRepository repository, ITenantContext tenantContext, IUserContext user,
-    ISecretProtector protector, IAwsObjectStorage storage, TimeProvider clock, Movers.Services.Tenants.ICompanyScope? companies = null) : ISurveyFileService
+    ISecretProtector protector, IAwsObjectStorage storage, TimeProvider clock, Movers.Services.CustomerLinks.ICustomerReplies replies, Movers.Services.Tenants.ICompanyScope? companies = null) : ISurveyFileService
 {
     public async Task<IReadOnlyList<SurveyAttachmentModel>?> ListAsync(Guid surveyId, CancellationToken t) =>
         await repository.GetSurveyAsync(surveyId, false, t) is null ? null : (await repository.ListAttachmentsAsync(surveyId, t)).Select(Map).ToList();
@@ -86,7 +86,10 @@ public sealed class SurveyFileService(ISurveyRepository repository, ITenantConte
         var info = await storage.GetObjectInfoAsync(Credentials(await repository.GetAwsAsync(t)), attachment.S3ObjectKey, t)
             ?? throw new InvalidOperationException("The file has not reached storage yet.");
         UploadPolicy.EnsureStoredSize(info, attachment.DeclaredSizeBytes);
-        attachment.MarkUploaded(info.SizeBytes); await repository.SaveChangesAsync(t); return Map(attachment);
+        attachment.MarkUploaded(info.SizeBytes);
+        if (source == SurveyAttachmentSources.Customer)
+            await replies.RepliedAsync(Movers.Domain.CustomerLinks.CustomerReplyRecordTypes.Survey, surveyId, Movers.Services.CustomerLinks.CustomerReplyKinds.SurveyFiles, attachment.OriginalFileName, t);
+        await repository.SaveChangesAsync(t); return Map(attachment);
     }
 
     private AwsStorageCredentials Credentials(TenantAwsConfiguration? x) => StorageCredentials.Resolve(storage, protector, x);

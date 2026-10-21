@@ -44,6 +44,7 @@ public interface IPickupWorkService
     Task<PickupWorkModel?> SignAsync(Guid pickupId, PickupSignoffCommand c, CancellationToken t);
     Task<PickupWorkModel?> StoreAsync(Guid pickupId, StoreInWarehouseCommand c, CancellationToken t);
     Task<IReadOnlyList<WarehouseModel>> WarehousesAsync(CancellationToken t);
+    Task<Movers.Services.Common.PagedResult<WarehouseModel>> SearchWarehousesAsync(Movers.Services.Common.ListQuery query, CancellationToken t);
     Task<WarehouseModel> CreateWarehouseAsync(SaveWarehouseCommand c, CancellationToken t);
     Task<WarehouseModel?> UpdateWarehouseAsync(Guid id, SaveWarehouseCommand c, CancellationToken t);
     Task<WarehouseModel?> SetWarehouseActiveAsync(Guid id, bool active, CancellationToken t);
@@ -177,6 +178,7 @@ public sealed class PickupWorkService(IPickupRepository pickups, IPickupWorkRepo
     }
 
     public async Task<IReadOnlyList<WarehouseModel>> WarehousesAsync(CancellationToken t) => (await work.WarehousesAsync(t)).Select(Map).ToList();
+    public async Task<Movers.Services.Common.PagedResult<WarehouseModel>> SearchWarehousesAsync(Movers.Services.Common.ListQuery query, CancellationToken t) { var (items, total) = await work.SearchWarehousesAsync(query.Normalized(), t); return new(items.Select(Map).ToList(), total); }
     public async Task<WarehouseModel> CreateWarehouseAsync(SaveWarehouseCommand c, CancellationToken t)
     {
         await ValidateWarehouse(c, null, t); var x = new Warehouse(tenant.TenantId, c.Code, c.Name, c.Address); work.Add(x); await pickups.Save(t); return Map(x);

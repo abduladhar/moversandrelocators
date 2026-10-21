@@ -1,9 +1,12 @@
+using Movers.Domain.CustomerLinks;
 using Movers.Domain.Sales;
+using Movers.Services.Common;
+using Movers.Services.CustomerLinks;
 using Movers.Services.Tenancy;
 
 namespace Movers.Services.Sales;
 
-public sealed class SalesService(ISalesRepository repository, ITenantContext tenantContext, Movers.Services.Numbering.IRecordNumbers numbers, ILeadInventoryRepository inventory) : ISalesService
+public sealed class SalesService(ISalesRepository repository, ITenantContext tenantContext, Movers.Services.Numbering.IRecordNumbers numbers, ILeadInventoryRepository inventory, ICustomerReplyQueries replyQueries) : ISalesService
 {
     public async Task<IReadOnlyList<LeadStatusModel>> ListLeadStatusesAsync(CancellationToken token) => (await repository.ListLeadStatusesAsync(token)).Select(Map).ToList();
     public async Task<LeadStatusModel> CreateLeadStatusAsync(SaveLeadStatusCommand c, CancellationToken t) { await EnsureLeadStatusCode(c.Code, null, t); var x = new LeadStatus(tenantContext.TenantId, c.Code, c.Name, c.DisplayOrder, c.Color, c.IsClosed); repository.AddLeadStatus(x); await repository.SaveChangesAsync(t); return Map(x); }
@@ -17,7 +20,18 @@ public sealed class SalesService(ISalesRepository repository, ITenantContext ten
     public async Task<MoveTypeModel> CreateMoveTypeAsync(SaveMoveTypeCommand c, CancellationToken t) { await EnsureMoveTypeCode(c.Code, null, t); var x = new MoveType(tenantContext.TenantId, c.Code, c.Name, c.DisplayOrder, c.Description); repository.AddMoveType(x); await repository.SaveChangesAsync(t); return Map(x); }
     public async Task<MoveTypeModel?> UpdateMoveTypeAsync(Guid id, SaveMoveTypeCommand c, CancellationToken t) { var x = await repository.GetMoveTypeAsync(id, true, t); if (x is null) return null; await EnsureMoveTypeCode(c.Code, id, t); x.Update(c.Code, c.Name, c.DisplayOrder, c.Description); await repository.SaveChangesAsync(t); return Map(x); }
     public async Task<MoveTypeModel?> SetMoveTypeActiveAsync(Guid id, bool active, CancellationToken t) { var x = await repository.GetMoveTypeAsync(id, true, t); if (x is null) return null; x.SetActive(active); await repository.SaveChangesAsync(t); return Map(x); }
-    public async Task<IReadOnlyList<SalesLeadModel>> ListLeadsAsync(CancellationToken t) { var leads = await repository.ListLeadsAsync(t); var statuses = (await repository.ListLeadStatusesAsync(t)).ToDictionary(x => x.Id); var moveTypes = (await repository.ListMoveTypesAsync(t)).ToDictionary(x => x.Id); var employees = (await repository.ListEmployeesAsync(t)).ToDictionary(x => x.Id, x => x.FullName); var totals = await inventory.Totals(t); return leads.Select(x => Map(x, statuses[x.StatusId], moveTypes[x.MoveTypeId], x.AssignedEmployeeId.HasValue && employees.TryGetValue(x.AssignedEmployeeId.Value, out var name) ? name : null) with { ExpectedCbm = totals.GetValueOrDefault(x.Id)?.ExpectedCbm ?? 0, FragileItems = totals.GetValueOrDefault(x.Id)?.FragileItems ?? 0 }).ToList(); }
+    public async Task<IReadOnlyList<SalesLeadModel>> ListLeadsAsync(CancellationToken t) => await MapLeads(await repository.ListLeadsAsync(t), await inventory.Totals(t), t);
+    public async Task<PagedResult<SalesLeadModel>> SearchLeadsAsync(SalesLeadListFilter filter, ListQuery query, CancellationToken t)
+    {
+        query = query.Normalized();
+        var ids = string.IsNullOrWhiteSpace(filter.CustomerState) ? null : await replyQueries.RecordIdsInStateAsync(CustomerReplyRecordTypes.SalesLead, filter.CustomerState.Trim().ToUpperInvariant(), t);
+        var (items, total) = await repository.SearchLeadsAsync(filter, query, ids, t);
+        return new(await MapLeads(items, await inventory.Totals(items.Select(x => x.Id).ToList(), t), t), total);
+    }
+    public async Task<PagedResult<LeadStatusModel>> SearchLeadStatusesAsync(bool? active, ListQuery query, CancellationToken t) { var (items, total, summary) = await repository.SearchLeadStatusesAsync(active, query.Normalized(), t); return new(items.Select(Map).ToList(), total, summary); }
+    public async Task<PagedResult<FollowUpStatusModel>> SearchFollowUpStatusesAsync(bool? active, ListQuery query, CancellationToken t) { var (items, total, summary) = await repository.SearchFollowUpStatusesAsync(active, query.Normalized(), t); return new(items.Select(Map).ToList(), total, summary); }
+    public async Task<PagedResult<MoveTypeModel>> SearchMoveTypesAsync(bool? active, ListQuery query, CancellationToken t) { var (items, total, summary) = await repository.SearchMoveTypesAsync(active, query.Normalized(), t); return new(items.Select(Map).ToList(), total, summary); }
+    private async Task<IReadOnlyList<SalesLeadModel>> MapLeads(IReadOnlyList<SalesLead> leads, IReadOnlyDictionary<Guid, LeadInventoryTotals> totals, CancellationToken t) { var statuses = (await repository.ListLeadStatusesAsync(t)).ToDictionary(x => x.Id); var moveTypes = (await repository.ListMoveTypesAsync(t)).ToDictionary(x => x.Id); var employees = (await repository.ListEmployeesAsync(t)).ToDictionary(x => x.Id, x => x.FullName); return leads.Select(x => Map(x, statuses[x.StatusId], moveTypes[x.MoveTypeId], x.AssignedEmployeeId.HasValue && employees.TryGetValue(x.AssignedEmployeeId.Value, out var name) ? name : null) with { ExpectedCbm = totals.GetValueOrDefault(x.Id)?.ExpectedCbm ?? 0, FragileItems = totals.GetValueOrDefault(x.Id)?.FragileItems ?? 0 }).ToList(); }
     public async Task<SalesLeadModel> CreateLeadAsync(SaveSalesLeadCommand c, CancellationToken t) { c = c with { LeadNumber = await numbers.Next("LD", t) }; await ValidateLead(null, c, t); var x = new SalesLead(tenantContext.TenantId, c.LeadNumber, c.CustomerName, c.Phone, c.Email, c.Source, c.MoveTypeId, c.Origin, c.Destination, c.ExpectedMoveDate, c.StatusId, c.AssignedEmployeeId, c.Notes); repository.AddLead(x); await repository.SaveChangesAsync(t); return (await ListLeadsAsync(t)).Single(y => y.Id == x.Id); }
     public async Task<SalesLeadModel?> UpdateLeadAsync(Guid id, SaveSalesLeadCommand c, CancellationToken t) { var x = await repository.GetLeadAsync(id, true, t); if (x is null) return null; c = c with { LeadNumber = x.LeadNumber }; await ValidateLead(id, c, t); x.Update(c.LeadNumber, c.CustomerName, c.Phone, c.Email, c.Source, c.MoveTypeId, c.Origin, c.Destination, c.ExpectedMoveDate, c.StatusId, c.AssignedEmployeeId, c.Notes); await repository.SaveChangesAsync(t); return (await ListLeadsAsync(t)).Single(y => y.Id == id); }
     public async Task<SalesLeadModel?> SetLeadActiveAsync(Guid id, bool active, CancellationToken t) { var x = await repository.GetLeadAsync(id, true, t); if (x is null) return null; x.SetActive(active); await repository.SaveChangesAsync(t); return (await ListLeadsAsync(t)).Single(y => y.Id == id); }

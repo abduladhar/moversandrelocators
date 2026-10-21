@@ -12,8 +12,10 @@ public sealed class LeadInventoryRepository(MoversDbContext db) : ILeadInventory
         await (track ? db.Set<SalesLeadInventoryItem>() : db.Set<SalesLeadInventoryItem>().AsNoTracking()).Where(x => x.SalesLeadId == leadId).OrderBy(x => x.SerialNo).ToListAsync(ct);
 
     // Summed in memory: decimal aggregates are not supported by every provider (SQLite).
-    public async Task<IReadOnlyDictionary<Guid, LeadInventoryTotals>> Totals(CancellationToken ct) =>
-        (await db.Set<SalesLeadInventoryItem>().AsNoTracking().Select(x => new { x.SalesLeadId, x.Quantity, x.UnitCbm, x.Fragile }).ToListAsync(ct))
+    public Task<IReadOnlyDictionary<Guid, LeadInventoryTotals>> Totals(CancellationToken ct) => Sum(db.Set<SalesLeadInventoryItem>().AsNoTracking(), ct);
+    public Task<IReadOnlyDictionary<Guid, LeadInventoryTotals>> Totals(IReadOnlyCollection<Guid> leadIds, CancellationToken ct) => Sum(db.Set<SalesLeadInventoryItem>().AsNoTracking().Where(x => leadIds.Contains(x.SalesLeadId)), ct);
+    private static async Task<IReadOnlyDictionary<Guid, LeadInventoryTotals>> Sum(IQueryable<SalesLeadInventoryItem> lines, CancellationToken ct) =>
+        (await lines.Select(x => new { x.SalesLeadId, x.Quantity, x.UnitCbm, x.Fragile }).ToListAsync(ct))
         .GroupBy(x => x.SalesLeadId)
         .ToDictionary(g => g.Key, g => new LeadInventoryTotals(Math.Round(g.Sum(x => x.Quantity * x.UnitCbm), 3), g.Where(x => x.Fragile).Sum(x => x.Quantity)));
 

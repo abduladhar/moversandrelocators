@@ -47,6 +47,10 @@ public sealed class PickupWorkApiTests : IAsyncLifetime
         var pickupId = Id(pickup);
         Assert.Equal(Id(salesLead), pickup.GetProperty("salesLeadId").GetGuid());
         Assert.False(string.IsNullOrEmpty(pickup.GetProperty("leadNumber").GetString()));
+        // The register's server search matches the linked lead's number and returns the same row as the full list.
+        var found = await _client.GetFromJsonAsync<JsonElement>($"/api/pickups/search?search={pickup.GetProperty("leadNumber").GetString()}&sort=statusName");
+        Assert.Equal(1, found.GetProperty("total").GetInt32());
+        Assert.Equal((await Get("/api/pickups")).Single(x => Id(x) == pickupId).GetRawText(), found.GetProperty("items")[0].GetRawText());
 
         // Trip clock with a pause.
         var now = DateTimeOffset.UtcNow;

@@ -16,6 +16,27 @@ public sealed class SecurityController(ISecurityService securityService, IAuditS
     public async Task<ActionResult> Users(CancellationToken cancellationToken) =>
         Ok((await securityService.ListUsersAsync(cancellationToken)).Select(UserResponse.From));
 
+    /// <summary>The Users register's advanced search: search, sort, desc, skip, take, isActive, roleId. Summary: linkedEmployeeIds.</summary>
+    [Authorize(Policy = SecurityPermissions.UsersView)]
+    [HttpGet("users/search")]
+    public async Task<ActionResult> SearchUsers([FromQuery] Movers.Services.Common.ListQuery query, [FromQuery] bool? isActive, [FromQuery] Guid? roleId, CancellationToken cancellationToken)
+    {
+        var page = await securityService.SearchUsersAsync(new UserListFilter(isActive, roleId), query, cancellationToken);
+        return Ok(new Movers.Services.Common.PagedResult<UserResponse>(page.Items.Select(UserResponse.From).ToList(), page.Total, page.Summary));
+    }
+
+    /// <summary>The Roles register's advanced search: search, sort, desc, skip, take, isSystemRole.</summary>
+    [Authorize(Policy = SecurityPermissions.RolesView)]
+    [HttpGet("roles/search")]
+    public async Task<ActionResult> SearchRoles([FromQuery] Movers.Services.Common.ListQuery query, [FromQuery] bool? isSystemRole, CancellationToken cancellationToken) =>
+        Ok(await securityService.SearchRolesAsync(new RoleListFilter(isSystemRole), query, cancellationToken));
+
+    /// <summary>Advanced search over the whole audit log: search, sort, desc, skip, take, action, entityType. Summary: actions, entityTypes.</summary>
+    [Authorize(Policy = SecurityPermissions.AuditView)]
+    [HttpGet("audit/search")]
+    public async Task<ActionResult> SearchAudit([FromQuery] Movers.Services.Common.ListQuery query, [FromQuery(Name = "action")] string? auditAction, [FromQuery] string? entityType, CancellationToken cancellationToken) =>
+        Ok(await auditService.SearchAsync(new AuditListFilter(auditAction, entityType), query, cancellationToken));
+
     [Authorize(Policy = SecurityPermissions.UsersManage)]
     [HttpPost("users")]
     public async Task<ActionResult> CreateUser(CreateUserRequest request, CancellationToken cancellationToken)

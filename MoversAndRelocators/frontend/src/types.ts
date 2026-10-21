@@ -231,3 +231,10 @@ export type PickupWork = { trip: { distanceKm: number | null; isPaused: boolean;
 export type Warehouse = { serialNo: number; id: string; code: string; name: string; address: string | null; isActive: boolean }
 
 
+
+/** The customer side of a record's shared links (see CustomerReplyTag). */
+export type CustomerReplyRecordType = 'SALES_LEAD' | 'QUOTATION' | 'SURVEY' | 'PICKUP' | 'PACKING_JOB' | 'DELIVERY_JOB'
+export type CustomerReplyState = 'PENDING' | 'EXPIRED' | 'REPLIED' | 'ACTION_TAKEN'
+export type CustomerReply = { recordType: CustomerReplyRecordType; recordId: string; state: CustomerReplyState; sharedAtUtc?: string | null; expiresAtUtc?: string | null; repliedAtUtc?: string | null; replyKind?: string | null; replyNote?: string | null; handledAtUtc?: string | null; handledBy?: string | null; handledAction?: string | null; handledNote?: string | null }
+/** One step of a record's customer history. actor is the staff member's name, or CUSTOMER. */
+export type CustomerReplyEvent = { event: 'SHARED' | 'REPLIED' | 'ACTION_TAKEN' | 'WITHDRAWN'; detail?: string | null; note?: string | null; actor: string; atUtc: string; expiresAtUtc?: string | null }

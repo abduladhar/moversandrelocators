@@ -50,6 +50,12 @@ public sealed class TenantServiceTests
         public Task<bool> SlugExistsAsync(string slug, Guid? excludingId, CancellationToken cancellationToken) =>
             Task.FromResult(Items.Any(x => x.Slug == slug && (!excludingId.HasValue || x.Id != excludingId)));
 
+        public Task<(IReadOnlyList<Tenant> Items, int Total)> SearchAsync(TenantListFilter filter, Movers.Services.Common.ListQuery query, CancellationToken cancellationToken) =>
+            Task.FromResult<(IReadOnlyList<Tenant> Items, int Total)>((Items, Items.Count));
+
+        public Task<TenantListSummary> SummaryAsync(CancellationToken cancellationToken) =>
+            Task.FromResult(new TenantListSummary(Items.Count, Items.Count(x => x.IsActive), Items.Count(x => !x.IsActive)));
+
         public void Add(Tenant tenant) => Items.Add(tenant);
 
         public Task SaveChangesAsync(CancellationToken cancellationToken)

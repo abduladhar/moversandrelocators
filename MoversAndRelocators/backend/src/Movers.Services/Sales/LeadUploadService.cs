@@ -1,14 +1,16 @@
 using System.Security.Cryptography;
 using System.Text;
 using Movers.Domain.Configuration;
+using Movers.Domain.CustomerLinks;
 using Movers.Domain.Sales;
 using Movers.Services.Aws;
+using Movers.Services.CustomerLinks;
 using Movers.Services.Tenancy;
 
 namespace Movers.Services.Sales;
 
 public sealed class LeadUploadService(ILeadUploadRepository repository, ITenantContext tenantContext,
-    ISecretProtector protector, IAwsObjectStorage storage, TimeProvider timeProvider, Movers.Services.Tenants.ICompanyScope? companies = null) : ILeadUploadService
+    ISecretProtector protector, IAwsObjectStorage storage, TimeProvider timeProvider, ICustomerReplies replies, Movers.Services.Tenants.ICompanyScope? companies = null) : ILeadUploadService
 {
 
     public async Task<GeneratedUploadLinkModel> GenerateLinkAsync(Guid leadId, int validDays, CancellationToken token, string? requestedItems = null, string? description = null)
@@ -20,7 +22,7 @@ public sealed class LeadUploadService(ILeadUploadRepository repository, ITenantC
         var rawToken = Base64Url(RandomNumberGenerator.GetBytes(32));
         var link = new SalesLeadUploadLink(tenantContext.TenantId, leadId, Hash(rawToken), timeProvider.GetUtcNow().AddDays(validDays));
         link.SetInstructions(OptionalText(requestedItems), OptionalText(description));
-        repository.AddLink(link); await repository.SaveChangesAsync(token);
+        repository.AddLink(link); await replies.SharedAsync(CustomerReplyRecordTypes.SalesLead, leadId, link.ExpiresAtUtc, token); await repository.SaveChangesAsync(token);
         return new GeneratedUploadLinkModel(Map(link), rawToken);
     }
 
@@ -28,7 +30,13 @@ public sealed class LeadUploadService(ILeadUploadRepository repository, ITenantC
         (await repository.ListLinksAsync(leadId, token)).Where(x => !IsStaffLink(x)).Select(Map).ToList();
 
     public async Task<UploadLinkModel?> RevokeLinkAsync(Guid leadId, Guid id, CancellationToken token)
-    { var link = await repository.GetLinkAsync(id, true, token); if (link is null || link.SalesLeadId != leadId) return null; link.Revoke(); await repository.SaveChangesAsync(token); return Map(link); }
+    {
+        var link = await repository.GetLinkAsync(id, true, token); if (link is null || link.SalesLeadId != leadId) return null; link.Revoke();
+        var now = timeProvider.GetUtcNow();
+        if (!(await repository.ListLinksAsync(leadId, token)).Any(x => x.Id != id && x.IsActive && !IsStaffLink(x) && x.ExpiresAtUtc > now))
+            await replies.WithdrawnAsync(CustomerReplyRecordTypes.SalesLead, leadId, token);
+        await repository.SaveChangesAsync(token); return Map(link);
+    }
 
     public async Task<IReadOnlyList<AttachmentModel>> ListAttachmentsAsync(Guid leadId, CancellationToken token) =>
         (await repository.ListAttachmentsAsync(leadId, token)).Select(Map).ToList();
@@ -59,7 +67,8 @@ public sealed class LeadUploadService(ILeadUploadRepository repository, ITenantC
         var info = await storage.GetObjectInfoAsync(Credentials(r.Aws), attachment.S3ObjectKey, cancellationToken)
             ?? throw new InvalidOperationException("The file has not reached storage yet.");
         UploadPolicy.EnsureStoredSize(info, attachment.DeclaredSizeBytes);
-        attachment.MarkUploaded(info.SizeBytes); await repository.SaveChangesAsync(cancellationToken); return Map(attachment) with { ExtractionJson = null };
+        attachment.MarkUploaded(info.SizeBytes); await replies.RepliedAsync(CustomerReplyRecordTypes.SalesLead, r.Lead.Id, CustomerReplyKinds.LeadFiles, attachment.OriginalFileName, cancellationToken);
+        await repository.SaveChangesAsync(cancellationToken); return Map(attachment) with { ExtractionJson = null };
     }
 
     public async Task<string?> CreateDownloadUrlAsync(Guid leadId, Guid attachmentId, CancellationToken cancellationToken)
@@ -114,6 +123,7 @@ public sealed class LeadUploadService(ILeadUploadRepository repository, ITenantC
         var r = await Resolve(token, ct) ?? throw new InvalidOperationException("This upload link is invalid or expired.");
         var link = await repository.GetLinkAsync(r.Link.Id, true, ct) ?? throw new InvalidOperationException("Link not found.");
         link.SetCustomerDetails(OptionalText(items), OptionalText(description));
+        await replies.RepliedAsync(CustomerReplyRecordTypes.SalesLead, r.Lead.Id, CustomerReplyKinds.LeadDetails, description ?? items, ct);
         await repository.SaveChangesAsync(ct);
     }
 

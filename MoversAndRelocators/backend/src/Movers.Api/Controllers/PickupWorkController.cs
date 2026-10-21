@@ -41,6 +41,8 @@ public sealed class PickupWorkController(IPickupWorkService work) : ControllerBa
     [HttpPost("{id:guid}/signoffs")] public Task<ActionResult> Sign(Guid id, PickupSignoffRequest r, CancellationToken t) => Run(() => work.SignAsync(id, r.Command(), t));
     [HttpPost("{id:guid}/warehouse")] public Task<ActionResult> Store(Guid id, StoreInWarehouseRequest r, CancellationToken t) => Run(() => work.StoreAsync(id, r.Command(), t));
     [HttpGet("warehouses")] public async Task<ActionResult> Warehouses(CancellationToken t) => Ok(await work.WarehousesAsync(t));
+    /// <summary>Advanced search: ?search=&amp;sort=&amp;desc=&amp;skip=&amp;take=.</summary>
+    [HttpGet("warehouses/search")] public async Task<ActionResult> SearchWarehouses([FromQuery] Movers.Services.Common.ListQuery query, CancellationToken t) => Ok(await work.SearchWarehousesAsync(query, t));
     [HttpPost("warehouses")] public async Task<ActionResult> CreateWarehouse(SaveWarehouseRequest r, CancellationToken t) { try { return Ok(await work.CreateWarehouseAsync(r.Command(), t)); } catch (InvalidOperationException e) { return BadRequest(new { message = e.Message }); } }
     [HttpPut("warehouses/{warehouseId:guid}")] public Task<ActionResult> UpdateWarehouse(Guid warehouseId, SaveWarehouseRequest r, CancellationToken t) => Run(() => work.UpdateWarehouseAsync(warehouseId, r.Command(), t));
     [HttpPatch("warehouses/{warehouseId:guid}/status")] public Task<ActionResult> WarehouseActive(Guid warehouseId, Contracts.Pickups.SetPickupMasterStatusRequest r, CancellationToken t) => Run(() => work.SetWarehouseActiveAsync(warehouseId, r.IsActive, t));

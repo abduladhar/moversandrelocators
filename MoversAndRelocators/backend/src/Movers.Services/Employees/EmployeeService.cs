@@ -8,6 +8,12 @@ public sealed class EmployeeService(IEmployeeRepository repository, ITenantConte
     public async Task<IReadOnlyList<DesignationModel>> ListDesignationsAsync(CancellationToken cancellationToken) =>
         (await repository.ListDesignationsAsync(cancellationToken)).Select(Map).ToList();
 
+    public async Task<Movers.Services.Common.PagedResult<DesignationModel>> SearchDesignationsAsync(DesignationListFilter filter, Movers.Services.Common.ListQuery query, CancellationToken cancellationToken)
+    {
+        query = query.Normalized(); var (items, total) = await repository.SearchDesignationsAsync(filter, query, cancellationToken);
+        return new(items.Select(Map).ToList(), total, await repository.DesignationSummaryAsync(cancellationToken));
+    }
+
     public async Task<DesignationModel> CreateDesignationAsync(SaveDesignationCommand command, CancellationToken cancellationToken)
     {
         await EnsureDesignationCodeAsync(command.Code, null, cancellationToken);
@@ -36,6 +42,18 @@ public sealed class EmployeeService(IEmployeeRepository repository, ITenantConte
         var names = employees.ToDictionary(x => x.Id, x => x.FullName);
         return employees.Select(x => Map(x, designations[x.DesignationId],
             x.ReportsToEmployeeId.HasValue && names.TryGetValue(x.ReportsToEmployeeId.Value, out var name) ? name : null)).ToList();
+    }
+
+    /// <summary>One page of the Employees register; manager names are loaded for the page's rows only.</summary>
+    public async Task<Movers.Services.Common.PagedResult<EmployeeModel>> SearchEmployeesAsync(EmployeeListFilter filter, Movers.Services.Common.ListQuery query, CancellationToken cancellationToken)
+    {
+        query = query.Normalized(); var (items, total) = await repository.SearchEmployeesAsync(filter, query, cancellationToken);
+        var designations = (await repository.ListDesignationsAsync(cancellationToken)).ToDictionary(x => x.Id);
+        var managerIds = items.Where(x => x.ReportsToEmployeeId.HasValue).Select(x => x.ReportsToEmployeeId!.Value).Distinct().ToList();
+        var names = (await repository.ListEmployeesByIdsAsync(managerIds, cancellationToken)).ToDictionary(x => x.Id, x => x.FullName);
+        return new(items.Select(x => Map(x, designations[x.DesignationId],
+            x.ReportsToEmployeeId.HasValue && names.TryGetValue(x.ReportsToEmployeeId.Value, out var name) ? name : null)).ToList(),
+            total, await repository.EmployeeSummaryAsync(cancellationToken));
     }
 
     public async Task<EmployeeModel?> GetEmployeeAsync(Guid id, CancellationToken cancellationToken)

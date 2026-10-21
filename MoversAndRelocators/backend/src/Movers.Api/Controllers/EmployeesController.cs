@@ -16,6 +16,12 @@ public sealed class EmployeesController(IEmployeeService service) : ControllerBa
     public async Task<ActionResult> List(CancellationToken cancellationToken) =>
         Ok(await service.ListEmployeesAsync(cancellationToken));
 
+    /// <summary>The register's advanced search: search, sort, desc, skip, take, isActive, designationId, managerId (reports to).</summary>
+    [Authorize(Policy = SecurityPermissions.EmployeesView)]
+    [HttpGet("search")]
+    public async Task<ActionResult> Search([FromQuery] Movers.Services.Common.ListQuery query, [FromQuery] bool? isActive, [FromQuery] Guid? designationId, [FromQuery] Guid? managerId, CancellationToken cancellationToken) =>
+        Ok(await service.SearchEmployeesAsync(new EmployeeListFilter(isActive, designationId, managerId), query, cancellationToken));
+
     [Authorize(Policy = SecurityPermissions.EmployeesView)]
     [HttpGet("{id:guid}")]
     public async Task<ActionResult> Get(Guid id, CancellationToken cancellationToken)

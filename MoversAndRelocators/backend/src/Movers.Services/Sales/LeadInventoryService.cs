@@ -29,6 +29,8 @@ public interface ILeadInventoryRepository
 {
     Task<IReadOnlyList<SalesLeadInventoryItem>> Lines(Guid leadId, bool track, CancellationToken ct);
     Task<IReadOnlyDictionary<Guid, LeadInventoryTotals>> Totals(CancellationToken ct);
+    /// <summary>Totals of the given leads only (one page of the leads list).</summary>
+    Task<IReadOnlyDictionary<Guid, LeadInventoryTotals>> Totals(IReadOnlyCollection<Guid> leadIds, CancellationToken ct);
     void Add(SalesLeadInventoryItem line);
     void Remove(SalesLeadInventoryItem line);
     Task Save(CancellationToken ct);
@@ -40,7 +42,7 @@ public interface ILeadInventoryRepository
 /// master when the name matches, otherwise from the AI estimate; boxes use the box type's capacity.
 /// </summary>
 public sealed class LeadInventoryService(ILeadInventoryRepository repository, ISalesRepository leads, ISurveyRepository surveys, IPackingRepository packing, Movers.Services.OpenAi.AiUsageService usage, ITenantContext tenant,
-    ILeadUploadRepository uploads, IAwsObjectStorage storage, Movers.Services.Aws.ISecretProtector protector, TimeProvider clock)
+    ILeadUploadRepository uploads, IAwsObjectStorage storage, Movers.Services.Aws.ISecretProtector protector, TimeProvider clock, Movers.Services.CustomerLinks.ICustomerReplies replies)
 {
     public const int MaxLines = 500;
 
@@ -109,7 +111,13 @@ public sealed class LeadInventoryService(ILeadInventoryRepository repository, IS
         var now = clock.GetUtcNow();
         var applied = 0;
         foreach (var d in decisions) if (lines.TryGetValue(d.LineId, out var line)) { line.SetCustomerDecision(d.Needed, d.Note, now); applied++; }
-        if (applied > 0) await repository.Save(ct);
+        if (applied > 0)
+        {
+            var dropped = decisions.Count(d => !d.Needed && lines.ContainsKey(d.LineId));
+            await replies.RepliedAsync(Movers.Domain.CustomerLinks.CustomerReplyRecordTypes.SalesLead, leadId, Movers.Services.CustomerLinks.CustomerReplyKinds.LeadInventory,
+                dropped > 0 ? $"{dropped} of {applied} lines not needed" : null, ct);
+            await repository.Save(ct);
+        }
         return applied;
     }
 

@@ -10,6 +10,7 @@ namespace Movers.Api.Controllers;
 public sealed class ChargeMastersController(IQuotationService service) : ControllerBase
 {
     [HttpGet] public async Task<ActionResult> List(CancellationToken t) => Ok(await service.ListChargesAsync(t));
+    [HttpGet("search")] public async Task<ActionResult> Search([FromQuery] Movers.Services.Common.ListQuery query, [FromQuery] bool? active, CancellationToken t) => await Run(() => service.SearchChargesAsync(active, query, t));
     [HttpPost] public async Task<ActionResult> Create(SaveChargeRequest r, CancellationToken t) => await Run(() => service.CreateChargeAsync(r.ToCommand(), t));
     [HttpPut("{id:guid}")] public async Task<ActionResult> Update(Guid id, SaveChargeRequest r, CancellationToken t) => await RunNullable(() => service.UpdateChargeAsync(id, r.ToCommand(), t));
     [HttpPatch("{id:guid}/status")] public async Task<ActionResult> Status(Guid id, SetChargeStatusRequest r, CancellationToken t) => await RunNullable(() => service.SetChargeActiveAsync(id, r.IsActive, t));

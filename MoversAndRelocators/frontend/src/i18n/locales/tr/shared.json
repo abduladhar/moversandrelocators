@@ -8,5 +8,72 @@
     "noCustomerMaster": "Bağlı müşteri kaydı yok.", "noVendorMaster": "Bağlı tedarikçi kaydı yok.",
     "noBaseAmount": "Dönüştürme için kayıtlı temel tutar yok.", "noTransactionDate": "Dönüştürme için işlem tarihi yok.",
     "noRate": "{date} tarihinde geçerli {currency} döviz kuru yok."
+  },
+  "customerReplies": {
+    "title": "Müşteri yanıtı",
+    "filter": "Müşteri yanıtı",
+    "state": {
+      "PENDING": "Müşteri işlemi bekleniyor",
+      "REPLIED": "Müşteri yanıtladı – işlem gerekli",
+      "EXPIRED": "Bağlantı süresi doldu – yanıt yok",
+      "ACTION_TAKEN": "İşlem yapıldı"
+    },
+    "banner": {
+      "PENDING": "Müşteri bekleniyor: bir bağlantı paylaşıldı ve henüz yanıt vermedi.",
+      "REPLIED": "Müşteri yanıtladı. Yanıtı inceleyin, gereken işlemi yapın ve ardından ele alındı olarak işaretleyin.",
+      "EXPIRED": "Müşteri bağlantısının süresi yanıt gelmeden doldu. Yeni bir bağlantı paylaşın veya müşteriyle iletişime geçin.",
+      "ACTION_TAKEN": "Müşterinin yanıtı üzerine işlem yapıldı."
+    },
+    "markHandled": "İşlem yapıldı olarak kaydet",
+    "handled": "İşlem kaydedildi.",
+    "handleFailed": "İşlem kaydedilemedi.",
+    "repliedAt": "Yanıt: {date}",
+    "sharedAt": "Bağlantı paylaşıldı: {date}",
+    "expiresAt": "Bağlantının bitişi: {date}",
+    "expiredAt": "Bağlantının süresi doldu: {date}",
+    "kind": {
+      "LEAD_DETAILS": "Taşınma ayrıntılarını gönderdi",
+      "LEAD_FILES": "Bir dosya yükledi",
+      "LEAD_INVENTORY": "Envanteri inceledi",
+      "QUOTATION_ACCEPTED": "Teklifi kabul etti",
+      "QUOTATION_REJECTED": "Teklifi reddetti",
+      "QUOTATION_REQUOTE": "Yeniden fiyat istedi",
+      "SURVEY_SCHEDULE": "Ekspertiz tarihini onayladı",
+      "SURVEY_ITEMS": "Ekspertiz kalemlerini onayladı",
+      "SURVEY_CHANGES": "Kalem değişikliği istedi",
+      "SURVEY_FILES": "Bir dosya yükledi",
+      "PICKUP_CONFIRMED": "Teslim almayı onayladı",
+      "PACKING_LIST_CONFIRMED": "Paketleme listesini onayladı",
+      "PACKING_LIST_DISPUTED": "Paketleme listesine itiraz etti",
+      "PACKING_SCHEDULE": "Paketleme tarihini onayladı",
+      "PACKING_LOCATION": "Paketleme konumunu paylaştı",
+      "PACKING_ITEMS_CONFIRMED": "Paketlenen kalemleri onayladı",
+      "PACKING_ITEMS_CORRECTIONS": "Paketlenen kalemlerde düzeltme istedi",
+      "DELIVERY_CONFIRMED": "Teslimat saatini onayladı",
+      "DELIVERY_RESCHEDULE": "Başka bir teslimat saati istedi",
+      "DELIVERY_LOCATION": "Teslimat konumunu paylaştı"
+    },
+    "actionNote": "Ne yapıldı",
+    "actionNotePlaceholder": "Ne yapıldı? (isteğe bağlı) ör. Müşteri arandı ve fiyat güncellendi",
+    "actionBy": "{name}, {date}",
+    "viewHistory": "Geçmişi görüntüle",
+    "history": "Geçmiş",
+    "historyTitle": "Müşteri geçmişi",
+    "historyFailed": "Geçmiş yüklenemedi.",
+    "noHistory": "Henüz geçmiş yok.",
+    "customer": "Müşteri",
+    "action": {
+      "MARKED": "İşlem yapıldı",
+      "REQUOTE_APPLIED": "Yeniden fiyatlandırma uygulandı",
+      "QUOTATION_REVISED": "Teklif revize edildi",
+      "SURVEY_CHANGES_APPLIED": "Ekspertiz değişiklikleri uygulandı",
+      "SURVEY_CHANGES_DISMISSED": "Ekspertiz değişiklikleri reddedildi"
+    },
+    "event": {
+      "SHARED": "Bağlantıyı {name} paylaştı",
+      "REPLIED": "Müşteri: {what}",
+      "ACTION_TAKEN": "{what} – {name}",
+      "WITHDRAWN": "Bağlantıları {name} iptal etti"
+    }
   }
 }

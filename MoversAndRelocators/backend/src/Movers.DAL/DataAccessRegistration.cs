@@ -50,6 +50,10 @@ public static class DataAccessRegistration
         services.AddScoped<ILeadUploadRepository, LeadUploadRepository>();
         services.AddScoped<ITodayTaskSource, SalesFollowUpTaskSource>();
         services.AddScoped<ITodayTaskSource, SurveyTaskSource>();
+        services.AddScoped<Movers.DAL.CustomerLinks.CustomerReplyStore>();
+        services.AddScoped<Movers.Services.CustomerLinks.ICustomerReplies>(x => x.GetRequiredService<Movers.DAL.CustomerLinks.CustomerReplyStore>());
+        services.AddScoped<Movers.Services.CustomerLinks.ICustomerReplyQueries>(x => x.GetRequiredService<Movers.DAL.CustomerLinks.CustomerReplyStore>());
+        services.AddScoped<ITodayTaskSource, Movers.DAL.CustomerLinks.CustomerReplyTaskSource>();
         services.AddScoped<ISurveyRepository, SurveyRepository>();
         services.AddScoped<IQuotationRepository, QuotationRepository>();
         services.AddScoped<IPickupRepository, PickupRepository>();
@@ -134,7 +138,9 @@ public static class DataAccessRegistration
         await Movers.DAL.Persistence.LeadInventorySchema.Apply(db);
         await Movers.DAL.Persistence.AiUsageSchema.Apply(db);
         await Movers.DAL.Persistence.ClaudeSchema.Apply(db);
+        await Movers.DAL.Persistence.CustomerReplySchema.Apply(db); // creates its table with CompanyId, so before CompanySchema indexes it
         await Movers.DAL.Persistence.CompanySchema.Apply(db);
+        await Movers.DAL.Persistence.CustomerReplySchema.Backfill(db);
         await Movers.DAL.Persistence.EmployeeExpenseSchema.Apply(db);
         await Movers.DAL.Numbering.NumberSequenceRepository.Initialize(db);
         var seeder = scope.ServiceProvider.GetRequiredService<SecuritySeeder>();

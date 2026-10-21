@@ -16,6 +16,12 @@ public sealed class DesignationsController(IEmployeeService service) : Controlle
     public async Task<ActionResult> List(CancellationToken cancellationToken) =>
         Ok(await service.ListDesignationsAsync(cancellationToken));
 
+    /// <summary>The register's advanced search: search, sort, desc, skip, take, isActive, level.</summary>
+    [Authorize(Policy = SecurityPermissions.EmployeesView)]
+    [HttpGet("search")]
+    public async Task<ActionResult> Search([FromQuery] Movers.Services.Common.ListQuery query, [FromQuery] bool? isActive, [FromQuery] int? level, CancellationToken cancellationToken) =>
+        Ok(await service.SearchDesignationsAsync(new DesignationListFilter(isActive, level), query, cancellationToken));
+
     [Authorize(Policy = SecurityPermissions.DesignationsManage)]
     [HttpPost]
     public async Task<ActionResult> Create(SaveDesignationRequest request, CancellationToken cancellationToken)

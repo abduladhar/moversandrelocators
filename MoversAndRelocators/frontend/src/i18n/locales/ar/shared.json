@@ -8,5 +8,72 @@
     "noCustomerMaster": "لا يوجد سجل عميل مرتبط.", "noVendorMaster": "لا يوجد سجل مورد مرتبط.",
     "noBaseAmount": "لا يوجد مبلغ أساسي محفوظ للتحويل.", "noTransactionDate": "لا يوجد تاريخ معاملة للتحويل.",
     "noRate": "لا يوجد سعر صرف لعملة {currency} ساري بتاريخ {date}."
+  },
+  "customerReplies": {
+    "title": "رد العميل",
+    "filter": "رد العميل",
+    "state": {
+      "PENDING": "بانتظار إجراء العميل",
+      "REPLIED": "ردّ العميل – يلزم إجراء",
+      "EXPIRED": "انتهت صلاحية الرابط – لا رد",
+      "ACTION_TAKEN": "تم اتخاذ إجراء"
+    },
+    "banner": {
+      "PENDING": "بانتظار العميل: تمت مشاركة رابط ولم يرد بعد.",
+      "REPLIED": "ردّ العميل. راجع الرد واتخذ الإجراء اللازم، ثم علّمه كمُعالَج.",
+      "EXPIRED": "انتهت صلاحية رابط العميل دون رد. شارك رابطًا جديدًا أو تابع مع العميل.",
+      "ACTION_TAKEN": "تم اتخاذ إجراء بشأن رد العميل."
+    },
+    "markHandled": "تسجيل الإجراء المتخذ",
+    "handled": "تم تسجيل الإجراء.",
+    "handleFailed": "تعذّر تسجيل الإجراء.",
+    "repliedAt": "ردّ في {date}",
+    "sharedAt": "تمت مشاركة الرابط في {date}",
+    "expiresAt": "تنتهي صلاحية الرابط في {date}",
+    "expiredAt": "انتهت صلاحية الرابط في {date}",
+    "kind": {
+      "LEAD_DETAILS": "أرسل تفاصيل النقل",
+      "LEAD_FILES": "رفع ملفًا",
+      "LEAD_INVENTORY": "راجع قائمة المحتويات",
+      "QUOTATION_ACCEPTED": "قبل عرض السعر",
+      "QUOTATION_REJECTED": "رفض عرض السعر",
+      "QUOTATION_REQUOTE": "طلب إعادة التسعير",
+      "SURVEY_SCHEDULE": "أكّد موعد المعاينة",
+      "SURVEY_ITEMS": "أكّد عناصر المعاينة",
+      "SURVEY_CHANGES": "طلب تغييرات على العناصر",
+      "SURVEY_FILES": "رفع ملفًا",
+      "PICKUP_CONFIRMED": "أكّد الاستلام",
+      "PACKING_LIST_CONFIRMED": "أكّد قائمة التغليف",
+      "PACKING_LIST_DISPUTED": "اعترض على قائمة التغليف",
+      "PACKING_SCHEDULE": "أكّد موعد التغليف",
+      "PACKING_LOCATION": "شارك موقع التغليف",
+      "PACKING_ITEMS_CONFIRMED": "أكّد العناصر المغلّفة",
+      "PACKING_ITEMS_CORRECTIONS": "طلب تصحيحات على العناصر المغلّفة",
+      "DELIVERY_CONFIRMED": "أكّد موعد التسليم",
+      "DELIVERY_RESCHEDULE": "طلب موعد تسليم آخر",
+      "DELIVERY_LOCATION": "شارك موقع التسليم"
+    },
+    "actionNote": "ما الذي تم",
+    "actionNotePlaceholder": "ما الذي تم؟ (اختياري) مثال: تم الاتصال بالعميل وتعديل السعر",
+    "actionBy": "بواسطة {name} في {date}",
+    "viewHistory": "عرض السجل",
+    "history": "السجل",
+    "historyTitle": "سجل العميل",
+    "historyFailed": "تعذّر تحميل السجل.",
+    "noHistory": "لا يوجد سجل بعد.",
+    "customer": "العميل",
+    "action": {
+      "MARKED": "تم اتخاذ إجراء",
+      "REQUOTE_APPLIED": "تم تطبيق إعادة التسعير",
+      "QUOTATION_REVISED": "تم تعديل عرض السعر",
+      "SURVEY_CHANGES_APPLIED": "تم تطبيق تغييرات المعاينة",
+      "SURVEY_CHANGES_DISMISSED": "تم تجاهل تغييرات المعاينة"
+    },
+    "event": {
+      "SHARED": "شارك {name} الرابط",
+      "REPLIED": "العميل: {what}",
+      "ACTION_TAKEN": "{what} بواسطة {name}",
+      "WITHDRAWN": "ألغى {name} الروابط"
+    }
   }
 }

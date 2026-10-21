@@ -1,21 +1,25 @@
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
+using Movers.Domain.CustomerLinks;
 using Movers.Domain.Quotations;
 using Movers.Domain.Sales;
 using Movers.Domain.Surveys;
+using Movers.Services.CustomerLinks;
 using Movers.Services.Security;
 using Movers.Services.Tenancy;
 
 namespace Movers.Services.Quotations;
 
-public sealed class QuotationService(IQuotationRepository repository, ITenantContext tenantContext, IUserContext userContext, TimeProvider timeProvider, Movers.Services.Numbering.IRecordNumbers numbers, Movers.Services.Currencies.CurrencyService currencies, Movers.Services.Tenants.ICompanyScope? companies = null, Movers.Services.OpenAi.AiUsageService? aiUsage = null) : IQuotationService
+public sealed class QuotationService(IQuotationRepository repository, ITenantContext tenantContext, IUserContext userContext, TimeProvider timeProvider, Movers.Services.Numbering.IRecordNumbers numbers, Movers.Services.Currencies.CurrencyService currencies, ICustomerReplies replies, ICustomerReplyQueries replyQueries, Movers.Services.Tenants.ICompanyScope? companies = null, Movers.Services.OpenAi.AiUsageService? aiUsage = null) : IQuotationService
 {
     public async Task<IReadOnlyList<ChargeModel>> ListChargesAsync(CancellationToken t) => (await repository.ListChargesAsync(t)).Select(Map).ToList();
     public async Task<ChargeModel> CreateChargeAsync(SaveChargeCommand c, CancellationToken t) { ValidateCharge(c); await UniqueCharge(c.Code, null, t); var x = new ChargeMaster(tenantContext.TenantId, c.Code, c.Name, c.Unit, c.DefaultRate, c.TaxPercent, c.Description); repository.AddCharge(x); await repository.SaveChangesAsync(t); return Map(x); }
     public async Task<ChargeModel?> UpdateChargeAsync(Guid id, SaveChargeCommand c, CancellationToken t) { ValidateCharge(c); var x = await repository.GetChargeAsync(id, true, t); if (x is null) return null; await UniqueCharge(c.Code, id, t); x.Update(c.Code, c.Name, c.Unit, c.DefaultRate, c.TaxPercent, c.Description); await repository.SaveChangesAsync(t); return Map(x); }
     public async Task<ChargeModel?> SetChargeActiveAsync(Guid id, bool active, CancellationToken t) { var x = await repository.GetChargeAsync(id, true, t); if (x is null) return null; x.SetActive(active); await repository.SaveChangesAsync(t); return Map(x); }
     public async Task<IReadOnlyList<TaxModel>> ListTaxesAsync(CancellationToken t) => (await repository.ListTaxesAsync(t)).Select(MapTax).ToList();
+    public async Task<Movers.Services.Common.PagedResult<ChargeModel>> SearchChargesAsync(bool? active, Movers.Services.Common.ListQuery query, CancellationToken t) { var (items, total) = await repository.SearchChargesAsync(active, query.Normalized(), t); return new(items.Select(Map).ToList(), total); }
+    public async Task<Movers.Services.Common.PagedResult<TaxModel>> SearchTaxesAsync(string? kind, Movers.Services.Common.ListQuery query, CancellationToken t) { var (items, total) = await repository.SearchTaxesAsync(kind, query.Normalized(), t); return new(items.Select(MapTax).ToList(), total); }
     public async Task<TaxModel> CreateTaxAsync(SaveTaxCommand c, CancellationToken t) { ValidateTax(c); await UniqueTax(c.Code, null, t); var x = new TaxMaster(tenantContext.TenantId, c.Code, c.Name, c.Kind, c.CalculationBasis, c.Rate, c.IsDefault, c.Description); repository.AddTax(x); await repository.SaveChangesAsync(t); return MapTax(x); }
     public async Task<TaxModel?> UpdateTaxAsync(Guid id, SaveTaxCommand c, CancellationToken t) { ValidateTax(c); var x = await repository.GetTaxAsync(id, true, t); if (x is null) return null; await UniqueTax(c.Code, id, t); x.Update(c.Code, c.Name, c.Kind, c.CalculationBasis, c.Rate, c.IsDefault, c.Description); await repository.SaveChangesAsync(t); return MapTax(x); }
     public async Task<TaxModel?> SetTaxActiveAsync(Guid id, bool active, CancellationToken t) { var x = await repository.GetTaxAsync(id, true, t); if (x is null) return null; x.SetActive(active); await repository.SaveChangesAsync(t); return MapTax(x); }
@@ -23,6 +27,13 @@ public sealed class QuotationService(IQuotationRepository repository, ITenantCon
     public async Task<IReadOnlyList<QuotationModel>> ListAsync(CancellationToken t)
     {
         var restriction = await EmployeeRestriction(t); var quotes = await repository.ListQuotationsAsync(restriction, t); return await MapQuotes(quotes, t);
+    }
+    public async Task<Movers.Services.Common.PagedResult<QuotationModel>> SearchAsync(QuotationListFilter filter, Movers.Services.Common.ListQuery query, CancellationToken t)
+    {
+        query = query.Normalized(); var restriction = await EmployeeRestriction(t);
+        var ids = string.IsNullOrWhiteSpace(filter.CustomerState) ? null : await replyQueries.RecordIdsInStateAsync(CustomerReplyRecordTypes.Quotation, filter.CustomerState.Trim().ToUpperInvariant(), t);
+        var (items, total) = await repository.SearchQuotationsAsync(restriction, filter, query, ids, t);
+        return new(await MapQuotes(items, t), total);
     }
     public async Task<QuotationDetailModel?> GetAsync(Guid id, CancellationToken t) => await LoadDetail(id, await EmployeeRestriction(t), t);
     public async Task<QuotationModel> CreateAsync(SaveQuotationCommand c, CancellationToken t)
@@ -54,6 +65,8 @@ public sealed class QuotationService(IQuotationRepository repository, ITenantCon
         repository.AddQuotation(quote);
         repository.AddLines(lines); repository.AddLineTaxes(taxes);
         repository.AddQuotationItems(items.Select(x => new QuotationItem(tenantContext.TenantId, quote.Id, x.HouseholdItemId, x.RoomName, x.ItemName, x.Quantity, x.VolumePerUnitCbm, x.Notes, x.DisplayOrder)));
+        // Revising is the office's answer to the rejection.
+        await replies.HandledAsync(CustomerReplyRecordTypes.Quotation, source.Id, CustomerReplyActions.QuotationRevised, t);
         // Persist the draft, copied items, charges, taxes and audit records atomically.
         await repository.SaveChangesAsync(t);
         return (await MapQuotes([quote], t)).Single();
@@ -82,7 +95,7 @@ public sealed class QuotationService(IQuotationRepository repository, ITenantCon
     }
     public async Task<GeneratedQuotationLinkModel> GenerateLinkAsync(Guid id, int validDays, CancellationToken t)
     {
-        if (validDays is < 1 or > 30) throw new InvalidOperationException("Quotation links must be valid for 1 to 30 days."); var restriction = await EmployeeRestriction(t); var quote = await repository.GetQuotationAsync(id, true, restriction, t) ?? throw new InvalidOperationException("Quotation was not found."); if (!(await repository.ListLinesAsync(id, t)).Any()) throw new InvalidOperationException("Add charges before sharing the quotation."); var latestRequest = (await repository.ListRequoteRequestsAsync(id, t)).FirstOrDefault(); if (quote.Status == QuotationStatuses.RequoteRequested && latestRequest is { AppliedAtUtc: null }) throw new InvalidOperationException("Apply the latest customer item changes and recalculate the quotation before resending."); var raw = Base64Url(RandomNumberGenerator.GetBytes(32)); var expires = timeProvider.GetUtcNow().AddDays(validDays); quote.Share(Hash(raw), expires); await repository.SaveChangesAsync(t); return new(raw, expires);
+        if (validDays is < 1 or > 30) throw new InvalidOperationException("Quotation links must be valid for 1 to 30 days."); var restriction = await EmployeeRestriction(t); var quote = await repository.GetQuotationAsync(id, true, restriction, t) ?? throw new InvalidOperationException("Quotation was not found."); if (!(await repository.ListLinesAsync(id, t)).Any()) throw new InvalidOperationException("Add charges before sharing the quotation."); var latestRequest = (await repository.ListRequoteRequestsAsync(id, t)).FirstOrDefault(); if (quote.Status == QuotationStatuses.RequoteRequested && latestRequest is { AppliedAtUtc: null }) throw new InvalidOperationException("Apply the latest customer item changes and recalculate the quotation before resending."); var raw = Base64Url(RandomNumberGenerator.GetBytes(32)); var expires = timeProvider.GetUtcNow().AddDays(validDays); quote.Share(Hash(raw), expires); await replies.SharedAsync(CustomerReplyRecordTypes.Quotation, quote.Id, expires, t); await repository.SaveChangesAsync(t); return new(raw, expires);
     }
     public async Task<QuotationDetailModel?> SaveItemsAsync(Guid id, IReadOnlyList<SaveQuotationItemCommand> commands, CancellationToken t)
     {
@@ -138,12 +151,12 @@ public sealed class QuotationService(IQuotationRepository repository, ITenantCon
         var restriction = await EmployeeRestriction(t); var quote = await repository.GetQuotationAsync(quotationId, true, restriction, t); if (quote is null) return null; if (quote.Status != QuotationStatuses.RequoteRequested || !quote.SurveyId.HasValue) throw new InvalidOperationException("This quotation does not have a pending customer requote request.");
         var latest = (await repository.ListRequoteRequestsAsync(quotationId, t)).FirstOrDefault() ?? throw new InvalidOperationException("The requote request was not found."); if (latest.Id != requestId) throw new InvalidOperationException("Only the latest customer requote request can be applied."); var request = await repository.GetRequoteRequestAsync(quotationId, requestId, true, t) ?? throw new InvalidOperationException("The requote request was not found."); if (request.AppliedAtUtc.HasValue) throw new InvalidOperationException("This requote request has already been applied.");
         var requested = JsonSerializer.Deserialize<List<RequoteStoredItem>>(request.ItemsJson) ?? []; var surveyItems = await repository.ListSurveyItemsForUpdateAsync(quote.SurveyId.Value, t); var remove = new List<SurveyItem>(); foreach (var change in requested) { var item = surveyItems.SingleOrDefault(x => x.Id == change.SurveyItemId) ?? throw new InvalidOperationException("A requested survey item no longer exists."); if (change.RequestedQuantity == 0) remove.Add(item); else item.ApplyRequoteChange(change.RequestedQuantity, change.Notes); } if (remove.Count > 0) repository.RemoveSurveyItems(remove); var survey = await repository.GetSurveyForUpdateAsync(quote.SurveyId.Value, t); survey?.RecordRequoteInventoryChange(); request.MarkApplied();
-        var newVolume = surveyItems.Except(remove).Sum(x => x.Quantity * x.VolumePerUnitCbm); var existingLines = await repository.ListLinesAsync(quotationId, t); var existingTaxes = await repository.ListLineTaxesAsync(existingLines.Select(x => x.Id).ToList(), t); await repository.SaveChangesAsync(t);
+        var newVolume = surveyItems.Except(remove).Sum(x => x.Quantity * x.VolumePerUnitCbm); var existingLines = await repository.ListLinesAsync(quotationId, t); var existingTaxes = await repository.ListLineTaxesAsync(existingLines.Select(x => x.Id).ToList(), t); await replies.HandledAsync(CustomerReplyRecordTypes.Quotation, quotationId, CustomerReplyActions.RequoteApplied, t); await repository.SaveChangesAsync(t);
         var commands = existingLines.Select(line => new SaveQuotationLineCommand(line.ChargeMasterId, line.Description, line.Unit.Equals("CBM", StringComparison.OrdinalIgnoreCase) ? newVolume : line.Quantity, line.Rate, line.DiscountPercent, existingTaxes.Where(x => x.QuotationLineId == line.Id).Select(x => x.TaxMasterId).ToList(), line.DisplayOrder)).ToList(); return await SaveLinesAsync(quotationId, commands, t);
     }
     public async Task<PublicQuotationModel?> GetPublicAsync(string token, CancellationToken t) { var r = await Resolve(token, t); return r is null ? null : await MapPublic(r.Value.Quotation, r.Value.TenantName, t); }
-    public async Task<PublicQuotationModel?> AcceptAsync(string token, CancellationToken t) { var r = await Resolve(token, t); if (r is null) return null; var quote = await repository.GetQuotationAsync(r.Value.Quotation.Id, true, null, t); if (quote is null) return null; quote.Accept(); await repository.SaveChangesAsync(t); return await MapPublic(quote, r.Value.TenantName, t); }
-    public async Task<PublicQuotationModel?> RejectAsync(string token, string reason, CancellationToken t) { var r = await Resolve(token, t); if (r is null) return null; var quote = await repository.GetQuotationAsync(r.Value.Quotation.Id, true, null, t); if (quote is null) return null; quote.Reject(reason); await repository.SaveChangesAsync(t); return await MapPublic(quote, r.Value.TenantName, t); }
+    public async Task<PublicQuotationModel?> AcceptAsync(string token, CancellationToken t) { var r = await Resolve(token, t); if (r is null) return null; var quote = await repository.GetQuotationAsync(r.Value.Quotation.Id, true, null, t); if (quote is null) return null; quote.Accept(); await replies.RepliedAsync(CustomerReplyRecordTypes.Quotation, quote.Id, CustomerReplyKinds.QuotationAccepted, null, t); await repository.SaveChangesAsync(t); return await MapPublic(quote, r.Value.TenantName, t); }
+    public async Task<PublicQuotationModel?> RejectAsync(string token, string reason, CancellationToken t) { var r = await Resolve(token, t); if (r is null) return null; var quote = await repository.GetQuotationAsync(r.Value.Quotation.Id, true, null, t); if (quote is null) return null; quote.Reject(reason); await replies.RepliedAsync(CustomerReplyRecordTypes.Quotation, quote.Id, CustomerReplyKinds.QuotationRejected, reason, t); await repository.SaveChangesAsync(t); return await MapPublic(quote, r.Value.TenantName, t); }
     public async Task<PublicQuotationModel?> RequestRequoteAsync(string token, SubmitRequoteCommand command, CancellationToken t)
     {
         var r = await Resolve(token, t); if (r is null) return null; var quote = await repository.GetQuotationAsync(r.Value.Quotation.Id, true, null, t); if (quote is null || !quote.SurveyId.HasValue) return null;
@@ -151,7 +164,7 @@ public sealed class QuotationService(IQuotationRepository repository, ITenantCon
         if (command.Items.Count == 0) throw new InvalidOperationException("Submit at least one surveyed item."); if (command.Items.Select(x => x.SurveyItemId).Distinct().Count() != command.Items.Count) throw new InvalidOperationException("Duplicate surveyed items are not allowed.");
         var stored = new List<RequoteStoredItem>(); foreach (var requested in command.Items) { var item = surveyItems.SingleOrDefault(x => x.Id == requested.SurveyItemId) ?? throw new InvalidOperationException("A submitted item does not belong to this survey."); if (requested.RequestedQuantity is < 0 or > 10000) throw new InvalidOperationException("Requested item quantities must be between 0 and 10,000."); stored.Add(new(item.Id, roomNames.GetValueOrDefault(item.RoomId) ?? "Room", masters.GetValueOrDefault(item.HouseholdItemId) ?? "Item", item.Quantity, requested.RequestedQuantity, Clean(requested.Notes))); }
         if (stored.All(x => x.OriginalQuantity == x.RequestedQuantity) && string.IsNullOrWhiteSpace(command.CustomerNotes) && stored.All(x => string.IsNullOrWhiteSpace(x.Notes))) throw new InvalidOperationException("Change an item quantity or add a note before requesting a requote.");
-        quote.RequestRequote(); repository.AddRequoteRequest(new QuotationRequoteRequest(quote.TenantId, quote.Id, JsonSerializer.Serialize(stored), command.CustomerNotes)); await repository.SaveChangesAsync(t); return await MapPublic(quote, r.Value.TenantName, t);
+        quote.RequestRequote(); repository.AddRequoteRequest(new QuotationRequoteRequest(quote.TenantId, quote.Id, JsonSerializer.Serialize(stored), command.CustomerNotes)); await replies.RepliedAsync(CustomerReplyRecordTypes.Quotation, quote.Id, CustomerReplyKinds.QuotationRequote, command.CustomerNotes, t); await repository.SaveChangesAsync(t); return await MapPublic(quote, r.Value.TenantName, t);
     }
 
     private async Task<Guid?> EmployeeRestriction(CancellationToken t)

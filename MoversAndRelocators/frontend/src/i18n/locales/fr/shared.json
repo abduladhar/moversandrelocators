@@ -8,5 +8,72 @@
     "noCustomerMaster": "Aucune fiche client liée.", "noVendorMaster": "Aucune fiche fournisseur liée.",
     "noBaseAmount": "Aucun montant de base enregistré pour la conversion.", "noTransactionDate": "Aucune date de transaction pour la conversion.",
     "noRate": "Aucun taux de change {currency} valable au {date}."
+  },
+  "customerReplies": {
+    "title": "Réponse du client",
+    "filter": "Réponse du client",
+    "state": {
+      "PENDING": "Action du client en attente",
+      "REPLIED": "Le client a répondu – action requise",
+      "EXPIRED": "Lien expiré – sans réponse",
+      "ACTION_TAKEN": "Action effectuée"
+    },
+    "banner": {
+      "PENDING": "En attente du client : un lien a été partagé et il n’a pas encore répondu.",
+      "REPLIED": "Le client a répondu. Examinez la réponse, effectuez l’action nécessaire, puis marquez-la comme traitée.",
+      "EXPIRED": "Le lien du client a expiré sans réponse. Partagez un nouveau lien ou relancez le client.",
+      "ACTION_TAKEN": "Une action a été effectuée suite à la réponse du client."
+    },
+    "markHandled": "Enregistrer l’action effectuée",
+    "handled": "Action enregistrée.",
+    "handleFailed": "Impossible d’enregistrer l’action.",
+    "repliedAt": "Répondu le {date}",
+    "sharedAt": "Lien partagé le {date}",
+    "expiresAt": "Le lien expire le {date}",
+    "expiredAt": "Le lien a expiré le {date}",
+    "kind": {
+      "LEAD_DETAILS": "A envoyé les détails du déménagement",
+      "LEAD_FILES": "A envoyé un fichier",
+      "LEAD_INVENTORY": "A vérifié l’inventaire",
+      "QUOTATION_ACCEPTED": "A accepté le devis",
+      "QUOTATION_REJECTED": "A refusé le devis",
+      "QUOTATION_REQUOTE": "A demandé un nouveau devis",
+      "SURVEY_SCHEDULE": "A confirmé la date de la visite",
+      "SURVEY_ITEMS": "A confirmé les articles de la visite",
+      "SURVEY_CHANGES": "A demandé des modifications d’articles",
+      "SURVEY_FILES": "A envoyé un fichier",
+      "PICKUP_CONFIRMED": "A confirmé l’enlèvement",
+      "PACKING_LIST_CONFIRMED": "A confirmé la liste d’emballage",
+      "PACKING_LIST_DISPUTED": "A contesté la liste d’emballage",
+      "PACKING_SCHEDULE": "A confirmé la date d’emballage",
+      "PACKING_LOCATION": "A partagé le lieu d’emballage",
+      "PACKING_ITEMS_CONFIRMED": "A confirmé les articles emballés",
+      "PACKING_ITEMS_CORRECTIONS": "A demandé des corrections sur les articles emballés",
+      "DELIVERY_CONFIRMED": "A confirmé l’heure de livraison",
+      "DELIVERY_RESCHEDULE": "A demandé une autre heure de livraison",
+      "DELIVERY_LOCATION": "A partagé le lieu de livraison"
+    },
+    "actionNote": "Ce qui a été fait",
+    "actionNotePlaceholder": "Qu’avez-vous fait ? (facultatif) ex. Client appelé et prix révisé",
+    "actionBy": "Par {name} le {date}",
+    "viewHistory": "Voir l’historique",
+    "history": "Historique",
+    "historyTitle": "Historique client",
+    "historyFailed": "Impossible de charger l’historique.",
+    "noHistory": "Pas encore d’historique.",
+    "customer": "Client",
+    "action": {
+      "MARKED": "Action effectuée",
+      "REQUOTE_APPLIED": "Nouveau devis appliqué",
+      "QUOTATION_REVISED": "Devis révisé",
+      "SURVEY_CHANGES_APPLIED": "Modifications de la visite appliquées",
+      "SURVEY_CHANGES_DISMISSED": "Modifications de la visite écartées"
+    },
+    "event": {
+      "SHARED": "Lien partagé par {name}",
+      "REPLIED": "Client : {what}",
+      "ACTION_TAKEN": "{what} par {name}",
+      "WITHDRAWN": "Liens révoqués par {name}"
+    }
   }
 }
