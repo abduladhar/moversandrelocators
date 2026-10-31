@@ -7,10 +7,11 @@ import type { FilterValue } from 'antd/es/table/interface'
 import { t as translate, useT } from '../i18n'
 
 // Money columns align to the end. Titles are translated, so the words are listed for every language
-// (en, ar, tr, es, fr, pt); the field name (dataIndex) is checked too.
-export const isAmount = (text: string) =>
-  /amount|cost|price|rate|total|subtotal|discount|debit|credit|balance|expense|revenue|fuelcharges|vendorcharges|مبلغ|المبلغ|الإجمالي|إجمالي|التكلفة|السعر|الخصم|مدين|دائن|الرصيد|المصروف|الإيراد|tutar|toplam|maliyet|fiyat|indirim|borç|alacak|bakiye|gider|gelir|importe|coste|costo|precio|descuento|debe|haber|saldo|gasto|ingreso|montant|coût|prix|taux|remise|débit|crédit|solde|dépense|revenu|valor|custo|preço|desconto|débito|crédito|despesa|receita/i.test(text)
-  && !/count|quantity|hours|minutes|percent|kilomet|distance|الكمية|العدد|ساعات|دقائق|المسافة|miktar|adet|saat|dakika|mesafe|cantidad|horas|minutos|distancia|quantité|nombre|heures|distance|quantidade|distância/i.test(text)
+// (en, ar, tr, es, fr, pt); the field name (dataIndex) is checked too, split at camelCase humps. Each term must be a
+// whole word (plural allowed), so "customerName" is not read as "custo" (pt: cost) nor "operator" as "rate".
+export const isAmount = (text: string) => (words =>
+  /(?<![\p{L}\p{N}])(?:amount|cost|price|rate|total|subtotal|discount|debit|credit|balance|expense|revenue|(?:fuel|vendor) ?charges|مبلغ|المبلغ|الإجمالي|إجمالي|التكلفة|السعر|الخصم|مدين|دائن|الرصيد|المصروف|الإيراد|tutar|toplam|maliyet|fiyat|indirim|borç|alacak|bakiye|gider|gelir|importe|coste|costo|precio|descuento|debe|haber|saldo|gasto|ingreso|montant|coût|prix|taux|remise|débit|crédit|solde|dépense|revenu|valor|custo|preço|desconto|débito|crédito|despesa|receita)s?(?![\p{L}\p{N}])/iu.test(words)
+  && !/count|quantity|hours|minutes|percent|kilomet|distance|الكمية|العدد|ساعات|دقائق|المسافة|miktar|adet|saat|dakika|mesafe|cantidad|horas|minutos|distancia|quantité|nombre|heures|distance|quantidade|distância/i.test(words))(text.replace(/(\p{Ll})(\p{Lu})/gu, '$1 $2'))
 
 function nodeText(node: ReactNode): string {
   if (typeof node === 'string' || typeof node === 'number') return String(node)
@@ -41,7 +42,7 @@ export function DataGrid<T extends object>({ serverPaged, ...props }: TableProps
     if ('children' in column) return { ...column, children: enhance(column.children) }
     const title = nodeText(typeof column.title === 'function' ? '' : column.title)
     const action = /^actions?$/i.test(title) || title.trim() === t('common.actions') || column.key === 'actions' || (!title && !column.dataIndex)
-    const money = !action && isAmount(title + ' ' + String(column.dataIndex ?? ''))
+    const money = !action && (column.align === 'right' || isAmount(title + ' ' + String(column.dataIndex ?? '')))
     const base: ColumnType<T> = { ...column, key: column.key ?? String(column.dataIndex ?? title ?? index),
       align: money ? 'right' : 'left', className: [column.className, money ? 'amount-column' : 'text-column'].filter(Boolean).join(' ') }
     if (action || serverPaged || column.filters || column.filterDropdown) return base

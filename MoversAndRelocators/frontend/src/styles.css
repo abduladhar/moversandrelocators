@@ -277,7 +277,7 @@ body { margin: 0; min-width: 320px; min-height: 100vh; }
 .ant-modal:not(.navigation-menu-dialog) .ant-modal-body {
   padding: 24px;
 }
-.ant-modal:not(.navigation-menu-dialog) .ant-form-item { margin-bottom: 18px; }
+.ant-modal:not(.navigation-menu-dialog) .ant-form-item { margin-bottom: 14px; }
 .ant-modal:not(.navigation-menu-dialog) .ant-form-item-label > label { color: #3d5148; font-size: 14px; font-weight: 500; }
 .ant-modal:not(.navigation-menu-dialog) .ant-input,
 .ant-modal:not(.navigation-menu-dialog) .ant-input-affix-wrapper,
@@ -332,6 +332,41 @@ body { margin: 0; min-width: 320px; min-height: 100vh; }
 @media screen {
   .ant-modal:not(.navigation-menu-dialog) .ant-modal-body { max-height: calc(100dvh - 180px); overflow-y: auto; }
 }
+/* Form popups on every page: a popup holding a field form opens laptop-wide and lays fields out up to three per row
+   (fewer when narrow), spaced by the grid gap so the space around every edge is the same. Confirmations, previews
+   and filters have no field form and keep their own width. A form counts when it has a field grid, a Row of Cols, or
+   four or more stacked fields. */
+.ant-modal:not(.navigation-menu-dialog):not(.filter-modal):has(.master-form-grid, .ant-form .ant-row:not(.ant-form-item-row) > .ant-col, .ant-modal-body > .ant-form-vertical > .ant-form-item ~ .ant-form-item ~ .ant-form-item ~ .ant-form-item) { width: min(1240px, calc(100vw - 32px)) !important; }
+.ant-modal:not(.navigation-menu-dialog) .master-form-grid,
+.ant-modal:not(.navigation-menu-dialog) .ant-modal-body > .ant-form-vertical:has(> .ant-form-item ~ .ant-form-item ~ .ant-form-item ~ .ant-form-item) { display: grid; grid-template-columns: repeat(auto-fill, minmax(max(220px, calc((100% - 32px) / 3)), 1fr)); gap: 14px 16px; align-items: start; }
+.ant-modal:not(.navigation-menu-dialog) .master-form-grid > .ant-form-item,
+.ant-modal:not(.navigation-menu-dialog) .master-form-grid > * > .ant-form-item:last-child { margin-bottom: 0; }
+.ant-modal:not(.navigation-menu-dialog) .master-form-grid:not(:last-child) { margin-bottom: 14px; }
+/* Stacked forms: fields share rows; anything else (notes, tables, uploads, option groups, alerts, sections) keeps a full row. */
+.ant-modal:not(.navigation-menu-dialog) .ant-modal-body > .ant-form-vertical:has(> .ant-form-item ~ .ant-form-item ~ .ant-form-item ~ .ant-form-item) > * { grid-column: 1 / -1; margin-bottom: 0; }
+.ant-modal:not(.navigation-menu-dialog) .ant-modal-body > .ant-form-vertical:has(> .ant-form-item ~ .ant-form-item ~ .ant-form-item ~ .ant-form-item) > .ant-form-item:not(:has(textarea, .ant-table, .ant-upload, .ant-checkbox-group, .ant-radio-group, .ant-list)) { grid-column: auto; }
+/* Row/Col forms: two-per-row columns become three per row on laptop widths. */
+@media (min-width: 992px) {
+  .ant-modal .ant-form .ant-row:not(.ant-form-item-row) > :is(.ant-col-sm-12, .ant-col-md-12):not([class*="ant-col-lg-"]) { flex: 0 0 33.3333%; max-width: 33.3333%; }
+}
+/* An auto-number note is a full-row hint, not a field cell. */
+.ant-modal .ant-form .ant-row:not(.ant-form-item-row) > .ant-col:has(> .auto-number-note:only-child) { flex: 0 0 100%; max-width: 100%; }
+.ant-modal .ant-form .auto-number-note { padding: 0 0 10px; }
+/* A field that needs two of the three columns (e.g. a lookup with its Create button). */
+@media (min-width: 900px) { .ant-modal .master-form-grid > .span-2 { grid-column: span 2; } }
+.picker-with-create { display: flex; gap: 8px; }.picker-with-create > .ant-select { flex: 1; min-width: 0; }
+/* Currency fields inside a field grid use the grid's own three columns and gaps, so both rows line up. */
+.ant-modal .master-form-grid > .currency-fields { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px 16px; margin: 0; }
+.ant-modal .master-form-grid > .currency-fields .ant-form-item { margin-bottom: 0; }
+@media (max-width: 860px) { .ant-modal .master-form-grid > .currency-fields { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 600px) { .ant-modal .master-form-grid > .currency-fields { grid-template-columns: minmax(0, 1fr); } }
+/* Info notes in popups are quiet hints, spaced like any other row. */
+.ant-modal:not(.navigation-menu-dialog) .ant-alert-info { padding: 12px 16px; border-color: #dfe9e4; background: #f5f9f7; }
+.ant-modal:not(.navigation-menu-dialog) .ant-alert-info .ant-alert-title { font-size: 14px; font-weight: 600; }
+.ant-modal:not(.navigation-menu-dialog) .ant-alert-info .ant-alert-description { color: #5f6f68; font-size: 13px; }
+.ant-modal:not(.navigation-menu-dialog) .ant-form > .ant-alert { margin-bottom: 16px; }
+/* A table inside a popup form keeps a field row's spacing above and below it. */
+.ant-modal .payment-allocation-grid { margin: 16px 0; }
 /* Grid actions open beside a compact, keyboard-accessible menu icon. */
 .row-actions-trigger.ant-btn { width: 36px; height: 36px; font-size: 21px; color: #247452; }
 .row-actions-trigger.ant-btn:hover { background: #eaf8ef !important; }
@@ -432,12 +467,17 @@ body { margin: 0; min-width: 320px; min-height: 100vh; }
 .survey-edit-title small { display: flex; align-items: center; gap: 8px; margin-top: 1px; color: #75847d; font-size: 12px; font-weight: 400; }
 .survey-edit-title small .ant-tag { margin: 0; font-size: 11px; line-height: 18px; }
 .ant-modal.survey-edit-modal .ant-modal-header { padding: 14px 52px 14px 18px; background: #f6fbf8; }
-.ant-modal.survey-edit-modal .ant-modal-body { padding: 18px 20px 4px; background: #fbfdfc; }
+.ant-modal.survey-edit-modal .ant-modal-body { padding: 20px; background: #fbfdfc; }
 .survey-edit-form { display: grid; gap: 14px; }
-.survey-edit-form section { padding: 14px 16px 2px; border: 1px solid #e1ebe6; border-radius: 8px; background: #fff; }
+.survey-edit-form section { padding: 16px; border: 1px solid #e1ebe6; border-radius: 8px; background: #fff; }
 .survey-edit-form section h4 { display: flex; align-items: center; gap: 8px; margin: 0 0 12px; color: #176b52; font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
 .survey-edit-form section h4::after { content: ''; flex: 1; height: 1px; background: #e8efeb; }
 .survey-edit-form .master-form-grid .full-width { grid-column: 1 / -1; }
+/* Equal 16px padding on every side: fields are spaced by the grid gap, not by their own bottom margins. */
+.survey-grid-3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px 16px; }
+.ant-modal.survey-edit-modal .survey-grid-3 .ant-form-item { margin-bottom: 0; }
+@media (max-width: 900px) { .survey-grid-3 { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 600px) { .survey-grid-3 { grid-template-columns: minmax(0, 1fr); } }
 .ant-modal.survey-edit-modal .ant-form-item { margin-bottom: 14px; }
 .ant-modal.survey-edit-modal .ant-form-item-label > label { font-size: 13px; }
 .ant-modal.survey-edit-modal .ant-form-item-label > label .ant-form-item-optional { color: #9aa7a1; font-size: 11px; }
@@ -446,8 +486,8 @@ body { margin: 0; min-width: 320px; min-height: 100vh; }
 .ant-modal.survey-edit-modal .ant-input-textarea-show-count .ant-input-data-count { bottom: -20px; color: #9aa7a1; font-size: 11px; }
 .ant-modal.survey-edit-modal .ant-form-item-extra { font-size: 11px; }
 @media (max-width: 700px) {
-  .ant-modal.survey-edit-modal .ant-modal-body { padding: 14px 12px 2px; }
-  .survey-edit-form section { padding: 12px 12px 2px; }
+  .ant-modal.survey-edit-modal .ant-modal-body { padding: 12px; }
+  .survey-edit-form section { padding: 12px; }
 }
 
 /* Survey workspace: consistent 16px rhythm, aligned header, KPI tiles and fact strip. */
@@ -1199,7 +1239,6 @@ body { margin: 0; min-width: 320px; min-height: 100vh; }
 }
 
 /* Space billing inputs consistently across desktop, tablet and phone. */
-.billing-entry-form { padding-top: 12px; }
 .billing-entry-form .ant-form-item { margin-bottom: 22px; }
 .billing-entry-form .ant-form-item-label { padding-bottom: 8px; }
 .billing-entry-form .billing-charge-card .ant-card-body { padding: 20px; }
@@ -1243,7 +1282,6 @@ body { margin: 0; min-width: 320px; min-height: 100vh; }
 /* Invoice and bill composer */
 .billing-document-modal .ant-modal-body { max-height: calc(100dvh - 210px); overflow-y: auto; padding-inline-end: 6px; }
 .billing-document-modal .ant-modal-footer { margin-top: 20px; padding-top: 16px; border-top: 1px solid #e2ebe6; }
-.billing-document-modal .billing-entry-form { padding-top: 0; }
 .document-intro { margin: 4px 0 20px; }
 .document-intro > span { font-size: 10px; font-weight: 700; letter-spacing: 1.2px; color: #548171; }
 .document-intro p { margin: 7px 0 0; color: #718078; font-size: 13px; line-height: 1.6; }
@@ -1688,3 +1726,28 @@ body { margin: 0; min-width: 320px; min-height: 100vh; }
 
 /* A record's own status with the customer-link state under it (CustomerReplyTag). */
 .status-stack { display: inline-flex; flex-direction: column; align-items: flex-start; gap: 4px; }
+
+/* Receive-into-warehouse dialog: flat sections split by hairlines, accent-marked headings, quiet notes. */
+.ant-modal.receive-dialog .ant-modal-body { padding: 4px 24px 8px; background: #fff; }
+.receive-dialog .warehouse-form-section { margin: 0; padding: 18px 0 4px; border: 0; border-bottom: 1px solid #edf1ef; border-radius: 0; background: none; }
+.receive-dialog .warehouse-form-section > h3 { display: flex; align-items: center; gap: 8px; margin: 0 0 14px; padding: 0; background: none; color: #1f2d27; font-size: 14px; font-weight: 600; line-height: 20px; }
+.receive-dialog .warehouse-form-section > h3::before { content: ""; width: 3px; height: 14px; border-radius: 2px; background: #247452; }
+.ant-modal.receive-dialog .ant-form-item { margin-bottom: 14px; }
+.ant-modal.receive-dialog .ant-form-item-label { padding-bottom: 4px; }
+.ant-modal.receive-dialog .ant-form-item-label > label { color: #4a5a53; font-size: 13px; font-weight: 500; }
+.receive-dialog .master-form-grid .receive-notes { grid-column: auto; }
+.receive-handover { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: 0 16px; }
+.receive-inline { display: flex; gap: 8px; }.receive-inline > .ant-select { flex: 1; min-width: 0; }
+.receive-dialog .shipping-party-row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 32px; }
+.receive-dialog .ant-alert { margin: 14px 0 0; padding: 10px 12px; border: 1px solid #e3ebe7; border-radius: 8px; background: #f7faf9; }
+.receive-dialog .ant-alert .ant-alert-icon { margin-top: 2px; font-size: 14px; color: #5b7d6e; }
+.receive-dialog .ant-alert .ant-alert-title { margin-bottom: 2px; color: #1f2d27; font-size: 13px; font-weight: 600; }
+.receive-dialog .ant-alert .ant-alert-description { color: #5f6f68; font-size: 12.5px; line-height: 1.5; }
+.receive-dialog .warehouse-form-section .ant-alert { margin: 0 0 12px; }
+.receive-dialog .warehouse-form-section .ant-card { margin-bottom: 12px; border-color: #e3ebe7; border-radius: 8px; }
+.receive-dialog .warehouse-form-section .ant-card-head { min-height: 38px; padding: 0 12px; border-bottom-color: #edf1ef; background: #f7faf9; color: #1f2d27; font-size: 13px; font-weight: 600; }
+.receive-dialog .warehouse-form-section .ant-card-body { padding: 14px 12px 2px; }
+.receive-dialog .receive-add-box { margin: 0 0 14px; height: 36px; color: #247452; border-color: #a8d2bb; }
+.receive-dialog .receive-storage { order: 1; }.receive-dialog .shipping-destination { order: 2; }.receive-dialog .shipping-shipper { order: 3; }.receive-dialog .shipping-consignee { order: 4; }
+@media (max-width: 900px) { .receive-dialog .shipping-party-row, .receive-handover { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 600px) { .ant-modal.receive-dialog .ant-modal-body { padding: 4px 16px 8px; } }

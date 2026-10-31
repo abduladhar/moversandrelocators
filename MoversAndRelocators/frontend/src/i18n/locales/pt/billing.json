@@ -22,7 +22,7 @@
   },
   "columns": {
     "number": "Número", "source": "Origem", "party": "Cliente / fornecedor", "partyShort": "Parte", "account": "Conta", "baseAmount": "Valor na moeda base",
-    "vendor": "Fornecedor", "dueDate": "Data de vencimento", "reference": "Referência", "memoAdjustment": "Ajuste por notas", "paidAmount": "Valor pago", "balance": "Saldo",
+    "vendor": "Fornecedor", "dueDate": "Data de vencimento", "reference": "Referência", "memoAdjustment": "Ajuste por notas", "paidAmount": "Valor pago",  "unpostedPaid": "Pago (não lançado)", "balance": "Saldo",
     "accounting": "Contabilidade", "voucher": "Comprovante", "cashBank": "Caixa / banco", "document": "Documento", "originalDocument": "Documento original",
     "allocateDocumentCurrency": "Alocar na moeda do documento", "paymentAmountIn": "Valor do pagamento ({currency})", "allocateAmount": "Valor a alocar",
     "charge": "Item de cobrança", "reason": "Motivo", "receipts": "Comprovantes", "postingVoucher": "Comprovante de lançamento"

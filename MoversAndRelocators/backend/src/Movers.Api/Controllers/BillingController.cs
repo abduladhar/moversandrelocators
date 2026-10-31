@@ -8,7 +8,7 @@ namespace Movers.Api.Controllers;
 public sealed class BillingController(BillingService service):ControllerBase {
  [HttpGet("choices")] public Task<IActionResult> Choices(CancellationToken ct)=>Run(()=>service.Choices(ct));
  [HttpGet("charges")] public Task<IActionResult> Charges(CancellationToken ct)=>Run(()=>service.Charges(ct));
- [HttpGet("documents")] public Task<IActionResult> Documents(CancellationToken ct)=>Run(()=>service.Documents(ct));
+ [HttpGet("documents")] public Task<IActionResult> Documents(CancellationToken ct)=>Run(()=>service.DocumentList(ct));
  [HttpGet("vouchers")] public Task<IActionResult> Vouchers(CancellationToken ct)=>Run(()=>service.Vouchers(ct));
  [HttpGet("accounts")] public Task<IActionResult> Accounts(CancellationToken ct)=>Run(()=>service.Accounts(ct));
  [HttpPost("accounts"),Authorize(Policy=SecurityPermissions.BillingAccounts)] public Task<IActionResult> Account(Account input,CancellationToken ct)=>Run(()=>service.SaveAccount(input,ct));

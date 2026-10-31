@@ -749,5 +749,12 @@
     "partyAmount": "Montant client / fournisseur",
     "partyBalance": "Solde client / fournisseur",
     "rateWarning": "Alerte de taux"
+  },
+  "outstandingAging": {
+    "days0To30": "0–30 jours",
+    "days31To60": "31–60 jours",
+    "days61To90": "61–90 jours",
+    "days91To120": "91–120 jours",
+    "daysOver120": "Plus de 120 jours"
   }
 }

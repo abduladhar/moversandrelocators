@@ -1,5 +1,13 @@
-import { CurrencySelect } from "../currency"
-import { useState } from 'react'
+import { CurrencySelect, formatMoney, localDate } from "../currency"
+import { useContext, useEffect, useState } from 'react'
+import { request } from '../api'
+import { BillingPermissions } from '../billingApi'
+import { CustomerStatementReport } from '../components/CustomerStatementReport'
+import { VendorStatementReport } from '../components/VendorStatementReport'
+import { OutstandingCustomersReport } from '../components/OutstandingCustomersReport'
+import { OutstandingVendorsReport } from '../components/OutstandingVendorsReport'
+import { ReceivableAgingReport } from '../components/ReceivableAgingReport'
+import { PayableAgingReport } from '../components/PayableAgingReport'
 import { AutoComplete, Button, Card, Form, Input, Modal, Select, Switch, Tag, message } from 'antd'
 import { PageHeader } from '../components/PageHeader'
 import { ResponsiveDataView } from '../components/ResponsiveDataView'
@@ -19,28 +27,42 @@ const vendorTypes = ['transporter', 'shippingLine', 'airline', 'freightForwarder
 const PLACEHOLDERS = '{{customer}} · {{reference}} · {{link}} · {{date}} · {{amount}} · {{origin}} · {{destination}}'
 /** The kind travels with the list params so a kind change refetches; it goes in the route, not the query string. */
 const searchMasters = ({ kind, ...params }: ListParams) => businessMastersApi.search(kind as MasterKind, params)
+type OutstandingRow = { customerCode?: string; vendorCode?: string; currency: string; outstanding: number }
+/** What each customer owes (or is owed to each vendor) today, in that party's own currency, keyed by party code. */
+async function outstandingByParty(kind: 'customer' | 'vendor') {
+ const report = await request<{ rows: OutstandingRow[] }>(`/api/billing/reports/outstanding-${kind}s?` + new URLSearchParams({ date: localDate(), currency: kind === 'customer' ? 'CUSTOMER' : 'VENDOR' }))
+ return new Map(report.rows.map(r => [(r.customerCode ?? r.vendorCode)!, r]))
+}
 export function BusinessMastersPage({ kind }: { kind: MasterKind }) {
  const { t } = useT()
  const kindText = (key: 'title' | 'add' | 'edit') => t(`masters.business.kinds.${kindKeys[kind]}.${key}`)
  const scopes = useCompanyScopes(kind === 'message-template' ? null : kind)
  const [query, setQuery] = useState(''), [active, setActive] = useState<boolean>(), [open, setOpen] = useState(false), [editing, setEditing] = useState<BusinessMaster>(), [saving, setSaving] = useState(false), [sortField, setSortField] = useState('name'), [sortDirection, setSortDirection] = useState<SortDirection>('asc')
  const list = useServerList(searchMasters, { kind, search: query, active, sort: sortField, desc: sortDirection === 'desc' })
- const reload = () => list.reload()
  const [form] = Form.useForm<BusinessMaster & { availableIn?: 'all' | 'company' }>()
  const contact = kind === 'customer' || kind === 'vendor'
+ // Balances come from the billing reports, so only users who can see billing get the column and the two reports.
+ const billing = useContext(BillingPermissions), accounts = contact && billing.includes('billing.view')
+ const [outstanding, setOutstanding] = useState<Map<string, OutstandingRow>>(new Map()), [report, setReport] = useState<{ type: 'statement' | 'outstanding' | 'aging'; row: BusinessMaster }>()
+ const loadOutstanding = () => { if (accounts) outstandingByParty(kind as 'customer' | 'vendor').then(setOutstanding).catch(() => setOutstanding(new Map())) }
+ useEffect(loadOutstanding, [kind, accounts])
+ const reload = () => { loadOutstanding(); return list.reload() }
+ const balance = (row: BusinessMaster) => { const o = outstanding.get(row.code); return o?.outstanding ? formatMoney(o.outstanding, o.currency) : '—' }
+ const accountActions = (row: BusinessMaster, size?: 'small') => accounts && <><Button size={size} data-close-actions onClick={() => setReport({ type: 'statement', row })}>{t('masters.business.statementOfAccount')}</Button><Button size={size} data-close-actions onClick={() => setReport({ type: 'outstanding', row })}>{t('masters.business.outstanding')}</Button><Button size={size} data-close-actions onClick={() => setReport({ type: 'aging', row })}>{t('masters.business.aging')}</Button></>
  // A template belongs to the screen that sends it, so its code is fixed: the wording is what can be changed.
  const template = kind === 'message-template'
  const show = (row?: BusinessMaster) => { setEditing(row); form.resetFields(); form.setFieldsValue({ ...(row ?? { name: '', isActive: true }), availableIn: row && scopes.isCompanyOnly(row.code) ? 'company' : 'all' }); setOpen(true) }
  const save = async () => { const { availableIn, ...value } = await form.validateFields(); setSaving(true); try { const saved = await businessMastersApi.save(kind, value, editing?.code); if (scopes.enabled && (availableIn === 'company') !== scopes.isCompanyOnly(saved.code)) await scopes.set(saved.code, availableIn === 'company'); await reload(); setOpen(false); message.success(t('masters.business.saved')) } catch (e) { message.error(e instanceof Error ? e.message : t('masters.business.saveFailed')) } finally { setSaving(false) } }
  return <><PageHeader eyebrow={t('masters.business.eyebrow')} title={kindText('title')} description={template ? t('masters.business.templateDescription') : contact ? t('masters.business.contactDescription') : t('masters.business.choiceDescription')} onRefresh={reload} {...(template ? {} : { action: t('masters.business.addRecord'), onAction: () => show() })} filters={<AdvancedSearch value={query} onChange={setQuery} active={active !== undefined || sortField !== 'name' || sortDirection !== 'asc'} onReset={() => { setQuery(''); setActive(undefined); setSortField('name'); setSortDirection('asc') }} sortField={sortField} onSortField={setSortField} sortDirection={sortDirection} onSortDirection={setSortDirection} sortOptions={[{ value: 'name', label: t('common.name') }, { value: 'code', label: t('common.code') }]}><Select allowClear placeholder={t('common.status')} value={active} onChange={setActive} options={[{ value: true, label: t('common.active') }, { value: false, label: t('common.inactive') }]} /></AdvancedSearch>} />
- <Card className="grid-card" title={kindText('title')} extra={t('masters.records', { count: list.total })}><ResponsiveDataView<BusinessMaster> rowKey="code" data={list.rows} onScroll={list.onScroll} hasMore={list.hasMore} total={list.total} loading={list.loading} label={kindText('title')} scrollX={720} renderTile={row => <><div className="tile-heading"><div className="primary-cell"><strong>{row.name}</strong><small>{row.code}</small></div><Tag color={row.isActive ? 'green' : 'default'}>{row.isActive ? t('common.active') : t('common.inactive')}</Tag></div>{template ? <div className="tile-details"><span className="template-preview">{row.notes}</span></div> : contact && <div className="tile-details">{row.phone && <span>{row.phone}</span>}{row.email && <span>{row.email}</span>}{row.vendorType && <span>{row.vendorType}</span>}{row.isAgent && <Tag color="green">{t('masters.business.agent')}</Tag>}</div>}<div className="tile-actions"><RowActions><Button size="small" onClick={() => show(row)}>{t('common.edit')}</Button></RowActions></div></>} columns={[
+ <Card className="grid-card" title={kindText('title')} extra={t('masters.records', { count: list.total })}><ResponsiveDataView<BusinessMaster> rowKey="code" data={list.rows} onScroll={list.onScroll} hasMore={list.hasMore} total={list.total} loading={list.loading} label={kindText('title')} scrollX={720} renderTile={row => <><div className="tile-heading"><div className="primary-cell"><strong>{row.name}</strong><small>{row.code}</small></div><Tag color={row.isActive ? 'green' : 'default'}>{row.isActive ? t('common.active') : t('common.inactive')}</Tag></div>{template ? <div className="tile-details"><span className="template-preview">{row.notes}</span></div> : contact && <div className="tile-details">{row.phone && <span>{row.phone}</span>}{row.email && <span>{row.email}</span>}{row.vendorType && <span>{row.vendorType}</span>}{row.isAgent && <Tag color="green">{t('masters.business.agent')}</Tag>}</div>}{accounts && <div className="tile-details"><span>{t('masters.business.outstanding')}: {balance(row)}</span></div>}<div className="tile-actions"><RowActions><Button size="small" onClick={() => show(row)}>{t('common.edit')}</Button>{accountActions(row, 'small')}</RowActions></div></>} columns={[
  { title: t('common.code'), dataIndex: 'code' }, { title: t('common.name'), dataIndex: 'name' },
  ...(template ? [{ title: t('masters.business.message'), dataIndex: 'notes', render: (value: string) => <span className="template-preview">{value}</span> }] : []),
  ...(contact ? [{ title: t('common.phone'), dataIndex: 'phone' }, { title: t('common.email'), dataIndex: 'email' }, { title: t('masters.contactPerson'), dataIndex: 'contactName' }, { title: t('common.currency'), dataIndex: 'currency' }] : []),
+ ...(accounts ? [{ title: t('masters.business.outstanding'), key: 'outstanding', align: 'right' as const, render: (_: unknown, row: BusinessMaster) => balance(row) }] : []),
  ...(kind === 'vendor' ? [{ title: t('masters.business.vendorType'), dataIndex: 'vendorType' }, { title: t('masters.business.agent'), dataIndex: 'isAgent', render: (value: boolean) => value ? <Tag color="green">{t('masters.business.agent')}</Tag> : '—' }] : []),
  ...scopes.column<BusinessMaster>(row => row.code),
  { title: t('common.status'), dataIndex: 'isActive', render: value => <Tag color={value ? 'green' : 'default'}>{value ? t('common.active') : t('common.inactive')}</Tag> },
- { title: t('common.actions'), key: 'actions', width: 80, render: (_, row) => <RowActions><Button onClick={() => show(row)}>{t('common.edit')}</Button></RowActions> },
+ { title: t('common.actions'), key: 'actions', width: 80, render: (_, row) => <RowActions><Button onClick={() => show(row)}>{t('common.edit')}</Button>{accountActions(row)}</RowActions> },
  ] as ColumnsType<BusinessMaster>} /></Card>
  <Modal centered title={editing ? kindText('edit') : kindText('add')} open={open} width={contact ? 760 : 520} onCancel={() => !saving && setOpen(false)} onOk={() => void save()} okText={t('common.save')} cancelText={t('common.cancel')} confirmLoading={saving} destroyOnHidden><Form form={form} layout="vertical" disabled={saving}>
  <div className="auto-number-note">{editing?.code ?? (template ? '' : t('masters.business.autoCode'))}</div>
@@ -51,7 +73,12 @@ export function BusinessMastersPage({ kind }: { kind: MasterKind }) {
   ? <Form.Item label={t('masters.business.message')} name="notes" rules={[{ required: true, whitespace: true, max: 2000, message: t('masters.business.messageRequired') }]} extra={t('masters.business.placeholdersHelp', { placeholders: PLACEHOLDERS, link: '{{link}}' })}><Input.TextArea rows={5} maxLength={2000} /></Form.Item>
   : <Form.Item label={t('common.notes')} name="notes"><Input.TextArea rows={2} maxLength={2000} /></Form.Item>}<Form.Item label={t('common.active')} name="isActive" valuePropName="checked"><Switch /></Form.Item>
  {scopes.enabled && <Form.Item label={t('masters.business.availableIn')} name="availableIn" extra={t('masters.business.availableInHelp')}><Select options={[{ value: 'all', label: t('masters.business.allCompanies') }, { value: 'company', label: scopes.companyName ? t('masters.business.companyOnly', { company: scopes.companyName }) : t('masters.business.thisCompanyOnly') }]} /></Form.Item>}
- </Form></Modal></>
+ </Form></Modal>
+ <Modal centered destroyOnHidden footer={null} width="min(1240px, calc(100vw - 32px))" open={!!report} onCancel={() => setReport(undefined)} title={report && t(`masters.business.${report.type}Title`, { name: `${report.row.name} · ${report.row.code}` })}>
+  {report?.type === 'statement' && (kind === 'customer' ? <CustomerStatementReport partyCode={report.row.code} /> : <VendorStatementReport partyCode={report.row.code} />)}
+  {report?.type === 'outstanding' && (kind === 'customer' ? <OutstandingCustomersReport partyCode={report.row.code} /> : <OutstandingVendorsReport partyCode={report.row.code} />)}
+  {report?.type === 'aging' && (kind === 'customer' ? <ReceivableAgingReport partyCode={report.row.code} /> : <PayableAgingReport partyCode={report.row.code} />)}
+ </Modal></>
 }
 
 

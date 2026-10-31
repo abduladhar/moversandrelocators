@@ -32,7 +32,6 @@
     "scheduleTitle": "Agenda de vistorias",
     "gridLabel": "vistorias",
     "autoNumber": "O número da vistoria é atribuído automaticamente ao salvar",
-    "source": "Origem",
     "salesLead": "Lead de vendas",
     "salesLeadHelp": "Ao selecionar um lead, os dados do cliente são preenchidos.",
     "salesLeadPlaceholder": "Vincular a um lead de vendas",

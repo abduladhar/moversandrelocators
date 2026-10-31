@@ -15,12 +15,14 @@ export function ContactMasterPicker({ kind, onSelect, getCreateDefaults, onCreat
     catch (error) { message.error(error instanceof Error ? error.message : t('masters.picker.loadFailed')) }
     finally { setLoading(false) }
   }
-  return <><Form.Item label={t(`masters.picker.${kind}.label`)} extra={t(`masters.picker.${kind}.help`)}>
+  // The picker is not a form field (value stays empty), so "Create customer" can sit beside it on the same line.
+  return <Form.Item label={t(`masters.picker.${kind}.label`)} extra={t(`masters.picker.${kind}.help`)}><div className="picker-with-create">
     <Select showSearch value={null} loading={loading} optionFilterProp="label" placeholder={t(`masters.picker.${kind}.placeholder`)}
       onOpenChange={open => { if (open) void load() }}
       notFoundContent={loading ? t('common.loading') : t(`masters.picker.${kind}.empty`)}
       options={rows.map(row => ({ value: row.code, label: `${row.name} · ${row.code}${row.phone ? ` · ${row.phone}` : ''}` }))}
       onChange={code => { const row = rows.find(x => x.code === code); if (row) onSelect(row) }} />
-  </Form.Item>{kind === 'customer' && getCreateDefaults && <div style={{ marginBottom: 16 }}><CreateCustomerButton getDefaults={getCreateDefaults} onCreated={row => { setRows(all => [...all, row]); (onCreated ?? onSelect)(row) }} /></div>}</>
+    {kind === 'customer' && getCreateDefaults && <CreateCustomerButton getDefaults={getCreateDefaults} onCreated={row => { setRows(all => [...all, row]); (onCreated ?? onSelect)(row) }} />}
+  </div></Form.Item>
 }
 

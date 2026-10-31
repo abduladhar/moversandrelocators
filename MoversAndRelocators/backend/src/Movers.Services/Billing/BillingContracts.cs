@@ -14,7 +14,8 @@ public record PaymentInput(Guid RequestId, string Type, string Currency, DateOnl
 public record Voucher(string Type, string PartyCode, string PartyName, string Currency, DateOnly Date, string AccountCode, string Reference, string? Notes, decimal Amount, IReadOnlyList<Allocation> Allocations, bool Voided = false, string? VoidReason = null,Movers.Services.Currencies.FxSnapshot? Fx = null,decimal? BaseAmount = null);
 public record VoidInput(Guid Version, string Reason, DateOnly Date);
 public record BillingView<T>(Guid Id, string Number, Guid Version, Guid? JournalId, T Details);
-public record DocumentView(Guid Id, string Number, Guid Version, Guid? JournalId, Document Details, decimal Paid, decimal Balance);
+/// <summary>Paid and Balance count posted payments only. UnpostedPaid (filled by DocumentList only) is money received or paid but not yet posted.</summary>
+public record DocumentView(Guid Id, string Number, Guid Version, Guid? JournalId, Document Details, decimal Paid, decimal Balance, decimal UnpostedPaid = 0);
 public interface IBillingRepository {
  Task<IReadOnlyList<BillingRecord>> List(string kind, CancellationToken ct);
  Task<BillingRecord?> Get(Guid id, CancellationToken ct);

@@ -22,7 +22,7 @@
   },
   "columns": {
     "number": "Numara", "source": "Kaynak", "party": "Müşteri / tedarikçi", "partyShort": "Cari", "account": "Hesap", "baseAmount": "Ana para birimi tutarı",
-    "vendor": "Tedarikçi", "dueDate": "Vade tarihi", "reference": "Referans", "memoAdjustment": "Dekont düzeltmesi", "paidAmount": "Ödenen tutar", "balance": "Bakiye",
+    "vendor": "Tedarikçi", "dueDate": "Vade tarihi", "reference": "Referans", "memoAdjustment": "Dekont düzeltmesi", "paidAmount": "Ödenen tutar",  "unpostedPaid": "Ödenen (deftere işlenmemiş)", "balance": "Bakiye",
     "accounting": "Muhasebe", "voucher": "Fiş", "cashBank": "Kasa / banka", "document": "Belge", "originalDocument": "Orijinal belge",
     "allocateDocumentCurrency": "Belge para biriminde dağıt", "paymentAmountIn": "Ödeme tutarı ({currency})", "allocateAmount": "Dağıtılacak tutar",
     "charge": "Hizmet kalemi", "reason": "Neden", "receipts": "Fişler", "postingVoucher": "Kayıt fişi"

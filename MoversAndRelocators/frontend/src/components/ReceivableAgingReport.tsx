@@ -1,31 +1,36 @@
 import {useEffect,useState} from 'react'
 import {Alert,Button,Card,Input,Select,Space,Tag} from 'antd'
-import {request} from '../api'
+import {lastBillingReportQuery,request} from '../api'
+import {ReportPrintButton} from '../reportingV2/ReportPrintButton'
+import {agingBuckets} from './OutstandingCustomersReport'
 import {billingApi,type Party} from '../billingApi'
 import {localDate,useCurrencies,formatMoney} from '../currency'
 import {DataGrid} from './DataGrid'
 import {useT,has} from '../i18n'
-type Totals={currency:string;current:number;days1To30:number;days31To60:number;days61To90:number;daysOver90:number;outstanding:number}
+type Totals={currency:string;current:number;days1To30:number;days31To60:number;days61To90:number;daysOver90:number;outstanding:number;days0To30:number;days91To120:number;daysOver120:number}
 type Row=Totals&{id:string;number:string;customerCode:string;customerName:string;invoiceDate:string;dueDate:string;daysOverdue:number;transactionCurrency:string;transactionOutstanding:number}
 type Report={date:string;mode:string;customerCode?:string;rows:Row[];totals:Totals[]}
-const buckets=['current','days1To30','days31To60','days61To90','daysOver90','outstanding'] as const
-export function ReceivableAgingReport(){
- const {t}=useT(),labels=buckets.map(k=>t('reports.receivableAging.buckets.'+k)),label=(g:string,v:string)=>has('reports.'+g+'.'+v)?t('reports.'+g+'.'+v):v
- const {data:currencies}=useCurrencies(),[customers,setCustomers]=useState<Party[]>([]),[customer,setCustomer]=useState<string>(),[date,setDate]=useState(localDate()),[currency,setCurrency]=useState('BASE'),[data,setData]=useState<Report>(),[loading,setLoading]=useState(false),[error,setError]=useState('')
+/** Days past the due date; 0–30 includes items not yet due. */
+const buckets=[...agingBuckets,'outstanding'] as const
+/** partyCode opens the report for that customer and runs it at once (used from the customer list). */
+export function ReceivableAgingReport({partyCode}:{partyCode?:string}={}){
+ const {t}=useT(),labels=buckets.map(k=>k==='outstanding'?t('reports.receivableAging.buckets.outstanding'):t('reports.outstandingAging.'+k)),label=(g:string,v:string)=>has('reports.'+g+'.'+v)?t('reports.'+g+'.'+v):v
+ const {data:currencies}=useCurrencies(),[customers,setCustomers]=useState<Party[]>([]),[customer,setCustomer]=useState<string|undefined>(partyCode),[date,setDate]=useState(localDate()),[currency,setCurrency]=useState(partyCode?'CUSTOMER':'BASE'),[data,setData]=useState<Report>(),[loading,setLoading]=useState(false),[error,setError]=useState('')
  useEffect(()=>{billingApi.choices().then(c=>setCustomers(c.customers)).catch(e=>setError(e.message))},[])
  const load=async()=>{setLoading(true);setError('');try{setData(await request<Report>('/api/billing/reports/receivable-aging?'+new URLSearchParams({date,currency,...(customer?{customerCode:customer}:{})})))}catch(e){setData(undefined);setError(e instanceof Error?e.message:t('reports.errors.load'))}finally{setLoading(false)}}
+ useEffect(()=>{if(partyCode)void load()},[partyCode])
  const exportCsv=()=>{
   if(!data)return
   const esc=(v:unknown)=>{let s=String(v??'');if(typeof v==='string'&&/^[=+\-@\t\r]/.test(s))s="'"+s;return '"'+s.replace(/"/g,'""')+'"'}
   const rows=[[t('reports.names.receivableAging'),data.date,data.mode,data.customerCode||t('reports.placeholders.allCustomers')],[t('reports.columns.customerCode'),t('reports.columns.customer'),t('reports.columns.invoice'),t('reports.columns.invoiceDate'),t('reports.columns.dueDate'),t('reports.columns.daysOverdue'),t('reports.columns.transactionCurrency'),t('reports.columns.transactionOutstanding'),t('reports.columns.reportCurrency'),...labels],...data.rows.map(r=>[r.customerCode,r.customerName,r.number,r.invoiceDate,r.dueDate,r.daysOverdue,r.transactionCurrency,r.transactionOutstanding,r.currency,...buckets.map(k=>r[k])]),[],[t('reports.totals.byCurrency'),...labels],...data.totals.map(x=>[x.currency,...buckets.map(k=>x[k])])]
   const url=URL.createObjectURL(new Blob(['﻿'+rows.map(r=>r.map(esc).join(',')).join('\r\n')],{type:'text/csv;charset=utf-8;'}));const a=document.createElement('a');a.href=url;a.download='accounts-receivable-aging.csv';a.click();URL.revokeObjectURL(url)
  }
- return <Card title={t('reports.cardTitle',{number:10,title:t('reports.names.receivableAging')})} extra={<Tag color="green">{t('reports.ready')}</Tag>}>
+ return <Card variant={partyCode?'borderless':undefined} styles={partyCode?{body:{padding:0}}:undefined} title={partyCode?undefined:t('reports.cardTitle',{number:10,title:t('reports.names.receivableAging')})} extra={partyCode?undefined:<Tag color="green">{t('reports.ready')}</Tag>}>
  <Space className="accounting-report-filters" wrap align="end" style={{marginBottom:20}}>
  <div className="accounting-report-field">{t('reports.filters.customer')}<Select className="accounting-report-select" aria-label={t('reports.receivableAging.ariaCustomer')} allowClear showSearch optionFilterProp="label" placeholder={t('reports.placeholders.allCustomers')} value={customer} onChange={setCustomer} style={{minWidth:240}} options={customers.map(c=>({value:c.code,label:c.name+' · '+c.code}))}/></div>
  <div className="accounting-report-field">{t('reports.filters.asOfDate')}<Input aria-label={t('reports.receivableAging.ariaDate')} type="date" value={date} onChange={e=>setDate(e.target.value)}/></div>
  <div className="accounting-report-field">{t('reports.filters.currency')}<Select className="accounting-report-select" aria-label={t('reports.receivableAging.ariaCurrency')} style={{minWidth:240}} value={currency} onChange={setCurrency} options={[{value:'BASE',label:t('reports.currencyOptions.base',{currency:currencies?.baseCurrency||'…'})},{value:'DEFAULT',label:t('reports.currencyOptions.default',{currency:currencies?.settings.defaultCurrency||'…'})},{value:'CUSTOMER',label:t('reports.currencyOptions.eachCustomer')},...(currencies?.currencies||[]).map(c=>({value:c.code,label:t('reports.currencyOptions.transactionsOnly',{currency:c.code})}))]}/></div>
- <Button type="primary" loading={loading} onClick={()=>void load()}>{t('reports.actions.run')}</Button><Button disabled={!data||loading} onClick={exportCsv}>{t('reports.actions.exportCsv')}</Button>
+ <Button type="primary" loading={loading} onClick={()=>void load()}>{t('reports.actions.run')}</Button><Button disabled={!data||loading} onClick={exportCsv}>{t('reports.actions.exportCsv')}</Button>{partyCode&&<ReportPrintButton type="ACCOUNTING_9" title={[t('reports.names.receivableAging'),customers.find(p=>p.code===customer)?.name].filter(Boolean).join(' · ')} disabled={!data||loading} query={()=>lastBillingReportQuery('receivable-aging')}/>}
  </Space>
  <Alert type="info" style={{marginBottom:16}} title={t('reports.receivableAging.alertTitle')} description={t('reports.receivableAging.alertDescription')}/>
  {error&&<Alert type="error" title={error}/>}

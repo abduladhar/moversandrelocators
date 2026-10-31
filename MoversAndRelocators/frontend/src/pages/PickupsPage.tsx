@@ -70,25 +70,25 @@ export function PickupsPage({ companyName, userName, mode = 'pickup' }: { compan
           <div className="tile-actions"><RowActions><Button size="small" onClick={() => setOpenId(x.id)}>{mode === 'packing' ? t('pickups.list.openPacking') : t('pickups.list.openPickup')}</Button></RowActions></div></>} />
     </Card>
 
-    <Modal centered width={760} className="survey-edit-modal" open={createOpen} title={t('pickups.list.create')} okText={t('pickups.list.create')} confirmLoading={saving} onOk={() => void create()} onCancel={() => setCreateOpen(false)} destroyOnHidden>
+    <Modal centered className="survey-edit-modal" open={createOpen} title={t('pickups.list.create')} okText={t('pickups.list.create')} confirmLoading={saving} onOk={() => void create()} onCancel={() => setCreateOpen(false)} destroyOnHidden>
       <Form form={form} layout="vertical" requiredMark="optional" className="survey-edit-form">
-        <section><h4>{t('pickups.list.colSource')}</h4>
-          <Form.Item><Segmented block value={source} onChange={value => changeSource(value as Source)} options={[{ value: 'QUOTATION', label: t('pickups.list.sourceQuotation') }, { value: 'LEAD', label: t('pickups.list.sourceLead') }, { value: 'DIRECT', label: t('pickups.list.sourceDirect') }]} /></Form.Item>
+        <section><h4>{t('pickups.list.colSource')}</h4><div className="master-form-grid">
+          <Form.Item className="span-2" label={t('pickups.list.createFrom')} required><Segmented block value={source} onChange={value => changeSource(value as Source)} options={[{ value: 'QUOTATION', label: t('pickups.list.sourceQuotation') }, { value: 'LEAD', label: t('pickups.list.sourceLead') }, { value: 'DIRECT', label: t('pickups.list.sourceDirect') }]} /></Form.Item>
           {source === 'QUOTATION' && <Form.Item label={t('pickups.list.quotation')} name="quotationId" rules={[{ required: true, message: t('pickups.list.selectQuotation') }]} extra={t('pickups.list.quotationHelp')}><Select showSearch optionFilterProp="label" placeholder={t('pickups.list.searchQuotations')} onChange={quoteChanged} options={quotes.map(x => ({ value: x.id, label: `${x.quotationNumber} · ${x.customerName} · ${x.status}` }))} /></Form.Item>}
           {source === 'LEAD' && <Form.Item label={t('pickups.list.salesLead')} name="salesLeadId" rules={[{ required: true, message: t('pickups.list.selectLead') }]} extra={t('pickups.list.leadHelp')}><Select showSearch optionFilterProp="label" placeholder={t('pickups.list.searchLeads')} onChange={leadChanged} options={leads.filter(x => x.isActive).map(x => ({ value: x.id, label: `${x.leadNumber} · ${x.customerName}` }))} /></Form.Item>}
-        </section>
-        <section><h4>{t('common.customer')}</h4><ContactMasterPicker kind="customer" getCreateDefaults={() => { const v = form.getFieldsValue(); return { name: v.customerName, phone: v.phone, email: v.email, address: v.address, notes: v.notes } }} onCreated={c => form.setFieldsValue({ customerName: c.name, phone: c.phone ?? '', email: c.email ?? '', address: c.address ?? '' })} onSelect={c => { changeSource('DIRECT'); form.setFieldsValue({ customerName: c.name, phone: c.phone ?? '', email: c.email ?? '', address: c.address ?? '' }) }} /><div className="master-form-grid">
-          <Form.Item className="full-width" label={t('pickups.customerName')} name="customerName" rules={[{ required: true, message: t('pickups.enterCustomerName') }]}><Input prefix={<UserOutlined />} /></Form.Item>
+        </div></section>
+        <section><h4>{t('common.customer')}</h4><div className="master-form-grid"><div className="span-2"><ContactMasterPicker kind="customer" getCreateDefaults={() => { const v = form.getFieldsValue(); return { name: v.customerName, phone: v.phone, email: v.email, address: v.address, notes: v.notes } }} onCreated={c => form.setFieldsValue({ customerName: c.name, phone: c.phone ?? '', email: c.email ?? '', address: c.address ?? '' })} onSelect={c => { changeSource('DIRECT'); form.setFieldsValue({ customerName: c.name, phone: c.phone ?? '', email: c.email ?? '', address: c.address ?? '' }) }} /></div>
+          <Form.Item label={t('pickups.customerName')} name="customerName" rules={[{ required: true, message: t('pickups.enterCustomerName') }]}><Input prefix={<UserOutlined />} /></Form.Item>
           <Form.Item label={t('common.phone')} name="phone" rules={[{ required: true, message: t('pickups.enterPhone') }]}><Input prefix={<PhoneOutlined />} placeholder={t('pickups.list.phonePlaceholder')} /></Form.Item>
           <Form.Item label={t('common.email')} name="email" rules={[{ type: 'email', message: t('pickups.enterValidEmail') }]}><Input prefix={<MailOutlined />} /></Form.Item>
-          <Form.Item className="full-width" label={t('pickups.pickupAddress')} name="address" rules={[{ required: true, message: t('pickups.list.enterAddress') }]}><Input prefix={<EnvironmentOutlined />} /></Form.Item>
+          <Form.Item label={t('pickups.pickupAddress')} name="address" rules={[{ required: true, message: t('pickups.list.enterAddress') }]}><Input prefix={<EnvironmentOutlined />} /></Form.Item>
         </div></section>
         <section><h4>{t('pickups.list.sectionPlan')}</h4><div className="master-form-grid">
           <Form.Item label={t('pickups.pickupDateTime')} name="scheduledAtLocal" rules={[{ required: true, message: t('pickups.list.chooseDateTime') }]}><Input type="datetime-local" /></Form.Item>
           <Form.Item label={t('common.status')} name="statusId" rules={[{ required: true, message: t('pickups.list.selectStatus') }]}><Select options={statuses.filter(x => x.isActive).map(x => ({ value: x.id, label: x.name }))} /></Form.Item>
-          <Form.Item className="full-width" label={t('pickups.vehicle')} name="vehicleId"><Select allowClear showSearch optionFilterProp="label" placeholder={t('pickups.list.assignNowOrLater')} options={vehicles.filter(x => x.isActive).map(x => ({ value: x.id, label: `${x.registrationNumber} · ${x.name} · ${x.capacityCbm} m³` }))} /></Form.Item>
+          <Form.Item label={t('pickups.vehicle')} name="vehicleId"><Select allowClear showSearch optionFilterProp="label" placeholder={t('pickups.list.assignNowOrLater')} options={vehicles.filter(x => x.isActive).map(x => ({ value: x.id, label: `${x.registrationNumber} · ${x.name} · ${x.capacityCbm} m³` }))} /></Form.Item>
+          <Form.Item label={t('common.notes')} name="notes"><Input.TextArea rows={2} maxLength={2000} placeholder={t('pickups.crewInstructions')} /></Form.Item>
         </div></section>
-        <section><h4>{t('common.notes')}</h4><Form.Item name="notes"><Input.TextArea rows={2} maxLength={2000} placeholder={t('pickups.crewInstructions')} /></Form.Item></section>
       </Form>
     </Modal>
   </div>

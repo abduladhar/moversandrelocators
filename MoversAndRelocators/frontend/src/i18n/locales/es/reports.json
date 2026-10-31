@@ -749,5 +749,12 @@
     "partyAmount": "Importe del cliente / proveedor",
     "partyBalance": "Saldo del cliente / proveedor",
     "rateWarning": "Aviso de tipo de cambio"
+  },
+  "outstandingAging": {
+    "days0To30": "0–30 días",
+    "days31To60": "31–60 días",
+    "days61To90": "61–90 días",
+    "days91To120": "91–120 días",
+    "daysOver120": "Más de 120 días"
   }
 }

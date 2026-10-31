@@ -32,7 +32,6 @@
     "scheduleTitle": "Survey schedule",
     "gridLabel": "surveys",
     "autoNumber": "Survey number is assigned automatically on save",
-    "source": "Source",
     "salesLead": "Sales lead",
     "salesLeadHelp": "Selecting a lead fills in the customer details.",
     "salesLeadPlaceholder": "Link to a sales lead",

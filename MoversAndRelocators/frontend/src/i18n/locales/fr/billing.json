@@ -22,7 +22,7 @@
   },
   "columns": {
     "number": "Numéro", "source": "Origine", "party": "Client / fournisseur", "partyShort": "Tiers", "account": "Compte", "baseAmount": "Montant en devise de base",
-    "vendor": "Fournisseur", "dueDate": "Date d’échéance", "reference": "Référence", "memoAdjustment": "Ajustement par avoir/note", "paidAmount": "Montant payé", "balance": "Solde",
+    "vendor": "Fournisseur", "dueDate": "Date d’échéance", "reference": "Référence", "memoAdjustment": "Ajustement par avoir/note", "paidAmount": "Montant payé",  "unpostedPaid": "Payé (non comptabilisé)", "balance": "Solde",
     "accounting": "Comptabilité", "voucher": "Pièce", "cashBank": "Trésorerie / banque", "document": "Document", "originalDocument": "Document d’origine",
     "allocateDocumentCurrency": "Affecter en devise du document", "paymentAmountIn": "Montant du paiement ({currency})", "allocateAmount": "Montant à affecter",
     "charge": "Prestation", "reason": "Motif", "receipts": "Justificatifs", "postingVoucher": "Pièce comptable"

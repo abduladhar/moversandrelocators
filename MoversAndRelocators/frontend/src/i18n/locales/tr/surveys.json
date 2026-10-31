@@ -32,7 +32,6 @@
     "scheduleTitle": "Keşif planı",
     "gridLabel": "keşif",
     "autoNumber": "Keşif numarası kayıtta otomatik atanır",
-    "source": "Kaynak",
     "salesLead": "Satış adayı",
     "salesLeadHelp": "Bir aday seçildiğinde müşteri bilgileri doldurulur.",
     "salesLeadPlaceholder": "Bir satış adayına bağla",

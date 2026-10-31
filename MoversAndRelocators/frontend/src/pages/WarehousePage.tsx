@@ -89,14 +89,14 @@ export function WarehousePage({ companyName, userName }: { companyName: string; 
         { title: t('warehouse.col.received'), dataIndex: 'receivedAtUtc', render: when }, { title: t('common.actions'), render: (_, x) => <RowActions><Button onClick={() => setReceipt(x)}>{t('warehouse.page.receiptAttachments')}</Button>{canBill&&<Button onClick={()=>setBillingReceipt(x)}>{t('warehouse.page.billing')}</Button>}</RowActions> },
       ]} /></Card> },
     ]} />
-    <Modal centered open={!!mode} width={900} title={mode === 'office' ? t('warehouse.receive.officeTitle') : t('warehouse.receive.pickupTitle')} okText={t('warehouse.receive.ok')} cancelText={t('common.cancel')} confirmLoading={saving} okButtonProps={{ disabled: loadingPickup || (mode === 'pickup' && !storable.length) }} onOk={() => void receive()} onCancel={() => { if (!saving) { lookupVersion.current++; setMode(null) } }} closable={!saving} maskClosable={!saving} destroyOnHidden>
+    <Modal centered className="receive-dialog" open={!!mode} width={1140} title={mode === 'office' ? t('warehouse.receive.officeTitle') : t('warehouse.receive.pickupTitle')} okText={t('warehouse.receive.ok')} cancelText={t('common.cancel')} confirmLoading={saving} okButtonProps={{ disabled: loadingPickup || (mode === 'pickup' && !storable.length) }} onOk={() => void receive()} onCancel={() => { if (!saving) { lookupVersion.current++; setMode(null) } }} closable={!saving} maskClosable={!saving} destroyOnHidden>
       <Form form={form} layout="vertical" disabled={saving}>
         <section className="warehouse-form-section"><h3>{mode === 'office' ? t('warehouse.receive.officeSection') : t('warehouse.receive.pickupSection')}</h3>
-          {mode === 'office' ? <>
-            <Form.Item name="customerCode" label={t('common.customer')} rules={[{ required: true, message: t('warehouse.receive.customerRequired') }]}><Select showSearch optionFilterProp="label" placeholder={t('warehouse.receive.customerPlaceholder')} onChange={code => { const c = customers.find(x => x.code === code); if (c) form.setFieldValue(['shipping', 'shipper'], { name: c.name, phone: c.phone, address: c.address }) }} options={customers.map(x => ({ value: x.code, label: `${x.name} · ${x.code} · ${x.phone ?? ''}` }))} /></Form.Item>
-            <CreateCustomerButton getDefaults={() => ({})} onCreated={c => { setCustomers(all => [...all, c]); form.setFieldValue('customerCode', c.code); form.setFieldValue(['shipping', 'shipper'], { name: c.name, phone: c.phone, address: c.address }) }} />
+          {mode === 'office' ? <div className="receive-handover">
+            <Form.Item label={t('common.customer')} required><div className="receive-inline"><Form.Item noStyle name="customerCode" rules={[{ required: true, message: t('warehouse.receive.customerRequired') }]}><Select showSearch optionFilterProp="label" placeholder={t('warehouse.receive.customerPlaceholder')} onChange={code => { const c = customers.find(x => x.code === code); if (c) form.setFieldValue(['shipping', 'shipper'], { name: c.name, phone: c.phone, address: c.address }) }} options={customers.map(x => ({ value: x.code, label: `${x.name} · ${x.code} · ${x.phone ?? ''}` }))} /></Form.Item>
+            <CreateCustomerButton getDefaults={() => ({})} onCreated={c => { setCustomers(all => [...all, c]); form.setFieldValue('customerCode', c.code); form.setFieldValue(['shipping', 'shipper'], { name: c.name, phone: c.phone, address: c.address }) }} /></div></Form.Item>
             <Form.Item name="deliveredBy" label={t('warehouse.receive.deliveredBy')} rules={[{ required: true, whitespace: true, message: t('common.required') }]}><Input maxLength={160} placeholder={t('warehouse.receive.deliveredByPlaceholder')} /></Form.Item>
-          </> : <>
+          </div> : <>
             <Form.Item name="pickupId" label={t('warehouse.receive.pickup')} rules={[{ required: true, message: t('common.required') }]}><Select showSearch optionFilterProp="label" placeholder={t('warehouse.receive.selectPickup')} options={pickups.map(p => ({ value: p.id, label: `${p.pickupNumber} · ${p.customerName}` }))} onChange={id => void choosePickup(id)} /></Form.Item>
             <Form.Item name="packageIds" label={t('warehouse.receive.boxesToReceive')} rules={[{ required: true, type: 'array', min: 1, message: t('warehouse.receive.boxesRequired') }]} extra={shipment && !storable.length ? t('warehouse.receive.noBoxesWaiting') : undefined}>
               <Select mode="multiple" loading={loadingPickup} optionFilterProp="label" placeholder={t('warehouse.receive.selectBoxes')} options={storable.map(p => ({ value: p.id, label: `${p.trackingNumber} · ${p.status === 'PACKED' ? t('warehouse.receive.packed') : t('warehouse.receive.inTransit')}` }))} />
@@ -104,16 +104,15 @@ export function WarehousePage({ companyName, userName }: { companyName: string; 
             {!!storable.length && <Button onClick={() => form.setFieldValue('packageIds', storable.map(p => p.id))}>{t('warehouse.receive.selectAll', { count: storable.length })}</Button>}
           </>}
         </section>
-        <section className="warehouse-form-section"><h3>{t('warehouse.receive.storageSection')}</h3><div className="master-form-grid">
+        <WarehouseShippingFields leading={<section className="warehouse-form-section receive-storage"><h3>{t('warehouse.receive.storageSection')}</h3><div className="master-form-grid">
           <Form.Item name="warehouseId" label={t('warehouse.col.warehouse')} rules={[{ required: true, message: t('common.required') }]}><Select showSearch optionFilterProp="label" placeholder={t('warehouse.receive.selectWarehouse')} options={warehouses.filter(w => w.isActive).map(w => ({ value: w.id, label: `${w.name} · ${w.code}` }))} notFoundContent={t('warehouse.receive.noWarehouse')} /></Form.Item>
           <Form.Item name="bay" label={t('warehouse.col.bayRack')}><Input maxLength={80} placeholder={t('warehouse.receive.bayPlaceholder')} /></Form.Item>
           <Form.Item name="receivedBy" label={t('warehouse.col.receivedBy')} rules={[{ required: true, whitespace: true, message: t('common.required') }]}><Input maxLength={160} /></Form.Item>
-        </div><Form.Item name="notes" label={t('warehouse.receive.notes')}><Input.TextArea rows={2} maxLength={2000} placeholder={t('warehouse.receive.notesPlaceholder')} /></Form.Item></section>
-        <WarehouseShippingFields />
-        <Alert type="info" showIcon message={t('warehouse.receive.attachmentsTitle')} description={t('warehouse.receive.attachmentsHint')} />
+          <Form.Item name="notes" className="receive-notes" label={t('warehouse.receive.notes')}><Input.TextArea autoSize={{ minRows: 1, maxRows: 4 }} maxLength={2000} placeholder={t('warehouse.receive.notesPlaceholder')} /></Form.Item>
+        </div></section>} />
         {mode === 'office' && <section className="warehouse-form-section"><h3>{t('warehouse.receive.customerBoxes')}</h3><Alert type="info" showIcon message={t('warehouse.receive.customerBoxesTitle')} description={t('warehouse.receive.customerBoxesHint')} />
           <Form.List name="boxes" rules={[{ validator: async (_, boxes) => { if (!boxes?.length) throw new Error(t('warehouse.receive.boxesListRequired')) } }]}>{(fields, { add, remove }, { errors }) => <>
-            {fields.map((field, index) => <Card size="small" key={field.key} title={t('warehouse.receive.boxTitle', { number: index + 1 })} style={{ marginTop: 12 }} extra={<Button aria-label={t('warehouse.receive.removeBox', { number: index + 1 })} danger type="text" icon={<DeleteOutlined />} onClick={() => remove(field.name)} />}>
+            {fields.map((field, index) => <Card size="small" key={field.key} title={t('warehouse.receive.boxTitle', { number: index + 1 })} extra={<Button aria-label={t('warehouse.receive.removeBox', { number: index + 1 })} danger type="text" icon={<DeleteOutlined />} onClick={() => remove(field.name)} />}>
               <div className="master-form-grid">
                 <Form.Item name={[field.name, 'description']} label={t('warehouse.receive.boxDescription')} rules={[{ required: true, whitespace: true, message: t('common.required') }]}><Input maxLength={160} placeholder={t('warehouse.receive.boxDescriptionPlaceholder')} /></Form.Item>
                 <Form.Item name={[field.name, 'customerReference']} label={t('warehouse.receive.customerReference')}><Input maxLength={80} /></Form.Item>
@@ -123,9 +122,10 @@ export function WarehousePage({ companyName, userName }: { companyName: string; 
               <Form.Item name={[field.name, 'contents']} label={t('warehouse.receive.contents')}><Input.TextArea maxLength={2000} rows={2} placeholder={t('warehouse.receive.contentsPlaceholder')} /></Form.Item>
               <Form.Item name={[field.name, 'contentsChecked']} valuePropName="checked"><Checkbox>{t('warehouse.receive.contentsChecked')}</Checkbox></Form.Item>
             </Card>)}
-            <Form.ErrorList errors={errors} /><Button style={{ marginTop: 12 }} icon={<PlusOutlined />} disabled={fields.length >= 200} onClick={() => add(newBox())}>{t('warehouse.receive.addBox')}</Button>
+            <Form.ErrorList errors={errors} /><Button className="receive-add-box" type="dashed" block icon={<PlusOutlined />} disabled={fields.length >= 200} onClick={() => add(newBox())}>{t('warehouse.receive.addBox')}</Button>
           </>}</Form.List>
         </section>}
+        <Alert type="info" showIcon message={t('warehouse.receive.attachmentsTitle')} description={t('warehouse.receive.attachmentsHint')} />
       </Form>
     </Modal>
     <Modal centered title={t('warehouse.receipt.title')} open={!!receipt} width={950} onCancel={() => setReceipt(undefined)} footer={<ReportPrintButton type="WAREHOUSE_RECEIPT" title={receipt?.receiptNumber??t('warehouse.receipt.printTitle')} id={receipt?.id} disabled={!receipt}/>}>

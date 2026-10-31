@@ -56,6 +56,7 @@
     "createFailed": "Não foi possível criar a coleta",
     "colPickup": "Coleta",
     "colSource": "Origem",
+    "createFrom": "Criar a partir de",
     "colSchedule": "Agendamento",
     "colTrip": "Viagem",
     "direct": "Direta",

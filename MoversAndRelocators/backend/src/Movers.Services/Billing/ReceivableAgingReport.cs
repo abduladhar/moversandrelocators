@@ -1,7 +1,8 @@
 using Movers.Services.Currencies;
 namespace Movers.Services.Billing;
-public record ReceivableAgingRow(Guid Id,string Number,string CustomerCode,string CustomerName,DateOnly InvoiceDate,DateOnly DueDate,int DaysOverdue,string TransactionCurrency,decimal TransactionOutstanding,string Currency,decimal Outstanding,decimal Current,decimal Days1To30,decimal Days31To60,decimal Days61To90,decimal DaysOver90);
-public record ReceivableAgingTotal(string Currency,decimal Current,decimal Days1To30,decimal Days31To60,decimal Days61To90,decimal DaysOver90,decimal Outstanding);
+/// <summary>Current/Days1To30/…/DaysOver90 are the original buckets. Days0To30 (includes not yet due), Days31To60, Days61To90, Days91To120 and DaysOver120 are the aging columns the statement-style reports use.</summary>
+public record ReceivableAgingRow(Guid Id,string Number,string CustomerCode,string CustomerName,DateOnly InvoiceDate,DateOnly DueDate,int DaysOverdue,string TransactionCurrency,decimal TransactionOutstanding,string Currency,decimal Outstanding,decimal Current,decimal Days1To30,decimal Days31To60,decimal Days61To90,decimal DaysOver90,decimal Days0To30=0,decimal Days91To120=0,decimal DaysOver120=0);
+public record ReceivableAgingTotal(string Currency,decimal Current,decimal Days1To30,decimal Days31To60,decimal Days61To90,decimal DaysOver90,decimal Outstanding,decimal Days0To30=0,decimal Days91To120=0,decimal DaysOver120=0);
 public record ReceivableAgingResult(DateOnly Date,string Mode,string? CustomerCode,IReadOnlyList<ReceivableAgingRow> Rows,IEnumerable<ReceivableAgingTotal> Totals);
 public sealed partial class BillingService {
  public async Task<ReceivableAgingResult> ReceivableAging(DateOnly date,string currency,string? customerCode,CancellationToken ct){
@@ -36,12 +37,13 @@ public sealed partial class BillingService {
    var days=Math.Max(0,date.DayNumber-d.DueDate.DayNumber);
    var bucket=days==0?0:days<=30?1:days<=60?2:days<=90?3:4;
    var buckets=new decimal[5];buckets[bucket]=amount;
+   var age=days<=30?0:days<=60?1:days<=90?2:days<=120?3:4;
    if(!totals.TryGetValue(target,out var sum)){sum=new decimal[5];totals[target]=sum;}
    sum[bucket]+=amount;
-   rows.Add(new(doc.Id,doc.Number,d.PartyCode,party?.Name??d.PartyName,d.Date,d.DueDate,days,d.Currency,outstanding,target,amount,buckets[0],buckets[1],buckets[2],buckets[3],buckets[4]));
+   rows.Add(new(doc.Id,doc.Number,d.PartyCode,party?.Name??d.PartyName,d.Date,d.DueDate,days,d.Currency,outstanding,target,amount,buckets[0],buckets[1],buckets[2],buckets[3],buckets[4],Days0To30:age==0?amount:0,Days91To120:age==3?amount:0,DaysOver120:age==4?amount:0));
   }
   if(currency is not ("BASE" or "CUSTOMER" or "DEFAULT"))await currencies.Require(currency,ct);
-  return new(date,currency,customerCode,rows,totals.Select(t=>new ReceivableAgingTotal(t.Key,t.Value[0],t.Value[1],t.Value[2],t.Value[3],t.Value[4],t.Value.Sum())));
+  return new(date,currency,customerCode,rows,totals.Select(t=>new ReceivableAgingTotal(t.Key,t.Value[0],t.Value[1],t.Value[2],t.Value[3],t.Value[4],t.Value.Sum(),rows.Where(r=>r.Currency==t.Key).Sum(r=>r.Days0To30),rows.Where(r=>r.Currency==t.Key).Sum(r=>r.Days91To120),rows.Where(r=>r.Currency==t.Key).Sum(r=>r.DaysOver120))));
  }
 }
 

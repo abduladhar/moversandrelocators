@@ -32,7 +32,6 @@
     "scheduleTitle": "Calendario de inspecciones",
     "gridLabel": "inspecciones",
     "autoNumber": "El número de inspección se asigna automáticamente al guardar",
-    "source": "Origen",
     "salesLead": "Cliente potencial",
     "salesLeadHelp": "Al seleccionar un cliente potencial se rellenan los datos del cliente.",
     "salesLeadPlaceholder": "Vincular a un cliente potencial",

@@ -195,6 +195,30 @@ public sealed partial class BillingApiTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task Invoice_list_shows_unposted_payments_separately_until_they_are_posted()
+    {
+        var f=await Setup();var date=DateOnly.FromDateTime(DateTime.UtcNow);
+        var invoice=await Issue(await Charge("JOB",f.Job,"INCOME",f.Customer,100));
+        async Task Expect(decimal paid,decimal unposted,decimal balance) {
+            var current=await Current(Id(invoice));
+            Assert.Equal(paid,current.GetProperty("paid").GetDecimal());
+            Assert.Equal(unposted,current.GetProperty("unpostedPaid").GetDecimal());
+            Assert.Equal(balance,current.GetProperty("balance").GetDecimal());
+        }
+        // Cash captured for the job is not allocated yet; it shows against the job's open invoice.
+        var captured=await Post("/api/billing/cash",new{requestId=Guid.NewGuid(),sourceKind="JOB",sourceId=f.Job,type="RECEIPT",partyCode=f.Customer,amount=40m,currency="INR",date,reference="Cash at office"});
+        await Expect(0,40,100);
+        // A draft receipt voucher counts exactly as allocated.
+        var receipt=(await DraftPost("/api/billing/payments",new{requestId=Guid.NewGuid(),type="RECEIPT",currency="INR",date,accountCode="1000",groups=new[]{new{partyCode=f.Customer,reference="Bank transfer",allocations=new[]{new{documentId=Id(invoice),version=Version(await Current(Id(invoice))),amount=30m}}}}}))[0];
+        await Expect(0,70,100);
+        await Post($"/api/billing/vouchers/{Id(receipt)}/post",new{id=Id(receipt),version=Version(receipt)});
+        await Expect(30,40,70);
+        var queue=(await Get("/api/billing/cash")).Single(x=>Id(x)==Id(captured));
+        await Post($"/api/billing/cash/{Id(captured)}/post",new{requestId=Guid.NewGuid(),expectedVersion=queue.GetProperty("version").GetString(),date,accountCode="1000",partyCode=f.Customer,allocations=new[]{new{documentId=Id(invoice),version=Version(await Current(Id(invoice))),amount=40m}}});
+        await Expect(70,0,30);
+    }
+
+    [Fact]
     public async Task Survey_expense_enters_queue_posts_to_the_ledger_and_is_locked_after_posting()
     {
         var f=await Setup();var date=DateOnly.FromDateTime(DateTime.UtcNow);
@@ -888,6 +912,14 @@ public sealed partial class BillingApiTests : IAsyncLifetime
         Assert.Equal(HttpStatusCode.BadRequest,(await _client.GetAsync(url.Replace(f.Vendor1,"MISSING")+"BASE")).StatusCode);
         Assert.Equal(HttpStatusCode.BadRequest,(await _client.GetAsync($"/api/billing/reports/vendor-statement?from={tomorrow:yyyy-MM-dd}&to={date:yyyy-MM-dd}&vendorCode={f.Vendor1}&currency=BASE")).StatusCode);
     }
+    /// <summary>Outstanding buckets by days past due: 0–30 (includes not yet due), 31–60, 61–90, 91–120, over 120.</summary>
+    private static void AssertAging(JsonElement aging,decimal d0To30,decimal d31To60,decimal d61To90,decimal d91To120,decimal over120) {
+        Assert.Equal(d0To30,aging.GetProperty("days0To30").GetDecimal());
+        Assert.Equal(d31To60,aging.GetProperty("days31To60").GetDecimal());
+        Assert.Equal(d61To90,aging.GetProperty("days61To90").GetDecimal());
+        Assert.Equal(d91To120,aging.GetProperty("days91To120").GetDecimal());
+        Assert.Equal(over120,aging.GetProperty("daysOver120").GetDecimal());
+    }
     [Fact]
     public async Task Receivable_aging_uses_due_boundaries_and_historical_postings()
     {
@@ -915,6 +947,8 @@ public sealed partial class BillingApiTests : IAsyncLifetime
         Assert.Equal(200,totals.GetProperty("days61To90").GetDecimal());
         Assert.Equal(100,totals.GetProperty("daysOver90").GetDecimal());
         Assert.Equal(750,totals.GetProperty("outstanding").GetDecimal());
+        AssertAging(totals,250,200,200,100,0);
+        Assert.Equal(100,report.GetProperty("rows").EnumerateArray().Single(r=>r.GetProperty("daysOverdue").GetInt32()==91).GetProperty("days91To120").GetDecimal());
         var summaryUrl=$"/api/billing/reports/outstanding-customers?date={date:yyyy-MM-dd}&customerCode={f.Customer}&currency=";
         var summary=await Get1(summaryUrl+"INR");
         Assert.Single(summary.GetProperty("rows").EnumerateArray());
@@ -924,6 +958,8 @@ public sealed partial class BillingApiTests : IAsyncLifetime
         Assert.Equal(50,customerRow.GetProperty("current").GetDecimal());
         Assert.Equal(700,customerRow.GetProperty("overdue").GetDecimal());
         Assert.Equal(750,customerRow.GetProperty("outstanding").GetDecimal());
+        AssertAging(customerRow.GetProperty("aging"),250,200,200,100,0);
+        AssertAging(summary.GetProperty("totals")[0].GetProperty("aging"),250,200,200,100,0);
         Assert.Equal(1,summary.GetProperty("totals")[0].GetProperty("customerCount").GetInt32());
         Assert.Equal(9m,(await Get1(summaryUrl+"BASE")).GetProperty("totals")[0].GetProperty("outstanding").GetDecimal());
         Assert.Equal(36m,(await Get1(summaryUrl+"CUSTOMER")).GetProperty("totals")[0].GetProperty("outstanding").GetDecimal());
@@ -963,6 +999,8 @@ public sealed partial class BillingApiTests : IAsyncLifetime
         Assert.Equal(200,totals.GetProperty("days61To90").GetDecimal());
         Assert.Equal(100,totals.GetProperty("daysOver90").GetDecimal());
         Assert.Equal(750,totals.GetProperty("outstanding").GetDecimal());
+        AssertAging(totals,250,200,200,100,0);
+        Assert.Equal(100,report.GetProperty("rows").EnumerateArray().Single(r=>r.GetProperty("daysOverdue").GetInt32()==91).GetProperty("days91To120").GetDecimal());
         var summaryUrl=$"/api/billing/reports/outstanding-vendors?date={date:yyyy-MM-dd}&vendorCode={f.Vendor1}&currency=";
         var summary=await Get1(summaryUrl+"INR");
         Assert.Single(summary.GetProperty("rows").EnumerateArray());
@@ -972,6 +1010,7 @@ public sealed partial class BillingApiTests : IAsyncLifetime
         Assert.Equal(50,vendorRow.GetProperty("current").GetDecimal());
         Assert.Equal(700,vendorRow.GetProperty("overdue").GetDecimal());
         Assert.Equal(750,vendorRow.GetProperty("outstanding").GetDecimal());
+        AssertAging(vendorRow.GetProperty("aging"),250,200,200,100,0);
         Assert.Equal(1,summary.GetProperty("totals")[0].GetProperty("vendorCount").GetInt32());
         Assert.Equal(9m,(await Get1(summaryUrl+"BASE")).GetProperty("totals")[0].GetProperty("outstanding").GetDecimal());
         Assert.Equal(36m,(await Get1(summaryUrl+"VENDOR")).GetProperty("totals")[0].GetProperty("outstanding").GetDecimal());

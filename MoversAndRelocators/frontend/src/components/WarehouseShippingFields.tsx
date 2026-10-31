@@ -1,22 +1,24 @@
+import type { ReactNode } from 'react'
 import { Form, Input } from 'antd'
 import type { WarehouseShipping } from '../warehouseApi'
 import { useT } from '../i18n'
 
-export function WarehouseShippingFields() {
+/** `leading` renders inside the same section grid, before the shipping sections. */
+export function WarehouseShippingFields({ leading }: { leading?: ReactNode }) {
   const { t } = useT()
   return <>
-    <section className="warehouse-form-section"><h3>{t('warehouse.shipping.shipperSection')}</h3><div className="master-form-grid">
+    <div className="shipping-party-row">{leading}<section className="warehouse-form-section shipping-shipper"><h3>{t('warehouse.shipping.shipperSection')}</h3><div className="master-form-grid">
       <Form.Item name={['shipping', 'shipper', 'name']} label={t('warehouse.shipping.shipperName')}><Input maxLength={160} /></Form.Item>
       <Form.Item name={['shipping', 'shipper', 'phone']} label={t('warehouse.shipping.shipperPhone')}><Input maxLength={40} /></Form.Item>
     </div><Form.Item name={['shipping', 'shipper', 'address']} label={t('warehouse.shipping.shipperAddress')}><Input.TextArea maxLength={1000} rows={2} /></Form.Item></section>
-    <section className="warehouse-form-section"><h3>{t('warehouse.shipping.consigneeSection')}</h3><div className="master-form-grid">
+    <section className="warehouse-form-section shipping-consignee"><h3>{t('warehouse.shipping.consigneeSection')}</h3><div className="master-form-grid">
       <Form.Item name={['shipping', 'consignee', 'name']} label={t('warehouse.shipping.consigneeName')}><Input maxLength={160} /></Form.Item>
       <Form.Item name={['shipping', 'consignee', 'phone']} label={t('warehouse.shipping.consigneePhone')}><Input maxLength={40} /></Form.Item>
     </div><Form.Item name={['shipping', 'consignee', 'address']} label={t('warehouse.shipping.consigneeAddress')}><Input.TextArea maxLength={1000} rows={2} /></Form.Item></section>
-    <section className="warehouse-form-section"><h3>{t('warehouse.shipping.destinationSection')}</h3><div className="master-form-grid">
+    <section className="warehouse-form-section shipping-destination"><h3>{t('warehouse.shipping.destinationSection')}</h3><div className="master-form-grid">
       <Form.Item name={['shipping', 'toLocation']} label={t('warehouse.shipping.toLocation')}><Input maxLength={200} placeholder={t('warehouse.shipping.toLocationPlaceholder')} /></Form.Item>
       <Form.Item name={['shipping', 'dropLocation']} label={t('warehouse.shipping.dropLocation')}><Input maxLength={200} placeholder={t('warehouse.shipping.dropLocationPlaceholder')} /></Form.Item>
-    </div><Form.Item name={['shipping', 'dropAddress']} label={t('warehouse.shipping.dropAddress')}><Input.TextArea maxLength={1000} rows={3} placeholder={t('warehouse.shipping.dropAddressPlaceholder')} /></Form.Item></section>
+    </div><Form.Item name={['shipping', 'dropAddress']} label={t('warehouse.shipping.dropAddress')}><Input.TextArea maxLength={1000} rows={3} placeholder={t('warehouse.shipping.dropAddressPlaceholder')} /></Form.Item></section></div>
   </>
 }
 export function WarehouseShippingSummary({ shipping }: { shipping?: WarehouseShipping }) {

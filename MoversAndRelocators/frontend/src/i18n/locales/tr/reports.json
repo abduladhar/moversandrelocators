@@ -749,5 +749,12 @@
     "partyAmount": "Müşteri / tedarikçi tutarı",
     "partyBalance": "Müşteri / tedarikçi bakiyesi",
     "rateWarning": "Kur uyarısı"
+  },
+  "outstandingAging": {
+    "days0To30": "0–30 gün",
+    "days31To60": "31–60 gün",
+    "days61To90": "61–90 gün",
+    "days91To120": "91–120 gün",
+    "daysOver120": "120 günden fazla"
   }
 }

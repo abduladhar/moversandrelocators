@@ -10,7 +10,8 @@ export type Doc = { fx?: import("./currency").Fx; baseAmount?: number; type: str
 export type Allocation = { documentId: string; version: string; amount: number; paymentAmount?:number; baseAmount?:number }
 export type Voucher = { fx?: import("./currency").Fx; baseAmount?: number; type: string; partyCode: string; partyName: string; currency: string; date: string; accountCode: string; reference: string; notes?: string; amount: number; allocations: Allocation[]; voided: boolean; voidReason?: string }
 export type Row<T> = { id: string; number: string; version: string; journalId?: string; details: T }
-export type DocumentRow = Row<Doc> & { paid: number; balance: number }
+/** paid and balance count posted payments only; unpostedPaid is allocated by draft payments still waiting to be posted. */
+export type DocumentRow = Row<Doc> & { paid: number; balance: number; unpostedPaid: number }
 export type Party = { code: string; name: string; isActive: boolean; currency?: string }
 export type MappedCharge = { id: string; code: string; name: string; defaultRate: number; isActive: boolean; incomeAccount?: string; expenseAccount?: string }
 export type Choices = { chargeMasters: MappedCharge[]; accounts: Account[]; sources: Source[]; customers: Party[]; vendors: Party[] }

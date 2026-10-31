@@ -26,6 +26,8 @@ type Spec = {
   list?: { path: string; cols: Col[] };
   fixedLines?: { cols: Col[] };                         // single-row "line" table for documents without a list
   totals?: [string, string][];
+  byCurrency?: { path: string; rows: number; cols: Col[] };  // "Totals by currency" table, one row per currency (amounts in different currencies are never added)
+  columnTotals?: { path: string; rows: number; label: string; lead: number; exprs: string[] };  // total rows under the list: label across the first `lead` columns, then one total per remaining column
   words?: string;
   notes?: [string, string][];
   signatures?: string[];
@@ -125,8 +127,70 @@ const SPECS: Record<string, (d: any) => Spec> = {
     meta: [['Report', 'name'], ['Basis', 'mode'], ['As of', 'DATE(date)']],
     list: { path: 'rows', cols: [['Pickup', 'pickupNumber', 1.1], ['Customer', 'customerName', 1.6], ['Currency', 'currency', 0.7], ['Income', 'MONEY(recordedIncome)', 1, 'right'], ['Labour', 'MONEY(labourCost)', 1, 'right'], ['Material', 'MONEY(materialCost)', 1, 'right'], ['Vendor', 'MONEY(vendorCost)', 1, 'right'], ['Total cost', 'MONEY(totalCost)', 1, 'right'], ['Surplus', 'MONEY(recordedSurplus)', 1, 'right']] },
     totals: [['Income', 'MONEY(SUM(rows.recordedIncome))'], ['Total cost', 'MONEY(SUM(rows.totalCost))'], ['Surplus', 'MONEY(SUM(rows.recordedSurplus))']]
-  })
+  }),
+  // Accounting reports a customer or vendor receives: laid out as documents, not as generic data dumps.
+  ACCOUNTING_7: () => statement('customer', 'CUSTOMER'),
+  ACCOUNTING_8: () => statement('vendor', 'VENDOR'),
+  ACCOUNTING_9: d => aging(d, 'customer', 'invoiceDate', 'Invoice'),
+  ACCOUNTING_10: d => aging(d, 'vendor', 'billDate', 'Bill'),
+  ACCOUNTING_17: d => outstanding(d, 'customer', 'invoices', 'invoiceDate', 'Invoice'),
+  ACCOUNTING_18: d => outstanding(d, 'vendor', 'bills', 'billDate', 'Bill')
 };
+
+/** Signed balance as an amount with Dr / Cr, the way the statement shows it on screen. */
+const drCr = (p: string) => `MONEY(ABS(${p}))+IF(${p}<0,' Cr',IF(${p}>0,' Dr',''))`;
+function statement(party: 'customer' | 'vendor', label: string): Spec {
+  return {
+    title: 'STATEMENT OF ACCOUNT',
+    party: { label, name: party + '.name', lines: [party + '.address', `'Account: '+${party}.code`] },
+    meta: [['Period', "DATE(from)+' to '+DATE(to)"], ['Statement date', 'DATE(generatedAt)'], ['Currency', 'currency'], ['Opening balance', drCr('opening')]],
+    list: { path: 'rows', cols: [['Date', 'DATE(date)', 0.9], ['Type', 'type', 1.1], ['Document', 'number', 1.4], ['Reference', 'reference', 1.3], ['Debit', 'MONEY(debit)', 1, 'right'], ['Credit', 'MONEY(credit)', 1, 'right'], ['Balance', drCr('balance'), 1.2, 'right']] },
+    totals: [['Opening balance', drCr('opening')], ['Total debits', 'MONEY(debit)'], ['Total credits', 'MONEY(credit)'], ['Closing balance', drCr('closing') + "+' '+currency"]]
+  };
+}
+/** Age buckets by days past the due date (0–30 includes not yet due), as the server's OutstandingBuckets. */
+const AGING: [string, string][] = [['0–30 days', 'days0To30'], ['31–60 days', 'days31To60'], ['61–90 days', 'days61To90'], ['91–120 days', 'days91To120'], ['Over 120 days', 'daysOver120']];
+/** One currency: a totals box. Several: a "Totals by currency" table, since amounts in different currencies are never added. */
+function currencyTotals(d: any, field: (key: string) => string, counts: Col[] = []): Pick<Spec, 'totals' | 'byCurrency'> {
+  const n = d?.totals?.length ?? 0;
+  if (n === 1) return { totals: [...AGING.map(([label, key]): [string, string] => [label, `MONEY(totals[0].${field(key)})`]), ['Total outstanding', money('totals[0].outstanding', 'totals[0].currency')]] };
+  return n > 1 ? { byCurrency: { path: 'totals', rows: n, cols: [['Currency', 'currency', 0.8], ...counts, ...AGING.map(([label, key]): Col => [label, `MONEY(${field(key)})`, 1, 'right']), ['Outstanding', 'MONEY(outstanding)', 1.1, 'right']] } } : {};
+}
+/** Each open invoice/bill with its amount in its age column. Filtered to one party, the party block replaces the party column. */
+function aging(d: any, party: 'customer' | 'vendor', dateField: string, docLabel: string): Spec {
+  const one = !!d?.[party + 'Code'] && (d?.rows?.length ?? 0) > 0, single = (d?.totals?.length ?? 0) === 1;
+  const partyCol: Col[] = one ? [] : [[party === 'customer' ? 'Customer' : 'Vendor', `${party}Name`, 1.6]];
+  const currencyCol: Col[] = single ? [] : [['Currency', 'currency', 0.6]];
+  return {
+    title: (party === 'customer' ? 'RECEIVABLE' : 'PAYABLE') + ' AGING',
+    landscape: true,
+    party: one ? { label: party.toUpperCase(), name: `rows[0].${party}Name`, lines: [`'Account: '+rows[0].${party}Code`] } : undefined,
+    meta: [['As of', 'DATE(date)'], ['Currency', single ? 'totals[0].currency' : "'Multiple currencies'"], [docLabel + 's', 'COUNT(rows)']],
+    list: { path: 'rows', cols: [...partyCol, [docLabel + ' no.', 'number', 1.3], [docLabel + ' date', `DATE(${dateField})`, 0.9], ['Due date', 'DATE(dueDate)', 0.9], ['Days', "IF(daysOverdue>0,daysOverdue,'—')", 0.5, 'right'], ...currencyCol, ...AGING.map(([label, key]): Col => [label, `IF(${key},MONEY(${key}),'')`, 0.95, 'right']), ['Outstanding', 'MONEY(outstanding)', 1, 'right']] },
+    // A total row per currency straight under the age columns (amounts in different currencies are never added).
+    columnTotals: { path: 'totals', rows: d?.totals?.length ?? 1, label: "'Total '+currency", lead: partyCol.length + currencyCol.length + 4, exprs: [...AGING.map(([, key]) => `MONEY(${key})`), 'MONEY(outstanding)'] }
+  };
+}
+/** One party: its open invoices/bills. All parties (printed from the reports page): one line per party. */
+function outstanding(d: any, party: 'customer' | 'vendor', docs: string, dateField: string, docLabel: string): Spec {
+  const title = 'OUTSTANDING ' + (party === 'customer' ? 'INVOICES' : 'BILLS');
+  const one = (d?.rows?.length ?? 0) === 1;
+  if (one) return {
+    title,
+    party: { label: party.toUpperCase(), name: `rows[0].${party}Name`, lines: [`'Account: '+rows[0].${party}Code`] },
+    meta: [['As of', 'DATE(date)'], ['Currency', 'rows[0].currency'], [docLabel + 's', `rows[0].${party === 'customer' ? 'invoiceCount' : 'billCount'}`], ['Oldest due date', 'DATE(rows[0].oldestDueDate)']],
+    list: { path: `rows.0.${docs}`, cols: [[docLabel + ' no.', 'number', 1.4], [docLabel + ' date', `DATE(${dateField})`, 1], ['Due date', 'DATE(dueDate)', 1], ['Days overdue', "IF(daysOverdue>0,daysOverdue,'—')", 0.8, 'right'], ['Outstanding', 'MONEY(outstanding)', 1.2, 'right']] },
+    totals: [...AGING.map(([label, key]): [string, string] => [label, `MONEY(rows[0].aging.${key})`]), ['Total outstanding', money('rows[0].outstanding', 'rows[0].currency')]]
+  };
+  const count = party === 'customer' ? 'invoiceCount' : 'billCount';
+  return {
+    title,
+    landscape: true,
+    meta: [['As of', 'DATE(date)'], ['Currency basis', 'mode']],
+    list: { path: 'rows', cols: [[party === 'customer' ? 'Customer' : 'Vendor', `${party}Name`, 1.8], ['Account', `${party}Code`, 1.5], ['Currency', 'currency', 0.6], [docLabel + 's', count, 0.6, 'right'], ...AGING.map(([label, key]): Col => [label, `MONEY(aging.${key})`, 1, 'right']), ['Outstanding', 'MONEY(outstanding)', 1.1, 'right']] },
+    ...currencyTotals(d, key => 'aging.' + key, [[party === 'customer' ? 'Customers' : 'Vendors', party + 'Count', 0.7, 'right'], [docLabel + 's', count, 0.6, 'right']])
+  };
+}
 
 function billingDoc(title: string, party: string, numberLabel: string): Spec {
   return {
@@ -217,6 +281,16 @@ function documentHeader(spec: Spec, inner: number): { h: number; elements: Repor
 function summary(spec: Spec, inner: number): { h: number; elements: ReportElement[] } {
   const els: ReportElement[] = []; const totW = 300, leftW = inner - totW - 30;
   let right = 10, left = 10;
+  if (spec.columnTotals && spec.list) {
+    // Same column widths as the list above, so each total sits under its own column.
+    const { path, rows, label, lead, exprs } = spec.columnTotals, cols = spec.list.cols, weight = cols.reduce((s, c) => s + (c[2] || 1), 0);
+    const width = (c: Col) => Math.round(inner * (c[2] || 1) / weight);
+    const totals = cols.slice(lead), h = rows * 24 + 2;
+    els.push(el('table', { x: 0, y: 0, w: inner, h, tableMode: 'loop', dataPath: path, rowH: 24, autoHeight: true, showHeader: false, showFooter: false, fontSize: 9.5, bold: true,
+      gridColor: RULE, zebra: false, bg: SOFT,
+      columns: [{ header: '', expr: wrap(label), width: cols.slice(0, lead).reduce((s, c) => s + width(c), 0), align: 'left' }, ...totals.map((c, i) => ({ header: '', expr: wrap(exprs[i]), width: width(c), align: c[3] || 'left' }))] }));
+    right = left = h + 10;
+  }
   if (spec.fixedLines) {
     const cols = spec.fixedLines.cols, total = cols.reduce((s, c) => s + (c[2] || 1), 0);
     els.push(grid(0, 10, inner, cols.map(c => Math.round(inner * (c[2] || 1) / total)), [
@@ -232,6 +306,14 @@ function summary(spec: Spec, inner: number): { h: number; elements: ReportElemen
     });
     els.push(grid(inner - totW, right, totW, [140, totW - 140], rows, { gridColor: RULE, fontSize: 10.5 }));
     right += rows.length * 22 + 8;
+  }
+  if (spec.byCurrency) {
+    const { path, rows, cols } = spec.byCurrency, top = Math.max(left, right), weight = cols.reduce((s, c) => s + (c[2] || 1), 0), h = 26 + rows * 22;
+    els.push(txt('TOTALS BY CURRENCY', { x: 0, y: top, w: inner, h: 16, fontSize: 9, bold: true, color: MUTED }));
+    els.push(el('table', { x: 0, y: top + 18, w: inner, h, tableMode: 'loop', dataPath: path, rowH: 22, autoHeight: true, showHeader: true, showFooter: false, fontSize: 9.5,
+      headerBg: ACCENT, headerColor: '#ffffff', gridColor: RULE, zebra: true,
+      columns: cols.map(c => ({ header: c[0], expr: wrap(c[1]), width: Math.round(inner * (c[2] || 1) / weight), align: c[3] || 'left' })) }));
+    left = right = top + 18 + h + 10;
   }
   if (spec.words) {
     els.push(txt('AMOUNT IN WORDS', { x: 0, y: left, w: leftW, h: 14, fontSize: 8.5, bold: true, color: MUTED }));

@@ -56,6 +56,7 @@
     "createFailed": "No se pudo crear la recogida",
     "colPickup": "Recogida",
     "colSource": "Origen",
+    "createFrom": "Crear a partir de",
     "colSchedule": "Programación",
     "colTrip": "Trayecto",
     "direct": "Directa",

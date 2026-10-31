@@ -32,7 +32,6 @@
     "scheduleTitle": "Planning des visites techniques",
     "gridLabel": "visites techniques",
     "autoNumber": "Le numéro de visite technique est attribué automatiquement à l'enregistrement",
-    "source": "Source",
     "salesLead": "Prospect",
     "salesLeadHelp": "Sélectionner un prospect renseigne les coordonnées du client.",
     "salesLeadPlaceholder": "Lier à un prospect",

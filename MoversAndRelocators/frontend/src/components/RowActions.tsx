@@ -8,12 +8,13 @@ export function RowActions({ children }: { children: ReactNode }) {
   const { t } = useT()
   const [open, setOpen] = useState(false)
   // Edit/Open buttons close the popup (their dialogs take over); matched on the label in the current language.
+  // Any other button that opens a dialog marks itself with data-close-actions.
   const closing = new Set(['Edit', 'Open', t('common.edit'), t('common.open')])
   return <Popover trigger="click" placement="leftTop" open={open} onOpenChange={setOpen}
     classNames={{ root: 'row-actions-popup' }} title={t('common.actions')}
     content={<div className="row-actions-list" onClick={event => {
       const button = (event.target as HTMLElement).closest('button')
-      if (button && closing.has(button.textContent?.trim() ?? '')) setOpen(false)
+      if (button && (button.hasAttribute('data-close-actions') || closing.has(button.textContent?.trim() ?? ''))) setOpen(false)
     }}>{children}</div>}>
     <Button type="text" className="row-actions-trigger" icon={<MoreOutlined />}
       aria-label={t('shell.rowActions.open')} aria-haspopup="dialog" aria-expanded={open}

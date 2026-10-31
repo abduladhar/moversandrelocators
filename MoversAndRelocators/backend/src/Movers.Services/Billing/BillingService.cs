@@ -57,6 +57,22 @@ public sealed partial class BillingService(IBillingRepository repository, IOpera
    return new DocumentView(r.Id,r.Number,r.Version,r.JournalId,d,paid,d.Voided?0:d.Amount-paid+memos.Where(m=>m.JournalId.HasValue&&!m.Details.Voided&&m.Details.DocumentId==r.Id).Sum(m=>(m.Details.Type=="CREDIT_MEMO"?-1:1)*m.Details.Amount));
   }).ToList();
  }
+ /// <summary>The invoice/bill list: Documents plus UnpostedPaid, money received or paid but not yet posted. Draft payment
+ /// vouchers count exactly as allocated. Captured customer cash is allocated only when it is posted, so until then it is
+ /// spread over that customer's open invoices for the same job/pickup/packing/delivery, oldest first, up to each balance.</summary>
+ public async Task<IReadOnlyList<DocumentView>> DocumentList(CancellationToken ct) {
+  var docs=await Documents(ct);
+  var drafts=(await Vouchers(ct)).Where(v=>!v.JournalId.HasValue&&!v.Details.Voided).SelectMany(v=>v.Details.Allocations).GroupBy(a=>a.DocumentId).ToDictionary(g=>g.Key,g=>g.Sum(a=>a.Amount));
+  var unposted=docs.ToDictionary(d=>d.Id,d=>d.Details.Voided?0:drafts.GetValueOrDefault(d.Id));
+  foreach(var cash in (await CashQueue(ct)).Where(x=>!x.Posted&&x.Details.Type=="RECEIPT")){
+   var c=cash.Details;var left=c.Amount;
+   foreach(var d in docs.Where(d=>d.JournalId.HasValue&&!d.Details.Voided&&d.Details.Type=="INVOICE"&&d.Details.Currency==c.Currency&&(c.PartyCode is null||d.Details.PartyCode==c.PartyCode)&&d.Details.Lines.Any(l=>l.SourceKind==c.SourceKind&&l.SourceId==c.SourceId)).OrderBy(d=>d.Details.Date).ThenBy(d=>d.Number)){
+    if(left<=0)break;
+    var take=Math.Min(left,Math.Max(0,d.Balance-unposted[d.Id]));unposted[d.Id]+=take;left-=take;
+   }
+  }
+  return docs.Select(d=>d with{UnpostedPaid=unposted[d.Id]}).ToList();
+ }
  public async Task<BillingView<Charge>> Capture(ChargeInput c,CancellationToken ct) {
   var prior=await Retry("CHARGE",c.RequestId,c,ct);if(prior is not null)return View<Charge>(prior);
   var number=await numbers.Next("CHG",ct);

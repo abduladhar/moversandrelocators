@@ -34,6 +34,11 @@ export async function request<T>(url: string, options: RequestInit = {}): Promis
 let lastBillingReport = ''
 /** URL of the last accounting report that loaded successfully, so Print re-fetches exactly the filters shown on screen. */
 export const lastBillingReportUrl = () => lastBillingReport
+/** Query of the last successful run of one accounting report (its URL slug), or null when another report ran last. */
+export const lastBillingReportQuery = (slug: string) => {
+  const [path, query] = lastBillingReport.split('?')
+  return path === '/api/billing/reports/' + slug ? query ?? '' : null
+}
 
 export const authApi = {
   /** companyId: the company to open (the last one used); ignored for company users. */

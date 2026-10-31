@@ -53,6 +53,7 @@
     "createFailed": "Teslim alma oluşturulamadı",
     "colPickup": "Teslim alma",
     "colSource": "Kaynak",
+    "createFrom": "Oluşturma kaynağı",
     "colSchedule": "Plan",
     "colTrip": "Sefer",
     "direct": "Doğrudan",

@@ -22,7 +22,7 @@
   },
   "columns": {
     "number": "Number", "source": "Source", "party": "Customer / vendor", "partyShort": "Party", "account": "Account", "baseAmount": "Base amount",
-    "vendor": "Vendor", "dueDate": "Due date", "reference": "Reference", "memoAdjustment": "Memo adjustment", "paidAmount": "Paid amount", "balance": "Balance",
+    "vendor": "Vendor", "dueDate": "Due date", "reference": "Reference", "memoAdjustment": "Memo adjustment", "paidAmount": "Paid amount",  "unpostedPaid": "Paid (unposted)", "balance": "Balance",
     "accounting": "Accounting", "voucher": "Voucher", "cashBank": "Cash / bank", "document": "Document", "originalDocument": "Original document",
     "allocateDocumentCurrency": "Allocate in document currency", "paymentAmountIn": "Payment amount ({currency})", "allocateAmount": "Allocate amount",
     "charge": "Charge", "reason": "Reason", "receipts": "Receipts", "postingVoucher": "Posting voucher"

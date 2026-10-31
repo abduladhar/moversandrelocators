@@ -27,7 +27,7 @@ import {GeneralLedgerReport} from '../components/GeneralLedgerReport'
 import {useEffect,useState,type ReactNode} from 'react'
 import {Alert,Button,Card,Empty,Input,Select,Space,Tooltip} from 'antd'
 import {UserOutlined,ArrowLeftOutlined,AuditOutlined,BankOutlined,BarChartOutlined,BookOutlined,CalculatorOutlined,CreditCardOutlined,DollarOutlined,FieldTimeOutlined,FileDoneOutlined,FileTextOutlined,GlobalOutlined,HistoryOutlined,IdcardOutlined,LineChartOutlined,MinusCircleOutlined,PercentageOutlined,PieChartOutlined,PlusCircleOutlined,ProfileOutlined,RiseOutlined,SearchOutlined,ShopOutlined,SwapOutlined,TeamOutlined,WalletOutlined} from '@ant-design/icons'
-import {lastBillingReportUrl,request} from '../api'
+import {lastBillingReportQuery,request} from '../api'
 import {localDate,useCurrencies,formatMoney} from '../currency'
 import {DataGrid} from '../components/DataGrid'
 
@@ -39,10 +39,7 @@ export const accountingReports=[
 ]
 /** Endpoint of each accounting report, by index. Print sends the server the query of the report last run on screen. */
 const reportSlugs=['trial-balance','general-ledger','journal-register','profit-and-loss','balance-sheet','cash-flow','cash-book','customer-statement','vendor-statement','receivable-aging','payable-aging','invoice-register','bill-register','receipt-register','payment-voucher-register','credit-memo-register','debit-memo-register','outstanding-customers','outstanding-vendors','customer-advances','expense-analysis','revenue-analysis','operation-profitability','currency-exposure','tax-summary','posting-audit','employee-expenses']
-const printQuery=(index:number)=>{
- const [path,query]=lastBillingReportUrl().split('?')
- return path==='/api/billing/reports/'+reportSlugs[index]?query??'':null
-}
+const printQuery=(index:number)=>lastBillingReportQuery(reportSlugs[index])
 type BalanceRow={code:string;name:string;type:string;openingDebit:number;openingCredit:number;debit:number;credit:number;closingDebit:number;closingCredit:number}
 type Report={currency:string;from:string;to:string;rows:BalanceRow[];totals:Omit<BalanceRow,'code'|'name'|'type'>}
 

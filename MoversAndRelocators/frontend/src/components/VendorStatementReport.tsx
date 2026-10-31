@@ -1,17 +1,20 @@
 import {useEffect,useState} from 'react'
 import {Alert,Button,Card,Input,Select,Space,Tag} from 'antd'
-import {request} from '../api'
+import {lastBillingReportQuery,request} from '../api'
+import {ReportPrintButton} from '../reportingV2/ReportPrintButton'
 import {billingApi,type Party} from '../billingApi'
 import {localDate,useCurrencies,formatMoney} from '../currency'
 import {DataGrid} from './DataGrid'
 import {useT} from '../i18n'
 type Entry={journalId:string;date:string;type:string;number:string;originalNumber:string;reference?:string;transactionCurrency:string;transactionDebit:number;transactionCredit:number;debit:number;credit:number;balance:number;isReversal:boolean;controlAccounts:string[]}
 type Statement={from:string;to:string;currency:string;mode:string;vendor:{code:string;name:string;address?:string};conversionDate?:string;opening:number;debit:number;credit:number;closing:number;rows:Entry[]}
-export function VendorStatementReport(){
+/** partyCode opens the report for that vendor and runs it at once (used from the vendor list). */
+export function VendorStatementReport({partyCode}:{partyCode?:string}={}){
  const {t}=useT()
- const {data:currencies}=useCurrencies(),[vendors,setVendors]=useState<Party[]>([]),[vendor,setVendor]=useState<string>(),[from,setFrom]=useState(localDate().slice(0,4)+'-01-01'),[to,setTo]=useState(localDate()),[currency,setCurrency]=useState('VENDOR'),[data,setData]=useState<Statement>(),[loading,setLoading]=useState(false),[error,setError]=useState('')
+ const {data:currencies}=useCurrencies(),[vendors,setVendors]=useState<Party[]>([]),[vendor,setVendor]=useState<string|undefined>(partyCode),[from,setFrom]=useState(localDate().slice(0,4)+'-01-01'),[to,setTo]=useState(localDate()),[currency,setCurrency]=useState(partyCode?'VENDOR':'VENDOR'),[data,setData]=useState<Statement>(),[loading,setLoading]=useState(false),[error,setError]=useState('')
  useEffect(()=>{billingApi.choices().then(c=>setVendors(c.vendors)).catch(e=>setError(e.message))},[])
  const load=async()=>{if(!vendor){setError(t('reports.vendorStatement.selectVendor'));return}setLoading(true);setError('');try{setData(await request<Statement>('/api/billing/reports/vendor-statement?'+new URLSearchParams({from,to,currency,vendorCode:vendor})))}catch(e){setData(undefined);setError(e instanceof Error?e.message:t('reports.customerStatement.loadError'))}finally{setLoading(false)}}
+ useEffect(()=>{if(partyCode)void load()},[partyCode])
  const balance=(n:number)=>{const amount=formatMoney(Math.abs(n),data?.currency||'USD');return n<0?t('reports.generalLedger.dr',{amount}):n>0?t('reports.generalLedger.cr',{amount}):amount}
  const lv=(label:string,amount:string)=>t('reports.generalLedger.labelValue',{label,amount})
  const exportCsv=()=>{
@@ -20,12 +23,12 @@ export function VendorStatementReport(){
   const rows=[[t('reports.names.vendorStatement'),data.vendor.code,data.vendor.name,data.from,data.to,data.currency,data.mode],[t('reports.customerStatement.conversionDate'),data.conversionDate||t('reports.customerStatement.savedJournalValues')],[t('reports.generalLedger.openingBalance'),data.opening],[t('reports.columns.date'),t('reports.columns.type'),t('reports.customerStatement.number'),t('reports.columns.originalDocument'),t('reports.columns.reference'),t('reports.columns.transactionCurrency'),t('reports.columns.transactionDebit'),t('reports.columns.transactionCredit'),t('reports.customerStatement.statementDebit'),t('reports.customerStatement.statementCredit'),t('reports.vendorStatement.runningBalanceCreditPositive')],...data.rows.map(r=>[r.date,r.type,r.number,r.originalNumber,r.reference,r.transactionCurrency,r.transactionDebit,r.transactionCredit,r.debit,r.credit,r.balance]),[t('reports.customerStatement.periodDebit'),data.debit],[t('reports.customerStatement.periodCredit'),data.credit],[t('reports.generalLedger.closingBalance'),data.closing]]
   const url=URL.createObjectURL(new Blob(['﻿'+rows.map(r=>r.map(esc).join(',')).join('\r\n')],{type:'text/csv;charset=utf-8;'}));const a=document.createElement('a');a.href=url;a.download='vendor-statement.csv';a.click();URL.revokeObjectURL(url)
  }
- return <Card title={t('reports.cardTitle',{number:9,title:t('reports.names.vendorStatement')})} extra={<Tag color="green">{t('reports.ready')}</Tag>}>
+ return <Card variant={partyCode?'borderless':undefined} styles={partyCode?{body:{padding:0}}:undefined} title={partyCode?undefined:t('reports.cardTitle',{number:9,title:t('reports.names.vendorStatement')})} extra={partyCode?undefined:<Tag color="green">{t('reports.ready')}</Tag>}>
  <Space className="accounting-report-filters" wrap align="end" style={{marginBottom:20}}>
  <div className="accounting-report-field">{t('reports.filters.vendor')}<Select className="accounting-report-select" aria-label={t('reports.vendorStatement.vendorAria')} showSearch optionFilterProp="label" placeholder={t('reports.vendorStatement.vendorPlaceholder')} value={vendor} onChange={setVendor} style={{minWidth:240}} options={vendors.map(c=>({value:c.code,label:c.name+' · '+c.code}))}/></div>
  <div className="accounting-report-field">{t('reports.filters.fromDate')}<Input aria-label={t('reports.customerStatement.fromAria')} type="date" value={from} onChange={e=>setFrom(e.target.value)}/></div><div className="accounting-report-field">{t('reports.filters.toDate')}<Input aria-label={t('reports.customerStatement.toAria')} type="date" value={to} onChange={e=>setTo(e.target.value)}/></div>
  <div className="accounting-report-field">{t('reports.filters.currency')}<Select className="accounting-report-select" aria-label={t('reports.customerStatement.currencyAria')} style={{minWidth:230}} value={currency} onChange={setCurrency} options={[{value:'VENDOR',label:t('reports.vendorStatement.vendorCurrencyOption',{currency:vendors.find(c=>c.code===vendor)?.currency||currencies?.settings.defaultCurrency||'…'})},{value:'BASE',label:t('reports.currencyOptions.base',{currency:currencies?.baseCurrency||'…'})},{value:'DEFAULT',label:t('reports.currencyOptions.default',{currency:currencies?.settings.defaultCurrency||'…'})},...(currencies?.currencies||[]).map(c=>({value:c.code,label:t('reports.currencyOptions.transactionsOnly',{currency:c.code})}))]}/></div>
- <Button type="primary" loading={loading} disabled={!vendor} onClick={()=>void load()}>{t('reports.actions.run')}</Button><Button disabled={!data||loading} onClick={exportCsv}>{t('reports.actions.exportCsv')}</Button>
+ <Button type="primary" loading={loading} disabled={!vendor} onClick={()=>void load()}>{t('reports.actions.run')}</Button><Button disabled={!data||loading} onClick={exportCsv}>{t('reports.actions.exportCsv')}</Button>{partyCode&&<ReportPrintButton type="ACCOUNTING_8" title={[t('reports.names.vendorStatement'),data?.vendor.name].filter(Boolean).join(' · ')} disabled={!data||loading} query={()=>lastBillingReportQuery('vendor-statement')}/>}
  </Space>
  {error&&<Alert type="error" title={error}/>}
  {!data&&!error&&<Alert type="info" title={t('reports.vendorStatement.empty')}/>}

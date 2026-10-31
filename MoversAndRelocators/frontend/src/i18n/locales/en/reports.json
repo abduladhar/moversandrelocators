@@ -749,5 +749,12 @@
     "partyAmount": "Customer / vendor amount",
     "partyBalance": "Customer / vendor balance",
     "rateWarning": "Rate warning"
+  },
+  "outstandingAging": {
+    "days0To30": "0–30 days",
+    "days31To60": "31–60 days",
+    "days61To90": "61–90 days",
+    "days91To120": "91–120 days",
+    "daysOver120": "Over 120 days"
   }
 }

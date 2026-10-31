@@ -22,7 +22,7 @@
   },
   "columns": {
     "number": "الرقم", "source": "المصدر", "party": "العميل / المورد", "partyShort": "الطرف", "account": "الحساب", "baseAmount": "المبلغ بالعملة الأساسية",
-    "vendor": "المورد", "dueDate": "تاريخ الاستحقاق", "reference": "المرجع", "memoAdjustment": "تسوية الإشعارات", "paidAmount": "المبلغ المدفوع", "balance": "الرصيد",
+    "vendor": "المورد", "dueDate": "تاريخ الاستحقاق", "reference": "المرجع", "memoAdjustment": "تسوية الإشعارات", "paidAmount": "المبلغ المدفوع",  "unpostedPaid": "مدفوع (غير مرحّل)", "balance": "الرصيد",
     "accounting": "المحاسبة", "voucher": "السند", "cashBank": "نقدية / بنك", "document": "المستند", "originalDocument": "المستند الأصلي",
     "allocateDocumentCurrency": "التخصيص بعملة المستند", "paymentAmountIn": "مبلغ الدفعة ({currency})", "allocateAmount": "المبلغ المخصص",
     "charge": "البند", "reason": "السبب", "receipts": "الإيصالات", "postingVoucher": "سند الترحيل"

@@ -22,7 +22,7 @@
   },
   "columns": {
     "number": "Número", "source": "Origen", "party": "Cliente / proveedor", "partyShort": "Tercero", "account": "Cuenta", "baseAmount": "Importe en moneda base",
-    "vendor": "Proveedor", "dueDate": "Fecha de vencimiento", "reference": "Referencia", "memoAdjustment": "Ajuste por notas", "paidAmount": "Importe pagado", "balance": "Saldo",
+    "vendor": "Proveedor", "dueDate": "Fecha de vencimiento", "reference": "Referencia", "memoAdjustment": "Ajuste por notas", "paidAmount": "Importe pagado",  "unpostedPaid": "Pagado (sin contabilizar)", "balance": "Saldo",
     "accounting": "Contabilidad", "voucher": "Comprobante", "cashBank": "Caja / banco", "document": "Documento", "originalDocument": "Documento original",
     "allocateDocumentCurrency": "Asignar en moneda del documento", "paymentAmountIn": "Importe del pago ({currency})", "allocateAmount": "Importe a asignar",
     "charge": "Concepto", "reason": "Motivo", "receipts": "Justificantes", "postingVoucher": "Comprobante contable"

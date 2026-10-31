@@ -749,5 +749,12 @@
     "partyAmount": "Valor do cliente / fornecedor",
     "partyBalance": "Saldo do cliente / fornecedor",
     "rateWarning": "Aviso de taxa"
+  },
+  "outstandingAging": {
+    "days0To30": "0–30 dias",
+    "days31To60": "31–60 dias",
+    "days61To90": "61–90 dias",
+    "days91To120": "91–120 dias",
+    "daysOver120": "Mais de 120 dias"
   }
 }
