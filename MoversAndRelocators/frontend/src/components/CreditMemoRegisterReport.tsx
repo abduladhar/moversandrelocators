@@ -1,4 +1,5 @@
 import {useEffect,useState} from 'react'
+import {ReportAbout} from './ReportAbout'
 import {Alert,Button,Card,Input,Select,Space,Tag} from 'antd'
 import {request} from '../api'
 import {billingApi,type Party} from '../billingApi'
@@ -28,7 +29,7 @@ export function CreditMemoRegisterReport(){
  <div className="accounting-report-field">{t('reports.filters.currency')}<Select className="accounting-report-select" aria-label={t(k+'ariaCurrency')} style={{minWidth:240}} value={currency} onChange={setCurrency} options={[{value:'BASE',label:t('reports.currencyOptions.base',{currency:currencies?.baseCurrency||'…'})},{value:'DEFAULT',label:t('reports.currencyOptions.default',{currency:currencies?.settings.defaultCurrency||'…'})},{value:'PARTY',label:t('reports.currencyOptions.party')},...(currencies?.currencies||[]).map(c=>({value:c.code,label:t('reports.currencyOptions.transactionsOnly',{currency:c.code})}))]}/></div>
  <Button type="primary" loading={loading} onClick={()=>void load()}>{t('reports.actions.run')}</Button><Button disabled={!data||loading} onClick={exportCsv}>{t('reports.actions.exportCsv')}</Button>
  </Space>
- <Alert type="info" style={{marginBottom:16}} title={t(k+'alertTitle')} description={t(k+'alertDescription')}/>
+ <ReportAbout title={t(k+'alertTitle')} description={t(k+'alertDescription')}/>
  {error&&<Alert type="error" title={error}/>}
  {data&&<><p>{t('reports.period',{from:data.from,to:data.to})} · {lbl('partyTypes',data.partyType)} · {data.partyCode||t('reports.placeholders.allParties')} · {lbl('status',data.status)} · {lbl('modes',data.mode)}</p>
  <DataGrid<Row> rowKey="id" dataSource={data.rows} pagination={{pageSize:25}} scroll={{x:1600}} expandable={{expandedRowRender:r=><div><p>{t(k+'expandReason',{reason:r.reason})}</p><p>{t(k+'expandCharge',{charge:r.chargeDescription??'',account:r.accountCode})}</p>{r.reversalNumber&&<p>{t(k+'expandReversal',{number:r.reversalNumber,date:r.reversalDate??''})}</p>}</div>}} columns={[{title:t('reports.columns.memo'),dataIndex:'number'},{title:t('reports.columns.date'),dataIndex:'date'},{title:t('reports.columns.partyType'),dataIndex:'partyType',render:(v:string)=>lbl('partyTypes',v)},{title:t('reports.columns.party'),dataIndex:'partyName'},{title:t('reports.columns.originalDocument'),dataIndex:'documentNumber'},{title:t('reports.columns.reference'),dataIndex:'documentReference'},{title:t('reports.columns.status'),dataIndex:'status',render:(v:string)=>lbl('status',v)},{title:t('reports.columns.transactionAmount'),align:'right',render:(_,r)=>formatMoney(r.transactionAmount,r.transactionCurrency)},{title:t('reports.columns.reportAmount'),align:'right',render:(_,r)=>formatMoney(r.amount,r.currency)}]}/>

@@ -1,4 +1,5 @@
 import {useEffect,useState} from 'react'
+import {ReportAbout} from './ReportAbout'
 import {Alert,Button,Card,Input,Select,Space,Tag} from 'antd'
 import {request} from '../api'
 import {billingApi,type Party} from '../billingApi'
@@ -28,7 +29,7 @@ export function CustomerAdvancesReport(){
  <div className="accounting-report-field">{t('reports.filters.currency')}<Select className="accounting-report-select" aria-label={t(k+'ariaCurrency')} style={{minWidth:240}} value={currency} onChange={setCurrency} options={[{value:'BASE',label:t('reports.currencyOptions.base',{currency:currencies?.baseCurrency||'…'})},{value:'DEFAULT',label:t('reports.currencyOptions.default',{currency:currencies?.settings.defaultCurrency||'…'})},{value:'CUSTOMER',label:t('reports.currencyOptions.eachCustomer')},...(currencies?.currencies||[]).map(c=>({value:c.code,label:t('reports.currencyOptions.transactionsOnly',{currency:c.code})}))]}/></div>
  <Button type="primary" loading={loading} onClick={()=>void load()}>{t('reports.actions.run')}</Button><Button disabled={!data||loading} onClick={exportCsv}>{t('reports.actions.exportCsv')}</Button>
  </Space>
- <Alert type="info" style={{marginBottom:16}} title={t(k+'alertTitle')} description={t(k+'alertDescription')}/>
+ <ReportAbout title={t(k+'alertTitle')} description={t(k+'alertDescription')}/>
  {error&&<Alert type="error" title={error}/>}
  {data&&<><p>{t('reports.asOf',{date:data.date})} · {data.customerCode||t('reports.placeholders.allCustomers')} · {has('reports.modes.'+data.mode)?t('reports.modes.'+data.mode):data.mode}</p>
  <DataGrid<Row> rowKey="id" dataSource={data.rows} pagination={{pageSize:25}} scroll={{x:1300}} columns={[{title:t('reports.columns.receipt'),dataIndex:'number'},{title:t('reports.columns.postingDate'),dataIndex:'date'},{title:t('reports.columns.customer'),dataIndex:'customerName'},{title:t('reports.columns.reference'),dataIndex:'reference'},{title:t('reports.columns.source'),dataIndex:'source'},{title:t('reports.columns.transactionBalance'),align:'right',render:(_,r)=>formatMoney(r.transactionAmount,r.transactionCurrency)},{title:t('reports.columns.reportBalance'),align:'right',render:(_,r)=>formatMoney(r.amount,r.currency)}]}/>

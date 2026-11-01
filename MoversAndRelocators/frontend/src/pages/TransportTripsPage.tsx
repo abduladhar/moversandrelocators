@@ -1,4 +1,5 @@
 import {CurrencyFields,useCurrencies} from '../currency'
+import { StatusTag } from '../components/StatusTag'
 import { useEffect, useState } from 'react'
 import { Alert, Button, Card, Form, Input, InputNumber, Modal, Select, Space, Tag, Typography, message } from 'antd'
 import { PageHeader } from '../components/PageHeader'
@@ -32,7 +33,7 @@ export function TransportTripsPage() {
     <PageHeader onRefresh={load} eyebrow={t('operations.trips.eyebrow')} title={t('operations.trips.title')} description={t('operations.trips.description')} filters={<><Button type="primary" onClick={() => { form.resetFields(); form.setFieldsValue({ currency: currencyData?.settings.defaultCurrency||'AED', startedAtUtc: now(), allocations: [{ weight: 1 }] }); setCreating(true) }}>{t('operations.trips.plan')}</Button></>} />
     {error && <Alert type="error" message={error} closable onClose={() => setError('')} />}
     <Alert type="info" message={t('operations.trips.fuelHint')} />
-    <div className="trip-cards">{trips.map(tr => <Card key={tr.trip.id} title={<Space>{tr.trip.number}<Tag color={tr.trip.status === 'COMPLETED' ? 'green' : 'blue'}>{statusLabel(tr.trip.status)}</Tag></Space>} extra={<span>{tr.trip.vehicleNumber}</span>}>
+    <div className="trip-cards">{trips.map(tr => <Card key={tr.trip.id} title={<Space>{tr.trip.number}<StatusTag color={tr.trip.status === 'COMPLETED' ? 'green' : 'blue'}>{statusLabel(tr.trip.status)}</StatusTag></Space>} extra={<span>{tr.trip.vehicleNumber}</span>}>
       <Typography.Title level={5}>{tr.trip.origin} → {tr.trip.destination}</Typography.Title><p>{t('operations.trips.started', { date: formatDateTime(tr.trip.startedAtUtc) })}</p>
       <p>{t('operations.trips.summary', { count: tr.allocations.length, km: tr.trip.kilometres, currency: tr.trip.currency, fuel: money(tr.trip.fuelCost), other: money(tr.trip.otherCost) })}</p>
       <ul>{tr.allocations.map(a => <li key={a.pickupId}>{t('operations.trips.allocation', { move: pickups.find(p => p.id === a.pickupId)?.pickupNumber ?? a.pickupId, weight: a.weight, fuel: money(a.fuelCost), other: money(a.otherCost) })}</li>)}</ul>

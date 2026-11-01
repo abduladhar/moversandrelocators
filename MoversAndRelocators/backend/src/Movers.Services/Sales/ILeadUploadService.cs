@@ -2,7 +2,7 @@ namespace Movers.Services.Sales;
 
 public interface ILeadUploadService
 {
-    Task<GeneratedUploadLinkModel> GenerateLinkAsync(Guid leadId, int validDays, CancellationToken token, string? requestedItems = null, string? description = null);
+    Task<GeneratedUploadLinkModel> GenerateLinkAsync(Guid leadId, int validDays, CancellationToken token, string? requestedItems = null, string? description = null, bool awaitReply = true);
     Task SaveCustomerDetailsAsync(string token, string? items, string? description, CancellationToken ct);
     Task<IReadOnlyList<UploadLinkModel>> ListLinksAsync(Guid leadId, CancellationToken token);
     Task<UploadLinkModel?> RevokeLinkAsync(Guid leadId, Guid id, CancellationToken token);

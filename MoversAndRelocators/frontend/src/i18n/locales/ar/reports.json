@@ -1,4 +1,5 @@
 {
+  "about": "حول هذا التقرير",
   "cardTitle": "{number}. {title}",
   "ready": "جاهز",
   "period": "من {from} إلى {to}",

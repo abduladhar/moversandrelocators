@@ -9,14 +9,15 @@ import { BillingPermissions } from '../billingApi'
 import { BusinessMastersPage } from '../pages/BusinessMastersPage'
 import { JobsPage } from '../pages/JobsPage'
 import { WarehousePage } from '../pages/WarehousePage'
-import { NavigationMenuDialog } from '../components/NavigationMenuDialog'
 import { MasterDataPage } from '../pages/MasterDataPage'
 import { ShipmentsPage } from '../pages/ShipmentsPage'
 import { OperationsCostsPage } from '../pages/OperationsCostsPage'
 import { TransportTripsPage } from '../pages/TransportTripsPage'
-import { useState } from 'react'
-import { Avatar, Button, Grid, Layout, Menu, Modal, Select, Space, Tag, Typography, message } from 'antd'
-import { DownOutlined, RightOutlined, InboxOutlined, SendOutlined, AppstoreOutlined, ApartmentOutlined, AuditOutlined, BankOutlined, CarOutlined, CloudServerOutlined, DollarOutlined, FileDoneOutlined, FileSearchOutlined, HomeOutlined, IdcardOutlined, LogoutOutlined, MenuFoldOutlined, MenuUnfoldOutlined, RobotOutlined, ExperimentOutlined, SafetyCertificateOutlined, ShopOutlined, TagsOutlined, TeamOutlined, ToolOutlined, UserSwitchOutlined, ClusterOutlined } from '@ant-design/icons'
+import { useEffect, useState } from 'react'
+import { CommandPalette } from '../components/CommandPalette'
+import { handOffSearch, OpenListContext } from '../searchHandoff'
+import { Avatar, Breadcrumb, Button, Dropdown, Grid, Layout, Menu, Modal, Select, Typography, message } from 'antd'
+import { CheckOutlined, GlobalOutlined, SearchOutlined, DownOutlined, RightOutlined, InboxOutlined, SendOutlined, AppstoreOutlined, ApartmentOutlined, AuditOutlined, BankOutlined, CarOutlined, CloudServerOutlined, DollarOutlined, FileDoneOutlined, FileSearchOutlined, HomeOutlined, IdcardOutlined, LogoutOutlined, MenuFoldOutlined, MenuUnfoldOutlined, RobotOutlined, ExperimentOutlined, SafetyCertificateOutlined, ShopOutlined, TagsOutlined, TeamOutlined, ToolOutlined, UserSwitchOutlined, ClusterOutlined } from '@ant-design/icons'
 import { authApi } from '../api'
 import type { AuthSession, Tenant } from '../types'
 import { TenantsPage } from '../pages/TenantsPage'
@@ -28,6 +29,7 @@ import { EmployeesPage } from '../pages/EmployeesPage'
 import { AuditPage } from '../pages/AuditPage'
 import { SalesLeadsPage } from '../pages/SalesLeadsPage'
 import { SalesStatusMastersPage } from '../pages/SalesStatusMastersPage'
+import { WebLeadFormSettingsPage } from '../pages/WebLeadFormSettingsPage'
 import { MyTasksPage } from '../pages/MyTasksPage'
 import { AwsConfigurationPage } from '../pages/AwsConfigurationPage'
 import { OpenAiConfigurationPage } from '../pages/OpenAiConfigurationPage'
@@ -43,13 +45,12 @@ import { DeliveryJobsPage } from '../pages/DeliveryJobsPage'
 import { PickupMastersPage } from '../pages/PickupMastersPage'
 import { CompaniesPage } from '../pages/CompaniesPage'
 import { rememberCompany } from '../session'
-import { useT } from '../i18n'
-import { LanguageSwitcher } from '../i18n/LanguageSwitcher'
+import { languages, useT, type Language } from '../i18n'
 
-type PageKey = 'delivery' | 'report-designs' | 'accounting-reports' | `billing-${string}` | 'currency-settings' | 'posting' | 'billing' | 'customers' | 'vendors' | 'jobs' | 'warehouse' | 'master-data' | 'shipments' | 'costs' | 'trips' | 'dashboard' | 'tenants' | 'users' | 'roles' | 'designations' | 'employees' | 'crew' | 'sales' | 'sales-statuses' | 'surveys' | 'survey-masters' | 'quotations' | 'charge-masters' | 'tax-masters' | 'pickups' | 'packing' | 'pickup-masters' | 'vehicle-master' | 'warehouse-master' | 'box-type-master' | 'packing-material-master' | 'aws-settings' | 'openai-settings' | 'claude-settings' | 'audit' | 'companies'
+type PageKey = 'delivery' | 'report-designs' | 'accounting-reports' | `billing-${string}` | 'currency-settings' | 'posting' | 'billing' | 'customers' | 'vendors' | 'jobs' | 'warehouse' | 'master-data' | 'shipments' | 'costs' | 'trips' | 'dashboard' | 'tenants' | 'users' | 'roles' | 'designations' | 'employees' | 'crew' | 'sales' | 'sales-statuses' | 'sales-web-form' | 'surveys' | 'survey-masters' | 'quotations' | 'charge-masters' | 'tax-masters' | 'pickups' | 'packing' | 'pickup-masters' | 'vehicle-master' | 'warehouse-master' | 'box-type-master' | 'packing-material-master' | 'aws-settings' | 'openai-settings' | 'claude-settings' | 'audit' | 'companies'
 
 export function WorkspaceLayout({ session, onSession }: { session: AuthSession; onSession: (session: AuthSession | null) => void }) {
-  const { t } = useT()
+  const { t, language, setLanguage } = useT()
   const isSystem = session.user.isSystemAdmin
   const tenantReady = Boolean(session.tenantId)
   const canManageCurrency = session.user.permissions.includes("billing.accounts")
@@ -71,7 +72,6 @@ export function WorkspaceLayout({ session, onSession }: { session: AuthSession; 
   const [page, setPage] = useState<PageKey>(isSystem && !tenantReady ? 'tenants' : 'dashboard')
   const [collapsed, setCollapsed] = useState(false)
   const [minimizedSections, setMinimizedSections] = useState<Record<string, boolean>>({})
-  const [menuGroup, setMenuGroup] = useState<string | null>(null)
   const screens = Grid.useBreakpoint()
   const selectTenant = async (tenant: Tenant) => {
     try { onSession(await authApi.selectTenant(tenant.id)); setPage('dashboard') }
@@ -108,7 +108,7 @@ export function WorkspaceLayout({ session, onSession }: { session: AuthSession; 
     ...(isSystem ? [{ key: 'platform', icon: <ShopOutlined />, label: t('shell.nav.platform'), children: [{ key: 'tenants', icon: <ShopOutlined />, label: t('shell.nav.tenants') }] }] : []),
     { key: 'workspace', icon: <HomeOutlined />, label: t('shell.nav.workspace'), children: [{ key: 'dashboard', icon: <HomeOutlined />, label: t('shell.nav.myTasks'), disabled: !tenantReady }] },
     { key: 'people', icon: <TeamOutlined />, label: t('shell.nav.people'), disabled: !tenantReady, children: [{ key: 'customers', icon: <IdcardOutlined />, label: t('shell.nav.customers') }, { key: 'vendors', icon: <ShopOutlined />, label: t('shell.nav.vendors') }, { key: 'employees', icon: <TeamOutlined />, label: t('shell.nav.employees') }, { key: 'designations', icon: <IdcardOutlined />, label: t('shell.nav.designations') }] },
-    { key: 'sales-group', icon: <ApartmentOutlined />, label: t('shell.nav.sales'), disabled: !tenantReady, children: [{ key: 'sales', icon: <ApartmentOutlined />, label: t('shell.nav.salesLeads') }, { key: 'sales-statuses', icon: <TagsOutlined />, label: t('shell.nav.statusMasters') }] },
+    { key: 'sales-group', icon: <ApartmentOutlined />, label: t('shell.nav.sales'), disabled: !tenantReady, children: [{ key: 'sales', icon: <ApartmentOutlined />, label: t('shell.nav.salesLeads') }, { key: 'sales-statuses', icon: <TagsOutlined />, label: t('shell.nav.statusMasters') }, { key: 'sales-web-form', icon: <GlobalOutlined />, label: t('shell.nav.webForm') }] },
     ...(canManageSurveys ? [{ key: 'survey-group', icon: <FileSearchOutlined />, label: t('shell.nav.survey'), disabled: !tenantReady, children: [{ key: 'surveys', icon: <FileSearchOutlined />, label: t('shell.nav.surveys') }, { key: 'survey-masters', icon: <ToolOutlined />, label: t('shell.nav.masterData') }] }] : []),
     ...(canManageQuotes ? [{ key: 'quotation-group', icon: <FileDoneOutlined />, label: t('shell.nav.quotation'), disabled: !tenantReady, children: [{ key: 'quotations', icon: <FileDoneOutlined />, label: t('shell.nav.quotations') }, { key: 'charge-masters', icon: <DollarOutlined />, label: t('shell.nav.chargeMaster') }, { key: 'tax-masters', icon: <TagsOutlined />, label: t('shell.nav.taxConfiguration') }] }] : []),
     ...(canManageOperations ? [{ key: 'operations-group', icon: <CarOutlined />, label: t('shell.nav.operationsSetup'), disabled: !tenantReady, children: [{ key: 'pickup-masters', icon: <TagsOutlined />, label: t('shell.nav.pickupStatuses') }, { key: 'vehicle-master', icon: <CarOutlined />, label: t('shell.nav.vehicles') }, { key: 'warehouse-master', icon: <HomeOutlined />, label: t('shell.nav.warehouses') }, ...(canManageSurveys ? [{ key: 'box-type-master', icon: <AppstoreOutlined />, label: t('shell.nav.boxTypes') }, { key: 'packing-material-master', icon: <ToolOutlined />, label: t('shell.nav.packingMaterials') }] : [])] }] : []),
@@ -117,7 +117,7 @@ export function WorkspaceLayout({ session, onSession }: { session: AuthSession; 
   ]
   const permissionByPage: Partial<Record<PageKey, string>> = {
     customers: 'operations.manage', vendors: 'operations.manage', employees: 'employees.view', designations: 'designations.manage', sales: 'sales.view',
-    'sales-statuses': 'sales.statuses.manage', users: 'security.users.view',
+    'sales-statuses': 'sales.statuses.manage', 'sales-web-form': 'sales.manage', users: 'security.users.view',
     roles: 'security.roles.view', audit: 'security.audit.view',
   }
   const visibleItems = items.map(item => ({ ...item, children: item.children?.filter(child => {
@@ -147,28 +147,52 @@ export function WorkspaceLayout({ session, onSession }: { session: AuthSession; 
         }}>
         <span>{section.label}</span>{minimized ? <RightOutlined /> : <DownOutlined />}
       </button>,
-      children: minimized ? [] : section.keys.flatMap(key => {
-        const entry = visibleItems.find(item => item.key === key)
-        if (!entry) return []
-        const { children: _children, ...item } = entry
-        return [item]
-      }),
+      // Modules with sub-pages open inline under their name (a fly-out when the sidebar is collapsed).
+      children: minimized ? [] : section.keys.flatMap(key => visibleItems.filter(item => item.key === key)),
     }
   })
-  const activeGroup = visibleItems.find(item => item.key === menuGroup)
-  const parentKey = visibleItems.find(item => item.children?.some(child => child.key === page))?.key
+  const parentOf = (key: string) => visibleItems.find(item => item.children?.some(child => child.key === key))
+  const [openKeys, setOpenKeys] = useState<string[]>(() => { const parent = parentOf(page); return parent ? [parent.key] : [] })
+  // Every page the user can open, with where it lives, for the breadcrumb and Ctrl K search.
+  const destinations = sections.flatMap(section => section.keys.flatMap(key => visibleItems.filter(item => item.key === key)).flatMap(item =>
+    item.children ? (item.disabled ? [] : item.children).map(child => ({ key: child.key, label: String(child.label), icon: child.icon ?? item.icon, trail: [section.label, String(item.label)] }))
+      : item.disabled ? [] : [{ key: item.key, label: String(item.label), icon: item.icon, trail: [section.label] }]))
+  const here = destinations.find(d => d.key === page)
+  const [searchOpen, setSearchOpen] = useState(false), [searchVisit, setSearchVisit] = useState(0)
+  // Lists that can start from a search typed in Ctrl K (each reads it with takeSearch on mount).
+  const RECORD_LISTS = ['sales', 'quotations', 'surveys', 'pickups', 'packing', 'delivery', 'customers', 'vendors', 'employees', 'users']
+  const searchRecords = (key: string, query: string) => { handOffSearch(key, query); setSearchVisit(n => n + 1); navigate(key) }
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => { if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); setSearchOpen(true) } }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [])
   const navigate = (key: string) => {
     setPage(key as PageKey)
-    setMenuGroup(null)
+    const parent = parentOf(key)
+    if (parent) setOpenKeys([parent.key])
     if (!screens.lg) setCollapsed(true)
   }
-  return <BillingPermissions.Provider value={session.user.permissions}><Layout className="workspace-layout">
-    <NavigationMenuDialog columns={menuGroup==='billing'?3:2} title={activeGroup?.label ?? ''} open={Boolean(activeGroup?.children)}
-      items={activeGroup?.children ?? []} onClose={() => setMenuGroup(null)} onSelect={navigate} />
+  const userMenu = { items: [
+    { key: 'who', type: 'group' as const, label: <span className="user-menu-who"><strong>{session.user.fullName}</strong><small>{session.user.email}</small></span> },
+    { type: 'divider' as const },
+    { key: 'language', icon: <GlobalOutlined />, label: t('common.language'), children: languages.map(l => ({ key: 'lang-' + l.code, label: <span lang={l.code} dir={l.dir}>{l.name}</span>, icon: l.code === language ? <CheckOutlined /> : <span className="user-menu-spacer" /> })) },
+    { type: 'divider' as const },
+    { key: 'sign-out', icon: <LogoutOutlined />, label: t('common.signOut'), danger: true },
+  ], onClick: ({ key }: { key: string }) => { if (key === 'sign-out') onSession(null); else if (key.startsWith('lang-')) setLanguage(key.slice(5) as Language) } }
+  return <BillingPermissions.Provider value={session.user.permissions}><OpenListContext.Provider value={searchRecords}><Layout className="workspace-layout">
+    <CommandPalette open={searchOpen} onClose={() => setSearchOpen(false)} onSelect={navigate}
+      items={destinations.map(d => ({ key: d.key, label: d.label, icon: d.icon, path: d.trail.join(' › ') }))}
+      recordLists={RECORD_LISTS.flatMap(key => destinations.filter(d => d.key === key)).map(d => ({ key: d.key, label: d.label, icon: d.icon, path: [...d.trail, d.label].join(' › ') }))} onSearchRecords={searchRecords} />
     <Layout.Sider collapsible collapsed={collapsed} onCollapse={setCollapsed} trigger={null} breakpoint="lg" onBreakpoint={broken => setCollapsed(broken)} collapsedWidth={screens.lg ? 72 : 0} width={252} theme="dark" className={`app-sider ${collapsed ? 'is-collapsed' : ''}`}><div className="brand"><BrandMark size={36} /><b>crateway</b></div><div className="tenant-context"><small>{t('shell.layout.activeWorkspace')}</small><strong>{session.tenantName ?? t('shell.layout.platformAdministration')}</strong>{tenantReady && session.companyId && (tenantWide && companies.length > 1
       ? <Select className="company-switcher" size="small" value={session.companyId} onChange={switchCompany} aria-label={t('common.company')} popupMatchSelectWidth={false} suffixIcon={<UserSwitchOutlined />} options={companies.map(x => ({ value: x.id, label: x.name }))} />
-      : <span className="company-name"><ClusterOutlined /> {session.companyName}</span>)}<Typography.Text>{isSystem ? t('shell.layout.systemAdministrator') : tenantWide ? t('shell.layout.tenantUserAllCompanies') : t('shell.layout.companyUser')}</Typography.Text></div><div className="sidebar-menu-scroll"><Menu theme="dark" mode="inline" inlineCollapsed={collapsed} selectedKeys={[parentKey ?? page]} items={groupedItems} onClick={({ key }) => { const item = visibleItems.find(entry => entry.key === key); if (item?.children) setMenuGroup(key); else navigate(key) }} /></div><div className="user-card"><Avatar>{session.user.fullName.charAt(0)}</Avatar><div><strong>{session.user.fullName}</strong><small>{session.user.email}</small></div><Button type="text" aria-label={t('common.signOut')} title={t('common.signOut')} icon={<LogoutOutlined />} onClick={() => onSession(null)} /></div></Layout.Sider>
-    <Layout><Layout.Header className="topbar"><Button type="text" className="menu-toggle" aria-label={collapsed ? t('shell.layout.expandMenu') : t('shell.layout.collapseMenu')} icon={collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />} onClick={() => setCollapsed(value => !value)} /><Space wrap><Tag color="green">{t('shell.layout.protectedSession')}</Tag><Typography.Text type="secondary">{session.tenantName ? [session.tenantName, session.companyName].filter(Boolean).join(' · ') : t('shell.layout.selectTenant')}</Typography.Text><LanguageSwitcher compact /></Space></Layout.Header><Layout.Content className="workspace-content" key={session.companyId ?? 'tenant'}>
+      : <span className="company-name"><ClusterOutlined /> {session.companyName}</span>)}<Typography.Text>{isSystem ? t('shell.layout.systemAdministrator') : tenantWide ? t('shell.layout.tenantUserAllCompanies') : t('shell.layout.companyUser')}</Typography.Text></div><div className="sidebar-menu-scroll"><Menu theme="dark" mode="inline" inlineCollapsed={collapsed} selectedKeys={[page]} items={groupedItems} onClick={({ key }) => navigate(key)}
+        {...(collapsed ? {} : { openKeys, onOpenChange: (keys: string[]) => setOpenKeys(keys.filter(key => !openKeys.includes(key)).slice(-1)) })} /></div></Layout.Sider>
+    <Layout><Layout.Header className="topbar"><Button type="text" className="menu-toggle" aria-label={collapsed ? t('shell.layout.expandMenu') : t('shell.layout.collapseMenu')} icon={collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />} onClick={() => setCollapsed(value => !value)} /><Breadcrumb className="topbar-crumbs" items={here ? [...here.trail.filter((crumb, i, all) => crumb !== all[i - 1] && crumb !== here.label).map(title => ({ title })), { title: <strong>{here.label}</strong> }] : [{ title: session.tenantName ?? t('shell.layout.selectTenant') }]} />
+      <div className="topbar-actions">
+        <Button className="topbar-search" icon={<SearchOutlined />} onClick={() => setSearchOpen(true)} aria-keyshortcuts="Control+K">{t('shell.palette.button')}<kbd>Ctrl K</kbd></Button>
+        <Dropdown menu={userMenu} trigger={['click']} placement="bottomRight"><Button type="text" className="topbar-user" aria-label={t('shell.userMenu.label')}><Avatar size={30}>{session.user.fullName.charAt(0)}</Avatar><span>{session.user.fullName}</span><DownOutlined /></Button></Dropdown>
+      </div></Layout.Header><Layout.Content className="workspace-content" key={(session.companyId ?? 'tenant') + ':' + searchVisit}>
       {page === 'report-designs' && tenantReady && session.user.permissions.includes('reports.design') && <ReportTemplatesPage />}
       {page === 'accounting-reports' && tenantReady && session.user.permissions.includes('billing.view') && <AccountingReportsPage/>}
       {page === 'posting' && tenantReady && session.user.permissions.includes('billing.view') && session.user.permissions.includes('billing.pay') && <><h1>{t('shell.nav.accountantPosting')}</h1><AccountingDocumentQueue/><CashPostingPanel/></>}
@@ -189,6 +213,7 @@ export function WorkspaceLayout({ session, onSession }: { session: AuthSession; 
       {page === 'designations' && tenantReady && <DesignationsPage />}
       {page === 'sales' && tenantReady && <SalesLeadsPage />}
       {page === 'sales-statuses' && tenantReady && <SalesStatusMastersPage />}
+      {page === 'sales-web-form' && tenantReady && <WebLeadFormSettingsPage />}
       {page === 'surveys' && tenantReady && canManageSurveys && <SurveysPage />}
       {page === 'survey-masters' && tenantReady && canManageSurveys && <SurveyMastersPage />}
       {page === 'quotations' && tenantReady && canManageQuotes && <QuotationsPage />}
@@ -210,7 +235,7 @@ export function WorkspaceLayout({ session, onSession }: { session: AuthSession; 
       {page === 'openai-settings' && tenantReady && canManageOpenAi && <OpenAiConfigurationPage />}
       {page === 'claude-settings' && tenantReady && canManageClaude && <ClaudeConfigurationPage />}
     </Layout.Content></Layout>
-  </Layout></BillingPermissions.Provider>
+  </Layout></OpenListContext.Provider></BillingPermissions.Provider>
 }
 
 

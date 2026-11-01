@@ -51,7 +51,7 @@ export function CurrencyExchangeRates(){
  <div className="job-form-grid"><Form.Item name="startDate" label={t('settings.currency.fromDate')} rules={[{required:true}]}><Input type="date"/></Form.Item><Form.Item name="endDate" label={t('settings.currency.toDateInclusive')} dependencies={['startDate']} rules={[{required:true},({getFieldValue})=>({validator:async(_,v)=>{if(v&&v<getFieldValue('startDate'))throw new Error(t('settings.currency.endBeforeStart'))}})]}><Input type="date"/></Form.Item></div>
  <Alert type="info" title={t('settings.currency.reviewTitle')} description={t('settings.currency.reviewText')}/>
  <div style={{maxHeight:'50vh',overflowY:'auto',marginTop:16}}>
- <Form.List name="rates">{fields=><>{fields.map(field=><div key={field.key} className="job-form-grid" style={{borderBottom:'1px solid #e8eee9',paddingTop:8}}>
+ <Form.List name="rates">{fields=><>{fields.map(field=><div key={field.key} className="job-form-grid" style={{borderBottom:'1px solid var(--cw-line-soft)',paddingTop:8}}>
  <div><strong>{rows[field.name]?.code}</strong><p>{rows[field.name]?.name}</p><Form.Item name={[field.name,'currency']} hidden><Input/></Form.Item></div>
  <Form.Item name={[field.name,'usdPerUnit']} className="amount-field" label={'1 '+rows[field.name]?.code+' = '+data?.baseCurrency} rules={[{required:true,message:t('settings.currency.enterRate')}]}><InputNumber aria-label={t('settings.currency.rateFor',{currency:rows[field.name]?.code})} disabled={saving||rows[field.name]?.code===data?.baseCurrency} controls={false} min={0.000000000001} max={1000000} precision={12} style={{width:'100%'}}/></Form.Item>
  </div>)}</>}</Form.List>

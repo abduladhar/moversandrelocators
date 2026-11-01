@@ -48,6 +48,8 @@ public static class DataAccessRegistration
         services.AddScoped<Movers.Services.OpenAi.IAiUsageRepository, Movers.DAL.Configuration.AiUsageRepository>();
         services.AddScoped<Movers.Services.OpenAi.AiUsageService>();
         services.AddScoped<ILeadUploadRepository, LeadUploadRepository>();
+        services.AddScoped<IWebLeadFormRepository, WebLeadFormRepository>();
+        services.AddScoped<Movers.Services.Sales.ILeadJourneyQuery, Movers.DAL.Sales.LeadJourneyQuery>();
         services.AddScoped<ITodayTaskSource, SalesFollowUpTaskSource>();
         services.AddScoped<ITodayTaskSource, SurveyTaskSource>();
         services.AddScoped<Movers.DAL.CustomerLinks.CustomerReplyStore>();

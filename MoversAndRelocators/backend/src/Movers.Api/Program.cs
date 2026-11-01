@@ -30,6 +30,10 @@ builder.Services.AddRateLimiter(options =>
     options.AddPolicy("customer-links", context => System.Threading.RateLimiting.RateLimitPartition.GetFixedWindowLimiter(
         context.Connection.RemoteIpAddress?.ToString() ?? "unknown", _ => new System.Threading.RateLimiting.FixedWindowRateLimiterOptions
         { PermitLimit = 60, Window = TimeSpan.FromMinutes(1), QueueLimit = 0 }));
+    // Website lead form: a person sends one or two requests; more from one address is a script.
+    options.AddPolicy("web-lead-form", context => System.Threading.RateLimiting.RateLimitPartition.GetFixedWindowLimiter(
+        context.Connection.RemoteIpAddress?.ToString() ?? "unknown", _ => new System.Threading.RateLimiting.FixedWindowRateLimiterOptions
+        { PermitLimit = 5, Window = TimeSpan.FromMinutes(10), QueueLimit = 0 }));
 });
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
@@ -91,6 +95,7 @@ builder.Services.AddScoped<IAwsConfigurationService, AwsConfigurationService>();
 builder.Services.AddScoped<IOpenAiConfigurationService, OpenAiConfigurationService>();
 builder.Services.AddScoped<Movers.Services.Claude.ClaudeConfigurationService>();
 builder.Services.AddScoped<ILeadUploadService, LeadUploadService>();
+builder.Services.AddScoped<WebLeadFormService>();
 builder.Services.AddScoped<LeadExtractionService>();
 builder.Services.AddHttpClient<IInventoryVisionGateway, OpenAiVisionGateway>(client => client.Timeout = TimeSpan.FromSeconds(180));
 // Claude: the SDK sets its own per-request timeout (5 minutes), so the HttpClient must not cut it shorter.

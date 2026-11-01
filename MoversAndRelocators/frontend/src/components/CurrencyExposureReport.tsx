@@ -1,4 +1,5 @@
 import {useState} from 'react'
+import {ReportAbout} from './ReportAbout'
 import {Alert,Button,Card,Input,Select,Space,Tag} from 'antd'
 import {request} from '../api'
 import {localDate,useCurrencies,formatMoney} from '../currency'
@@ -26,7 +27,7 @@ export function CurrencyExposureReport(){
  <div className="accounting-report-field">{t('reports.filters.transactionCurrency')}<Select className="accounting-report-select" style={{minWidth:220}} value={currency} onChange={setCurrency} options={[{value:'ALL',label:t('reports.currencyOptions.all')},...(currencies?.currencies||[]).map(c=>({value:c.code,label:c.code}))]}/></div>
  <Button type="primary" loading={loading} onClick={()=>void load()}>{t('reports.actions.run')}</Button><Button disabled={!data||loading} onClick={exportCsv}>{t('reports.actions.exportCsv')}</Button>
  </Space>
- <Alert type="info" style={{marginBottom:16}} title={t('reports.currencyExposure.alertTitle')} description={t('reports.currencyExposure.alertDescription')}/>
+ <ReportAbout title={t('reports.currencyExposure.alertTitle')} description={t('reports.currencyExposure.alertDescription')}/>
  {error&&<Alert type="error" title={error}/>}
  {data&&<><p>{t('reports.currencyExposure.summary',{to:data.to,period:t('reports.period',{from:data.from,to:data.to}),base:data.baseCurrency,currency:data.currency==='ALL'?t('reports.currencyOptions.all'):data.currency})}</p>{data.warnings.map(w=><Alert key={w} type="warning" title={w}/>)}
  <DataGrid<Row> rowKey="currency" dataSource={data.rows} pagination={false} scroll={{x:1300}} expandable={{expandedRowRender:r=><DataGrid<Doc> rowKey="id" dataSource={r.documents} pagination={{pageSize:10}} columns={[{title:t('reports.columns.document'),dataIndex:'number'},{title:t('reports.columns.type'),dataIndex:'type'},{title:c('party'),dataIndex:'party'},{title:c('foreignBalance'),align:'right',render:(_,d)=>formatMoney(d.foreignBalance,d.currency)},{title:c('carryingBase'),align:'right',render:(_,d)=>money(d.carryingBase)},{title:c('revaluedBase'),align:'right',render:(_,d)=>money(d.revaluedBase)},{title:c('estimatedGainLoss'),align:'right',render:(_,d)=>money(d.gainLoss)}]}/>}} columns={[{title:t('reports.columns.currency'),dataIndex:'currency'},{title:c('baseUnitsPerUnit'),dataIndex:'rate',render:v=>v??unavailable},...(['receivable','payable','netExposure'] as const).map(k=>({title:c(k),align:'right' as const,render:(_:unknown,r:Row)=>formatMoney(r[k],r.currency)})),...(['carryingBase','revaluedBase','gainLoss'] as const).map(k=>({title:c(k==='gainLoss'?'estimatedGainLoss':k),align:'right' as const,render:(_:unknown,r:Row)=>money(r[k])}))]}/>

@@ -1,4 +1,5 @@
 import {ReportPrintButton} from '../reportingV2/ReportPrintButton'
+import { MoveJourneyBar } from '../components/MoveJourneyBar'
 import { BillingPanel } from '../components/BillingPanel'
 import { useBilling } from '../billingApi'
 import { useCurrencies } from '../currency'
@@ -70,6 +71,7 @@ export function PickupDetailPage({ pickupId, companyName, userName, onBack, onCh
   return <div className="survey-workspace pickup-workspace">
     <div className="survey-workspace-header"><div className="survey-heading"><Button icon={<ArrowLeftOutlined />} aria-label={t('pickups.detail.back')} onClick={onBack} /><div><Typography.Text className="eyebrow">{t('pickups.detail.eyebrow')}</Typography.Text><Typography.Title level={2}>{p.pickupNumber}<span className="survey-heading-customer">{p.customerName}</span></Typography.Title></div></div>
       <div className="survey-heading-actions"><Tag className="survey-status-tag" color={status?.color ?? 'blue'}>{status?.name ?? p.statusName}</Tag></div></div>
+    <MoveJourneyBar stage="PICKUP" id={p.id} />
     <CustomerReplyBanner type="PICKUP" id={p.id} refreshKey={detail} onChanged={onChanged} />
 
     <div className="survey-kpi-row">{kpis.map(k => <div key={k.key} className={`survey-kpi survey-kpi-${k.key}`}><span className="survey-kpi-icon">{k.icon}</span><div><small>{k.label}</small><strong>{k.value}</strong></div></div>)}</div>

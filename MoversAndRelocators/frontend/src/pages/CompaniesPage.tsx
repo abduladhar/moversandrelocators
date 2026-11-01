@@ -60,7 +60,7 @@ export function CompaniesPage({ currentCompanyId, onChanged }: { currentCompanyI
   return <>
     <PageHeader onRefresh={load} refreshDisabled={loading || saving} eyebrow={t('admin.common.tenantSettings')} title={t('admin.companies.title')} description={t('admin.companies.description')} action={t('admin.companies.add')} onAction={() => open('new')} />
     <Alert className="companies-note" type="info" showIcon title={t('admin.companies.whoWorksWhere')} description={t('admin.companies.whoWorksWhereText')} />
-    <Card className="grid-card" title={t('admin.companies.inThisTenant')} extra={t('admin.companies.companyCount', { count: companies.length })} loading={loading && companies.length === 0}><ResponsiveDataView rowKey="id" columns={columns} data={visibleRows} onScroll={onScroll} hasMore={hasMore} total={companies.length} label={t('admin.companies.companiesLabel')} scrollX={980}
+    <Card className="grid-card" title={t('admin.companies.inThisTenant')} extra={t('admin.companies.companyCount', { count: companies.length })} loading={loading && companies.length === 0}><ResponsiveDataView onOpen={x => open(x)} rowKey="id" columns={columns} data={visibleRows} onScroll={onScroll} hasMore={hasMore} total={companies.length} label={t('admin.companies.companiesLabel')} scrollX={980}
       renderTile={x => <><div className="tile-heading"><Space><BankOutlined /><div className="primary-cell"><strong>{x.name}</strong><small>{x.code}</small></div></Space><Space>{x.isDefault && <Tag color="green">{t('admin.companies.default')}</Tag>}{x.id === currentCompanyId && <Tag color="blue">{t('admin.companies.current')}</Tag>}<StatusTag active={x.isActive} /></Space></div><div className="tile-details"><span>{t('admin.companies.numbersLine', { pattern: x.numberCode ? `QT-${x.numberCode}-…` : 'QT-…' })}</span><span>{t('admin.companies.taxNumberLine', { value: x.taxNumber ?? '—' })}</span><span>{t('admin.companies.companyUsersLine', { users: x.userCount })}</span></div><div className="tile-actions">{actions(x)}</div></>} /></Card>
     <Modal centered width={720} title={editing === 'new' ? t('admin.companies.add') : t('admin.companies.editTitle', { name: editing?.name ?? '' })} open={Boolean(editing)} onCancel={() => setEditing(null)} onOk={() => void save()} confirmLoading={saving} okText={editing === 'new' ? t('admin.companies.add') : t('admin.companies.save')} cancelText={t('common.cancel')} destroyOnHidden>
       <Form form={form} layout="vertical" requiredMark="optional">
@@ -73,10 +73,8 @@ export function CompaniesPage({ currentCompanyId, onChanged }: { currentCompanyI
           <Col xs={24} sm={8}><Form.Item label={t('common.phone')} name="phone"><Input /></Form.Item></Col>
           <Col xs={24} sm={8}><Form.Item label={t('common.email')} name="email" rules={[{ type: 'email' }]}><Input /></Form.Item></Col>
           <Col xs={24} sm={8}><Form.Item label={t('admin.companies.website')} name="website"><Input /></Form.Item></Col>
-          <Col xs={24} sm={8}><Form.Item label={t('admin.companies.numberCode')} name="numberCode" normalize={(v: string) => v?.toUpperCase()}
-            rules={[{ pattern: /^[A-Za-z0-9]{1,6}$/, message: t('admin.companies.numberCodeRule') }, { required: Boolean(plainNumbers), message: t('admin.companies.numberCodeRequired', { name: plainNumbers?.name ?? t('admin.companies.anotherCompany') }) }]}><Input placeholder="DXB" maxLength={6} /></Form.Item></Col>
-          <Col xs={24} sm={16}><Form.Item label=" " colon={false}><Typography.Text type="secondary">{t('admin.companies.numberCodeHint')}</Typography.Text></Form.Item></Col>
-        </Row>
+          <Col xs={24}><Form.Item label={t('admin.companies.numberCode')} name="numberCode" normalize={(v: string) => v?.toUpperCase()} extra={t('admin.companies.numberCodeHint')} className="narrow-field"
+            rules={[{ pattern: /^[A-Za-z0-9]{1,6}$/, message: t('admin.companies.numberCodeRule') }, { required: Boolean(plainNumbers), message: t('admin.companies.numberCodeRequired', { name: plainNumbers?.name ?? t('admin.companies.anotherCompany') }) }]}><Input placeholder="DXB" maxLength={6} /></Form.Item></Col>        </Row>
       </Form>
     </Modal>
   </>

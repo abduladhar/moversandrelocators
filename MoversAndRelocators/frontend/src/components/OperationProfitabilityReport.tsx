@@ -1,4 +1,5 @@
 import {useEffect,useState} from 'react'
+import {ReportAbout} from './ReportAbout'
 import {Alert,Button,Card,Input,Select,Space,Tag} from 'antd'
 import {request} from '../api'
 import {billingApi} from '../billingApi'
@@ -29,7 +30,7 @@ export function OperationProfitabilityReport(){
  <div className="accounting-report-field">{t('reports.filters.currency')}<Select className="accounting-report-select" style={{minWidth:230}} value={currency} onChange={setCurrency} options={[{value:'BASE',label:t('reports.currencyOptions.base',{currency:currencies?.baseCurrency||'…'})},{value:'DEFAULT',label:t('reports.currencyOptions.default',{currency:currencies?.settings.defaultCurrency||'…'})},...(currencies?.currencies||[]).map(c=>({value:c.code,label:t('reports.currencyOptions.transactionsOnly',{currency:c.code})}))]}/></div>
  <Button type="primary" loading={loading} onClick={()=>void load()}>{t('reports.actions.run')}</Button><Button disabled={!data||loading} onClick={exportCsv}>{t('reports.actions.exportCsv')}</Button>
  </Space>
- <Alert type="info" style={{marginBottom:16}} title={k('alertTitle')} description={k('alertDescription')}/>
+ <ReportAbout title={k('alertTitle')} description={k('alertDescription')}/>
  {error&&<Alert type="error" title={error}/>}
  {data&&<><p>{t('reports.period',{from:data.from,to:data.to})} · {data.currency} · {kindLabel(data.sourceKind)}</p>
  <DataGrid<Row> rowKey={r=>r.sourceKind+r.sourceId} dataSource={data.rows} pagination={{pageSize:25}} scroll={{x:1000}} expandable={{expandedRowRender:r=><DataGrid<Entry> rowKey={(_,i)=>String(i)} dataSource={r.entries} pagination={{pageSize:10}} scroll={{x:1200}} columns={[{title:t('reports.columns.date'),dataIndex:'date'},{title:t('reports.columns.reference'),dataIndex:'reference'},{title:t('reports.columns.description'),dataIndex:'description'},{title:t('reports.columns.type'),render:(_,e)=>e.isReversal?t('reports.columns.reversal'):k('posting')},{title:t('reports.columns.transactionAmount'),align:'right',render:(_,e)=>formatMoney(e.transactionAmount,e.transactionCurrency)},{title:amountTitles.revenue,align:'right',render:(_,e)=>formatMoney(e.revenue,data.currency)},{title:amountTitles.expense,align:'right',render:(_,e)=>formatMoney(e.expense,data.currency)}]}/>}} columns={[{title:t('reports.columns.type'),dataIndex:'sourceKind',render:v=>kindLabel(v)},{title:k('operation'),dataIndex:'sourceLabel'},...(['revenue','expense','profit'] as const).map(x=>({title:amountTitles[x],align:'right' as const,render:(_:unknown,r:Row)=>formatMoney(r[x],data.currency)})),{title:k('columns.margin'),align:'right',render:(_,r)=>r.marginPercent==null?'—':r.marginPercent.toFixed(2)+'%'}]}/>

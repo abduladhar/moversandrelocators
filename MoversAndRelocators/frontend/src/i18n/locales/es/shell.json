@@ -56,7 +56,8 @@
     "systemCurrency": "Moneda del sistema",
     "aws": "Configuración de AWS",
     "openai": "Configuración de OpenAI",
-    "claude": "Configuración de Claude"
+    "claude": "Configuración de Claude",
+    "webForm": "Formulario web"
   },
   "layout": {
     "activeWorkspace": "ESPACIO DE TRABAJO ACTIVO",
@@ -165,5 +166,15 @@
     "keepTitle": "¿Limitar este registro solo a {company}?",
     "keepContent": "Las demás empresas ya no podrán verlo ni seleccionarlo. Los documentos que ya hayan creado con él no cambian.",
     "keepOk": "Limitar a esta empresa"
+  },
+  "palette": {
+    "button": "Buscar",
+    "placeholder": "Buscar páginas y registros",
+    "findIn": "Buscar «{query}» en {page}",
+    "empty": "Ninguna página coincide con «{query}».",
+    "hint": "↑ ↓ para moverse · Enter para abrir · Esc para cerrar"
+  },
+  "userMenu": {
+    "label": "Menú de la cuenta"
   }
 }

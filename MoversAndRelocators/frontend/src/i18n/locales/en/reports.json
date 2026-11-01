@@ -1,4 +1,5 @@
 {
+  "about": "About this report",
   "cardTitle": "{number}. {title}",
   "ready": "Ready",
   "period": "{from} to {to}",

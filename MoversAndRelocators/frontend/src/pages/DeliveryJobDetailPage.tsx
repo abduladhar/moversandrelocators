@@ -1,4 +1,6 @@
 import {useEffect,useMemo,useRef,useState} from 'react'
+import { MoveJourneyBar } from '../components/MoveJourneyBar'
+import { StatusTag } from '../components/StatusTag'
 import { ReceiptPicker, ReceiptsButton, uploadReceipts, useReceipts } from '../expenseReceipts'
 import {Alert,AutoComplete,Button,Card,Checkbox,Col,Empty,Form,Input,InputNumber,Modal,Popconfirm,Row,Select,Space,Spin,Statistic,Table,Tabs,Tag,Typography,message} from 'antd'
 import type {ColumnsType} from 'antd/es/table'
@@ -65,6 +67,7 @@ export function DeliveryJobDetailPage({jobId,onBack,onChanged}:{jobId:string;onB
   </div>
   {locked&&<Alert type={j.status==='COMPLETED'?'success':'warning'} showIcon title={j.status==='COMPLETED'?t('delivery.detail.completedAlert',{date:when(j.completedAtUtc)}):t('delivery.detail.cancelledAlert')}/>}
   {j.status==='PLANNED'&&!items.length&&<Alert type="info" showIcon title={t('delivery.detail.loadHint')}/>}
+  <MoveJourneyBar stage="DELIVERY" id={jobId} />
   <CustomerReplyBanner type="DELIVERY_JOB" id={jobId} refreshKey={detail} onChanged={onChanged}/>
   <div className="survey-kpi-row packing-kpi-row">{kpis.map(k=><div key={k.key} className={'survey-kpi packing-kpi-'+k.key}><span className="survey-kpi-icon">{k.icon}</span><div><small>{k.label}</small><strong>{k.value}</strong></div></div>)}</div>
   <Card className="survey-customer-strip"><div className="survey-facts pickup-facts">{facts.map(f=><div key={f.key} className="survey-fact"><span className="survey-fact-icon">{f.icon}</span><div><small>{f.label}</small><div className="survey-fact-value">{f.value}</div></div></div>)}</div>
@@ -95,7 +98,7 @@ function NotesTab({detail,act}:{detail:DeliveryDetail;act:Act}){
   {title:t('delivery.notes.col.package'),dataIndex:'trackingNumber',render:(_,x)=><div className="primary-cell"><strong>{x.trackingNumber}</strong><small>{x.description}</small></div>},
   {title:t('delivery.notes.col.contents'),dataIndex:'contents',ellipsis:true},
   {title:t('delivery.notes.col.loadedFrom'),key:'from',render:(_,x)=><div className="primary-cell"><span>{x.source==='JOB'?t('delivery.notes.fromJob',{reference:x.reference}):x.location}</span><small>{x.source==='JOB'?t('delivery.notes.transportJob'):t('delivery.notes.warehouseRef',{reference:x.reference})}</small></div>},
-  {title:t('common.status'),key:'status',render:(_,x)=><div className="primary-cell"><span><Tag color={ITEM_STATUS[x.status].color}>{t('delivery.itemStatus.'+x.status)}</Tag></span>{x.status!=='LOADED'&&<small>{[x.receivedBy&&t('delivery.notes.receivedBy',{name:x.receivedBy}),x.notes,when(x.statusAtUtc)].filter(Boolean).join(' · ')}</small>}</div>},
+  {title:t('common.status'),key:'status',render:(_,x)=><div className="primary-cell"><span><StatusTag color={ITEM_STATUS[x.status].color}>{t('delivery.itemStatus.'+x.status)}</StatusTag></span>{x.status!=='LOADED'&&<small>{[x.receivedBy&&t('delivery.notes.receivedBy',{name:x.receivedBy}),x.notes,when(x.statusAtUtc)].filter(Boolean).join(' · ')}</small>}</div>},
   {title:'',key:'actions',width:260,render:(_,x)=>note.isSigned?null:<Space size={4} wrap>
    {out&&x.status!=='DELIVERED'&&<Button size="small" type="primary" icon={<CheckCircleOutlined/>} onClick={()=>setMarking({item:x,note,status:'DELIVERED'})}>{t('delivery.notes.delivered')}</Button>}
    {out&&x.status!=='RETURNED'&&<Button size="small" danger icon={<CloseCircleOutlined/>} onClick={()=>setMarking({item:x,note,status:'RETURNED'})}>{t('delivery.notes.notDelivered')}</Button>}
@@ -123,8 +126,8 @@ function NotesTab({detail,act}:{detail:DeliveryDetail;act:Act}){
     <Table rowKey="id" size="small" pagination={false} scroll={{x:900}} dataSource={note.items} columns={columns(note)}/>
     {note.isSigned&&<div className="delivery-signature">
      {note.signaturePng&&<img src={note.signaturePng} alt={t('delivery.notes.signatureAlt',{name:note.signerName})} style={{maxWidth:280,maxHeight:110,border:'1px solid #e3e8ef',borderRadius:6,background:'#fff'}}/>}
-     <div><strong>{t('delivery.notes.signedBy',{name:note.signerName})}</strong><div style={{color:'#6b7686'}}>{t('delivery.notes.recordedBy',{date:when(note.signedAtUtc),name:note.signedBy})}</div>{note.remarks&&<div>{t('delivery.notes.remarks',{remarks:note.remarks})}</div>}
-      <div style={{color:'#6b7686'}}>{signedMissing?t('delivery.notes.coversWithMissing',{delivered:signedDelivered,missing:signedMissing}):t('delivery.notes.covers',{count:signedDelivered})}</div></div>
+     <div><strong>{t('delivery.notes.signedBy',{name:note.signerName})}</strong><div style={{color:'var(--cw-muted)'}}>{t('delivery.notes.recordedBy',{date:when(note.signedAtUtc),name:note.signedBy})}</div>{note.remarks&&<div>{t('delivery.notes.remarks',{remarks:note.remarks})}</div>}
+      <div style={{color:'var(--cw-muted)'}}>{signedMissing?t('delivery.notes.coversWithMissing',{delivered:signedDelivered,missing:signedMissing}):t('delivery.notes.covers',{count:signedDelivered})}</div></div>
     </div>}
    </Card>})}
   <DeliveryCustomerLinks detail={detail} note={detail.notes.find(n=>n.id===linksFor)??null} open={linksFor!==null} onClose={()=>setLinksFor(null)} act={act}/>
@@ -292,7 +295,7 @@ function MoneyTab({detail,masters,act}:{detail:DeliveryDetail;masters:DeliveryMa
   {title:t('delivery.money.col.category'),dataIndex:'category',render:(v:string)=>masters.expenseCategories.find(c=>c.code===v)?.name??v},
   {title:t('delivery.money.col.paidBy'),dataIndex:'paidByName',render:(v:string|null|undefined,x:{type:string})=>x.type==='EXPENSE'?(v??'—'):''},
   {title:t('delivery.money.col.method'),dataIndex:'paymentMethod',render:(v:string)=>methods.find(m=>m.value===v)?.label??v},
-  {title:t('common.amount'),align:'right' as const,render:(_:unknown,x:Tx)=><>{formatMoney(x.amount,x.currency||cur)}<br/><small style={{color:'#6b7686'}}>{formatMoney(x.baseAmount,cur)}</small></>},
+  {title:t('common.amount'),align:'right' as const,render:(_:unknown,x:Tx)=><>{formatMoney(x.amount,x.currency||cur)}<br/><small style={{color:'var(--cw-muted)'}}>{formatMoney(x.baseAmount,cur)}</small></>},
   {title:t('common.date'),dataIndex:'createdAtUtc',render:when},
   {title:'',render:(_:unknown,x:Tx)=>x.type==='INCOME'?<ReportPrintButton type="DELIVERY_RECEIPT" title={t('delivery.money.receiptTitle',{number:x.transactionNumber})} id={detail.job.id} query={{transactionId:x.id}} label={t('delivery.money.receipt')} size="small"/>:<ReceiptsButton kind='DELIVERY' expenseId={x.id} receipts={receipts.byExpense.get(x.id)??[]} onChanged={()=>void receipts.reload()} title={t('delivery.money.receiptsTitle',{number:x.transactionNumber})}/>}
  ],[masters,detail,receipts.byExpense,language])
@@ -306,7 +309,7 @@ function MoneyTab({detail,masters,act}:{detail:DeliveryDetail;masters:DeliveryMa
   </Row>
   <Card title={t('delivery.money.title')} extra={<Space><Button type="primary" icon={<PlusOutlined/>} disabled={cancelled} onClick={()=>start('INCOME')}>{t('delivery.money.collectPayment')}</Button><Button icon={<PlusOutlined/>} disabled={cancelled} onClick={()=>start('EXPENSE')}>{t('delivery.money.recordExpense')}</Button></Space>}>
    <Table rowKey="id" size="middle" pagination={false} scroll={{x:900}} dataSource={detail.transactions} columns={columns} locale={{emptyText:t('delivery.money.empty')}}/>
-   {detail.accounting.totals.length>1&&<p style={{marginTop:8,color:'#6b7686'}}>{t('delivery.money.byCurrency',{totals:detail.accounting.totals.map(x=>t('delivery.money.currencyTotal',{currency:x.currency,income:formatMoney(x.income,x.currency),expense:formatMoney(x.expense,x.currency)})).join(' · ')})}</p>}
+   {detail.accounting.totals.length>1&&<p style={{marginTop:8,color:'var(--cw-muted)'}}>{t('delivery.money.byCurrency',{totals:detail.accounting.totals.map(x=>t('delivery.money.currencyTotal',{currency:x.currency,income:formatMoney(x.income,x.currency),expense:formatMoney(x.expense,x.currency)})).join(' · ')})}</p>}
    <Alert style={{marginTop:12}} type="info" showIcon title={t('delivery.money.accounting')} description={t('delivery.money.accountingHint')}/>
   </Card>
   <Modal centered width={860} open={open!==null} title={open==='INCOME'?t('delivery.money.collectTitle'):t('delivery.money.expenseTitle')} okText={t('common.save')} cancelText={t('common.cancel')} onOk={()=>void save()} onCancel={()=>setOpen(null)} destroyOnHidden>

@@ -5,7 +5,7 @@ using Movers.Services.Sales;
 
 namespace Movers.Api.Controllers;
 
-[ApiController, AllowAnonymous, Route("api/public/lead-uploads/{token}")]
+[ApiController, AllowAnonymous, Microsoft.AspNetCore.RateLimiting.EnableRateLimiting("customer-links"), Route("api/public/lead-uploads/{token}")]
 public sealed class PublicLeadUploadsController(ILeadUploadService service) : ControllerBase
 {
     [HttpPut("details")]

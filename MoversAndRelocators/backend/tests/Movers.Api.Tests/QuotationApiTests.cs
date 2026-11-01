@@ -38,6 +38,15 @@ public sealed class QuotationApiTests : IAsyncLifetime
         Assert.Equal(lead.Id, quote.SalesLeadId);
         Assert.Equal("Chennai", quote.Origin);
         Assert.Equal("Bengaluru", quote.Destination);
+        // The lead's journey finds the survey linked to it and the quotation made from that survey.
+        var journey = await _client.GetFromJsonAsync<List<JourneyStepResponse>>($"/api/sales/leads/{lead.Id}/journey");
+        Assert.Contains(journey!, x => x.Stage == "SURVEY" && x.Id == survey.Id && x.Status == "SCHEDULED");
+        Assert.Contains(journey!, x => x.Stage == "QUOTATION" && x.Id == quote.Id);
+        // From the quotation the same move is found: its lead through the survey, and the survey itself.
+        var fromQuote = await _client.GetFromJsonAsync<RecordJourneyResponse>($"/api/journey/quotation/{quote.Id}");
+        Assert.Equal(lead.Id, fromQuote!.LeadId);
+        Assert.Contains(fromQuote.Steps, x => x.Stage == "SURVEY" && x.Id == survey.Id);
+        Assert.Equal(System.Net.HttpStatusCode.BadRequest, (await _client.GetAsync($"/api/journey/invoice/{quote.Id}")).StatusCode);
         var withItems = await Put<QuotationDetailResponse>($"/api/quotations/{quote.Id}/items", new { items = new[] { new { householdItemId = chair.Id, roomName = "Dining room", quantity = 4, volumePerUnitCbm = 1m, notes = "Quotation inventory", displayOrder = 1 } } });
         Assert.Equal(4m, withItems.SurveyVolumeCbm);
         await Put<QuotationDetailResponse>($"/api/quotations/{quote.Id}/items", new { items = Array.Empty<object>() });
@@ -265,4 +274,6 @@ public sealed class QuotationApiTests : IAsyncLifetime
     private sealed record RequoteItemResponse(int RequestedQuantity);
     private sealed record LineResponse(decimal Quantity);
     private sealed record RoleResponse(Guid Id, string Code);
+    private sealed record JourneyStepResponse(string Stage, Guid Id, string Number, string Status);
+    private sealed record RecordJourneyResponse(Guid? LeadId, List<JourneyStepResponse> Steps);
 }

@@ -1,4 +1,5 @@
 {
+  "about": "Bu rapor hakkında",
   "cardTitle": "{number}. {title}",
   "ready": "Hazır",
   "period": "{from} – {to}",

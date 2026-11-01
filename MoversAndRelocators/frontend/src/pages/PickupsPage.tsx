@@ -1,4 +1,6 @@
 import { nowLocal } from '../dates'
+import { takeSearch } from '../searchHandoff'
+import { StatusTag } from '../components/StatusTag'
 import { ContactMasterPicker } from '../components/ContactMasterPicker'
 import { RowActions } from '../components/RowActions'
 import { useEffect, useState } from 'react'
@@ -21,7 +23,7 @@ type CreateForm = { quotationId?: string; salesLeadId?: string; customerName: st
 /** Pickup register; each pickup opens in its own workspace. */
 export function PickupsPage({ companyName, userName, mode = 'pickup' }: { companyName: string; userName: string; mode?: 'pickup' | 'packing' }) {
   const [statuses, setStatuses] = useState<PickupStatus[]>([]), [vehicles, setVehicles] = useState<Vehicle[]>([])
-  const [quotes, setQuotes] = useState<Quotation[]>([]), [leads, setLeads] = useState<SalesLead[]>([]), [query, setQuery] = useState(''), [statusFilter, setStatusFilter] = useState<string>()
+  const [quotes, setQuotes] = useState<Quotation[]>([]), [leads, setLeads] = useState<SalesLead[]>([]), [query, setQuery] = useState(() => takeSearch('pickups')), [statusFilter, setStatusFilter] = useState<string>()
   const [createOpen, setCreateOpen] = useState(false), [source, setSource] = useState<Source>('QUOTATION'), [saving, setSaving] = useState(false), [openId, setOpenId] = useState<string | null>(null)
   const [form] = Form.useForm<CreateForm>()
   const { t } = useT()
@@ -56,7 +58,7 @@ export function PickupsPage({ companyName, userName, mode = 'pickup' }: { compan
     { title: t('pickups.list.colSchedule'), dataIndex: 'scheduledAtUtc', width: 190, render: (_, x) => formatDateTime(x.scheduledAtUtc) },
     { title: t('pickups.vehicle'), dataIndex: 'vehicleNumber', width: 150, render: (_, x) => x.vehicleNumber ?? <Tag>{t('pickups.notAssigned')}</Tag> },
     { title: t('pickups.list.colTrip'), key: 'trip', width: 150, render: (_, x) => x.endedAtUtc ? <Tag color="green">{t('pickups.list.tripBack')}</Tag> : x.isPaused ? <Tag color="orange">{t('pickups.list.tripPaused')}</Tag> : x.startedAtUtc ? <Tag color="blue">{t('pickups.list.tripInProgress')}</Tag> : <Tag>{t('pickups.list.tripNotStarted')}</Tag> },
-    { title: t('common.status'), dataIndex: 'statusName', width: 130, render: (_, x) => <span className="status-stack"><Tag color={x.statusColor ?? 'blue'}>{x.statusName}</Tag><CustomerReplyTag reply={customer.get(x.id)} onChanged={customerChanged} /></span> },
+    { title: t('common.status'), dataIndex: 'statusName', width: 130, render: (_, x) => <span className="status-stack"><StatusTag color={x.statusColor ?? 'blue'}>{x.statusName}</StatusTag><CustomerReplyTag reply={customer.get(x.id)} onChanged={customerChanged} /></span> },
     { title: t('common.actions'), key: 'actions', width: 80, render: (_, x) => <RowActions><Button size="small" onClick={() => setOpenId(x.id)}>{mode === 'packing' ? t('pickups.list.openPacking') : t('pickups.list.openPickup')}</Button></RowActions> },
   ]
 
@@ -64,8 +66,8 @@ export function PickupsPage({ companyName, userName, mode = 'pickup' }: { compan
     <PageHeader onRefresh={load} eyebrow={t('pickups.list.eyebrow')} title={mode === 'packing' ? t('pickups.list.titlePacking') : t('pickups.list.title')} description={t('pickups.list.description')} action={t('pickups.list.create')} onAction={openCreate}
       filters={<AdvancedSearch value={query} onChange={setQuery} active={Boolean(statusFilter) || Boolean(customerState) || sortField !== 'serialNo' || direction !== 'desc'} sortField={sortField} onSortField={setSortField} sortDirection={direction} onSortDirection={setDirection} sortOptions={[{ value: 'serialNo', label: t('common.createdAt') }, { value: 'scheduledAtUtc', label: t('pickups.list.colSchedule') }, { value: 'customerName', label: t('pickups.customerName') }, { value: 'pickupNumber', label: t('pickups.list.colPickup') }, { value: 'statusName', label: t('common.status') }]} onReset={() => { setQuery(''); setStatusFilter(undefined); setCustomerState(undefined); setSortField('serialNo'); setDirection('desc') }}><CustomerStateFilter value={customerState} onChange={setCustomerState} /><Select allowClear placeholder={t('common.status')} value={statusFilter} onChange={setStatusFilter} options={statuses.map(s => ({ value: s.id, label: s.name }))} /></AdvancedSearch>} />
     <Card className="grid-card" title={mode === 'packing' ? t('pickups.list.registerPacking') : t('pickups.list.register')} extra={t('pickups.list.count', { count: list.total })}>
-      <ResponsiveDataView rowKey="id" columns={columns} data={list.rows} onScroll={list.onScroll} hasMore={list.hasMore} total={list.total} loading={list.loading}label={t('pickups.list.rowsLabel')} scrollX={1160}
-        renderTile={x => <><div className="tile-heading"><div className="primary-cell"><strong>{x.pickupNumber}</strong><small>{x.customerName}</small></div><span className="status-stack"><Tag color={x.statusColor ?? 'blue'}>{x.statusName}</Tag><CustomerReplyTag reply={customer.get(x.id)} onChanged={customerChanged} /></span></div>
+      <ResponsiveDataView onOpen={x => setOpenId(x.id)} rowKey="id" columns={columns} data={list.rows} onScroll={list.onScroll} hasMore={list.hasMore} total={list.total} loading={list.loading}label={t('pickups.list.rowsLabel')} scrollX={1160}
+        renderTile={x => <><div className="tile-heading"><div className="primary-cell"><strong>{x.pickupNumber}</strong><small>{x.customerName}</small></div><span className="status-stack"><StatusTag color={x.statusColor ?? 'blue'}>{x.statusName}</StatusTag><CustomerReplyTag reply={customer.get(x.id)} onChanged={customerChanged} /></span></div>
           <div className="tile-details"><span>{formatDateTime(x.scheduledAtUtc)}</span><span>{x.vehicleNumber ?? t('pickups.list.vehicleNotAssigned')}</span><span>{x.quotationNumber ? t('pickups.quotationNumber', { number: x.quotationNumber }) : x.leadNumber ? t('pickups.leadNumber', { number: x.leadNumber }) : t('pickups.directPickup')}</span></div>
           <div className="tile-actions"><RowActions><Button size="small" onClick={() => setOpenId(x.id)}>{mode === 'packing' ? t('pickups.list.openPacking') : t('pickups.list.openPickup')}</Button></RowActions></div></>} />
     </Card>

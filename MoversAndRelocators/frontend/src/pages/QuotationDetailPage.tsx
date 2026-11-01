@@ -1,4 +1,6 @@
 import {ReportPrintButton} from '../reportingV2/ReportPrintButton'
+import { MoveJourneyBar } from '../components/MoveJourneyBar'
+import { StatusTag } from '../components/StatusTag'
 import {useCurrencies} from '../currency'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Alert, Button, Card, Descriptions, Empty, Form, Input, InputNumber, Modal, Popconfirm, Select, Space, Tabs, Tag, Typography, message } from 'antd'
@@ -110,6 +112,7 @@ export function QuotationDetailPage({ quotationId, onBack, onChanged, onOpenRevi
   if (!detail) return <Card loading />
   const q = detail.quotation; const locked = q.status === 'ACCEPTED' || q.status === 'REJECTED'
   return <div className="survey-workspace quotation-workspace"><div className="survey-workspace-header"><div className="survey-heading"><Button disabled={saving} icon={<ArrowLeftOutlined />} aria-label={t('quotations.detail.back')} onClick={onBack} /><div><Typography.Text className="eyebrow">{t('quotations.detail.eyebrow')}</Typography.Text><Typography.Title level={2}>{q.quotationNumber}<span className="survey-heading-customer">{q.customerName}</span></Typography.Title></div></div><Space wrap className="survey-heading-actions"><ReportPrintButton type="QUOTATION" title={q.quotationNumber} id={q.id}/><Button icon={<SyncOutlined />} loading={refreshing} disabled={saving || refreshingReview || open || itemOpen} onClick={() => void refreshQuotation()}>{t('common.refresh')}</Button><Tag className="survey-status-tag" color={statusColor[q.status]}>{statusLabel(q.status)}</Tag></Space></div>
+    <MoveJourneyBar stage="QUOTATION" id={q.id} />
     <CustomerReplyBanner type="QUOTATION" id={q.id} refreshKey={q} onChanged={onChanged} />
     {q.revisedFromNumber && <Alert type="info" showIcon message={t('quotations.revisionOf', { number: q.revisedFromNumber })} description={<div style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>{t('quotations.detail.previousReason', { reason: q.revisionReason || t('quotations.detail.notRecorded') })}</div>} />}
     <div className="survey-kpi-row quotation-kpi-row">{[
@@ -143,7 +146,7 @@ export function QuotationDetailPage({ quotationId, onBack, onChanged, onOpenRevi
         <Card title={t('quotations.detail.customerResponse')} extra={<Button icon={<SyncOutlined />} loading={refreshingReview} onClick={() => void refreshReview()}>{t('quotations.detail.refreshResponse')}</Button>}>
           <Space direction="vertical" size="middle" style={{ width: '100%' }}>
             {q.status === 'REJECTED' && <Button type="primary" icon={<PlusOutlined />} loading={saving} onClick={() => void createRevision()}>{t('quotations.detail.createRevision')}</Button>}
-            <Space wrap><Tag color={statusColor[q.status]}>{statusLabel(q.status)}</Tag>{q.respondedAtUtc && <Typography.Text type="secondary">{t('quotations.detail.responded', { date: formatDateTime(q.respondedAtUtc) })}</Typography.Text>}</Space>
+            <Space wrap><StatusTag color={statusColor[q.status]}>{statusLabel(q.status)}</StatusTag>{q.respondedAtUtc && <Typography.Text type="secondary">{t('quotations.detail.responded', { date: formatDateTime(q.respondedAtUtc) })}</Typography.Text>}</Space>
             {q.status === 'REJECTED' ? <Alert type="error" showIcon message={t('quotations.detail.rejectionReason')} description={<div style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>{q.rejectionReason || t('quotations.detail.noRejectionReason')}</div>} />
               : q.status === 'ACCEPTED' ? <Alert type="success" showIcon message={t('quotations.detail.accepted')} />
               : q.status === 'REQUOTE_REQUESTED' ? <Alert type="warning" showIcon message={t('quotations.detail.requoteRequested')} description={t('quotations.detail.reviewChangesBelow')} />

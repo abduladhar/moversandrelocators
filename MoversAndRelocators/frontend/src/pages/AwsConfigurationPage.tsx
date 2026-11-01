@@ -39,7 +39,7 @@ export function AwsConfigurationPage() {
     <Row gutter={[14, 14]}>
       <Col xs={24} xl={16}>
         <Card className="grid-card aws-settings-card" loading={loading} title={<Space><CloudServerOutlined /> {t('settings.aws.connectionDetails')}</Space>} extra={configuration ? <Tag color="green">{t('settings.common.configured')}</Tag> : <Tag>{t('settings.common.notConfigured')}</Tag>}>
-          <Form form={form} layout="vertical" requiredMark="optional">
+          <Form form={form} layout="vertical" requiredMark="optional" className="settings-form">
             <Form.Item label={t('settings.aws.region')} name="region" rules={[{ required: true }, { pattern: /^[a-z]{2}(?:-[a-z0-9]+)+-[0-9]+$/, message: t('settings.aws.regionRule') }]}>
               <Select showSearch optionFilterProp="label" options={regions} placeholder={t('settings.aws.selectRegion')} />
             </Form.Item>

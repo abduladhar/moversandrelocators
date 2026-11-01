@@ -1,4 +1,5 @@
 import {useEffect,useState} from 'react'
+import {ReportAbout} from './ReportAbout'
 import {Alert,Button,Card,Input,Select,Space,Tag} from 'antd'
 import {lastBillingReportQuery,request} from '../api'
 import {ReportPrintButton} from '../reportingV2/ReportPrintButton'
@@ -33,7 +34,7 @@ export function VendorStatementReport({partyCode}:{partyCode?:string}={}){
  {error&&<Alert type="error" title={error}/>}
  {!data&&!error&&<Alert type="info" title={t('reports.vendorStatement.empty')}/>}
  {data&&<><h3>{data.vendor.name} · {data.vendor.code}</h3><p>{t('reports.period',{from:data.from,to:data.to})} · {data.currency}{data.conversionDate?' · '+t('reports.vendorStatement.conversionNote',{date:data.conversionDate}):''}</p>
- <Alert style={{marginBottom:16}} type="info" title={t('reports.vendorStatement.alertTitle')} description={t('reports.vendorStatement.alertDescription')}/>
+ <ReportAbout title={t('reports.vendorStatement.alertTitle')} description={t('reports.vendorStatement.alertDescription')}/>
  <h3>{lv(t('reports.generalLedger.openingBalance'),balance(data.opening))}</h3>
  <DataGrid<Entry> rowKey="journalId" dataSource={data.rows} scroll={{x:1300}} pagination={{pageSize:25}} columns={[{title:t('reports.columns.date'),dataIndex:'date'},{title:t('reports.columns.type'),dataIndex:'type'},{title:t('reports.columns.document'),dataIndex:'number'},{title:t('reports.columns.reference'),dataIndex:'reference'},{title:t('reports.columns.transactionDebit'),align:'right',render:(_,r)=>formatMoney(r.transactionDebit,r.transactionCurrency)},{title:t('reports.columns.transactionCredit'),align:'right',render:(_,r)=>formatMoney(r.transactionCredit,r.transactionCurrency)},{title:t('reports.columns.debitIn',{currency:data.currency}),align:'right',render:(_,r)=>formatMoney(r.debit,data.currency)},{title:t('reports.columns.creditIn',{currency:data.currency}),align:'right',render:(_,r)=>formatMoney(r.credit,data.currency)},{title:t('reports.columns.runningBalance'),align:'right',render:(_,r)=>balance(r.balance)}]}/>
  <Space wrap style={{display:'flex',justifyContent:'flex-end',marginTop:20}}><strong>{lv(t('reports.customerStatement.periodDebit'),formatMoney(data.debit,data.currency))}</strong><strong>{lv(t('reports.customerStatement.periodCredit'),formatMoney(data.credit,data.currency))}</strong><strong>{t('reports.generalLedger.closing',{amount:balance(data.closing)})}</strong></Space>

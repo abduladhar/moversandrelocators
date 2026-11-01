@@ -1,4 +1,5 @@
 import { RefreshButton } from '../components/RefreshButton'
+import { MoveJourneyBar } from '../components/MoveJourneyBar'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Alert, Button, Card, Col, Empty, Form, Input, InputNumber, Modal, Popconfirm, Progress, Row, Select, Space, Statistic, Tabs, Tag, Typography, message } from 'antd'
 import { AppstoreAddOutlined, ArrowLeftOutlined, BoxPlotOutlined, CalendarOutlined, CheckCircleOutlined, ClockCircleOutlined, DeleteOutlined, DollarOutlined, EditOutlined, EnvironmentOutlined, HomeOutlined, ImportOutlined, InboxOutlined, MessageOutlined, MinusCircleOutlined, PaperClipOutlined, PlusCircleOutlined, PlusOutlined, SaveOutlined, TeamOutlined } from '@ant-design/icons'
@@ -121,6 +122,7 @@ export function SurveyDetailPage({ surveyId, onBack, onChanged }: { surveyId: st
   return <div className="survey-workspace">
     <div className="survey-workspace-header"><div className="survey-heading"><Button icon={<ArrowLeftOutlined />} aria-label={t('surveys.detail.back')} onClick={onBack} /><div><Typography.Text className="eyebrow">{t('surveys.detail.eyebrow')}</Typography.Text><Typography.Title level={2}>{detail.survey.surveyNumber}<span className="survey-heading-customer">{detail.survey.customerName}</span></Typography.Title></div></div><Space wrap className="survey-heading-actions"><RefreshButton onRefresh={load} disabled={saving || reviewing || roomOpen || itemOpen} confirmText={unsaved ? t('surveys.detail.refreshDiscards') : undefined} /><Tag className="survey-status-tag" color={statusColor[detail.survey.status]}>{t('surveys.status.' + detail.survey.status)}</Tag>{saveState === 'error' ? <Tag className="survey-save-state" color="error">{t('surveys.detail.lastNotSaved')}</Tag> : <Tag className="survey-save-state" color={saveState === 'saving' ? 'processing' : 'success'} icon={saveState === 'saving' ? <ClockCircleOutlined /> : <CheckCircleOutlined />}>{saveState === 'saving' ? t('common.saving') : t('surveys.detail.allSaved')}</Tag>}</Space></div>
 
+    <MoveJourneyBar stage="SURVEY" id={detail.survey.id} />
     <CustomerReplyBanner type="SURVEY" id={detail.survey.id} refreshKey={detail} onChanged={onChanged} />
     <div className="survey-kpi-row">{[
       { key: 'rooms', icon: <HomeOutlined />, label: t('surveys.detail.rooms'), value: draft.rooms.length },

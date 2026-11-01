@@ -56,7 +56,7 @@ export function ClaudeConfigurationPage() {
     <Row gutter={[14, 14]}>
       <Col xs={24} xl={16}>
         <Card className="grid-card integration-settings-card" loading={loading} title={<Space><ExperimentOutlined /> {t('settings.claude.connectionAndModel')}</Space>} extra={configuration ? <Tag color="green">{t('settings.common.configured')}</Tag> : <Tag>{t('settings.common.notConfigured')}</Tag>}>
-          <Form form={form} layout="vertical" requiredMark="optional">
+          <Form form={form} layout="vertical" requiredMark="optional" className="settings-form">
             <Form.Item label={t('settings.claude.apiKey')} name="apiKey" extra={configuration ? t('settings.common.currentCredential', { masked: configuration.maskedApiKey }) : t('settings.claude.requiredInitially')} rules={configuration ? [{ min: 20 }] : [{ required: true, min: 20 }]}>
               <Input.Password autoComplete="new-password" prefix={<KeyOutlined />} placeholder={configuration ? t('settings.common.enterToRotate') : 'sk-ant-…'} />
             </Form.Item>

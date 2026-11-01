@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { StatusTag } from '../StatusTag'
 import { useMessageTemplate } from '../../messageTemplates'
 import { ShareChannels } from '../ShareChannels'
 import { movementLabel } from '../../operationsApi'
@@ -59,7 +60,7 @@ export function PickupStorageTab({ detail, work, warehouses, onWork }: Props) {
     </Card>
     <Card title={t('pickups.storage.locations')} extra={<Tag>{t('pickups.boxCount', { count: detail.packages.length })}</Tag>}>
       {detail.packages.length ? <ul className="pickup-list">{detail.packages.map(b => { const s = work.storage.find(x => x.packageId === b.id)
-        return <li key={b.id}><div><strong>{b.trackingNumber}</strong><small>{s?.location ?? p.address}{s?.updatedAtUtc ? ` · ${when(s.updatedAtUtc)}` : ''}</small></div><Tag color={statusColor[s?.status ?? 'PACKED']}>{movementLabel(s?.status ?? 'PACKED')}</Tag></li> })}</ul>
+        return <li key={b.id}><div><strong>{b.trackingNumber}</strong><small>{s?.location ?? p.address}{s?.updatedAtUtc ? ` · ${when(s.updatedAtUtc)}` : ''}</small></div><StatusTag color={statusColor[s?.status ?? 'PACKED']}>{movementLabel(s?.status ?? 'PACKED')}</StatusTag></li> })}</ul>
         : <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description={t('pickups.noBoxesYet')} />}
     </Card>
 

@@ -13,7 +13,7 @@ public sealed class LeadUploadService(ILeadUploadRepository repository, ITenantC
     ISecretProtector protector, IAwsObjectStorage storage, TimeProvider timeProvider, ICustomerReplies replies, Movers.Services.Tenants.ICompanyScope? companies = null) : ILeadUploadService
 {
 
-    public async Task<GeneratedUploadLinkModel> GenerateLinkAsync(Guid leadId, int validDays, CancellationToken token, string? requestedItems = null, string? description = null)
+    public async Task<GeneratedUploadLinkModel> GenerateLinkAsync(Guid leadId, int validDays, CancellationToken token, string? requestedItems = null, string? description = null, bool awaitReply = true)
     {
         if (validDays is < 5 or > 30) throw new InvalidOperationException("Upload links must be valid for 5 to 30 days.");
         if (await repository.GetLeadAsync(leadId, token) is null) throw new InvalidOperationException("Sales lead was not found.");
@@ -22,7 +22,7 @@ public sealed class LeadUploadService(ILeadUploadRepository repository, ITenantC
         var rawToken = Base64Url(RandomNumberGenerator.GetBytes(32));
         var link = new SalesLeadUploadLink(tenantContext.TenantId, leadId, Hash(rawToken), timeProvider.GetUtcNow().AddDays(validDays));
         link.SetInstructions(OptionalText(requestedItems), OptionalText(description));
-        repository.AddLink(link); await replies.SharedAsync(CustomerReplyRecordTypes.SalesLead, leadId, link.ExpiresAtUtc, token); await repository.SaveChangesAsync(token);
+        repository.AddLink(link); if (awaitReply) await replies.SharedAsync(CustomerReplyRecordTypes.SalesLead, leadId, link.ExpiresAtUtc, token); await repository.SaveChangesAsync(token);
         return new GeneratedUploadLinkModel(Map(link), rawToken);
     }
 

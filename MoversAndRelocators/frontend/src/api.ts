@@ -1,4 +1,4 @@
-import type { AuditLog, PickupAttachment, PickupWork, Warehouse, SurveyExpenseInput, CatalogItem, CustomerChangesInput, SurveyAttachment, AuthSession, AwsConfiguration, AwsConfigurationInput, BoxType, ChargeMaster, TaxMaster, Designation, DesignationInput, Employee, EmployeeHierarchyNode, EmployeeInput, FollowUpInput, FollowUpStatus, HouseholdItem, LeadAttachment, LeadFollowUp, LeadStatus, LeadUploadLink, MoveType, MyTask, OpenAiConfiguration, OpenAiConfigurationInput, PackingMaterial, Permission, PresignedUpload, PublicQuotation, PublicSurvey, PublicUploadInfo, Quotation, QuotationDetail, QuotationInput, QuotationItemInput, QuotationLineInput, Role, SalesLead, SalesLeadInput, Survey, SurveyDetail, SurveyDetailsInput, SurveyInput, Tenant, TenantInput, User } from './types'
+import type { LeadJourneyStep, AuditLog, PickupAttachment, PickupWork, Warehouse, SurveyExpenseInput, CatalogItem, CustomerChangesInput, SurveyAttachment, AuthSession, AwsConfiguration, AwsConfigurationInput, BoxType, ChargeMaster, TaxMaster, Designation, DesignationInput, Employee, EmployeeHierarchyNode, EmployeeInput, FollowUpInput, FollowUpStatus, HouseholdItem, LeadAttachment, LeadFollowUp, LeadStatus, LeadUploadLink, MoveType, MyTask, OpenAiConfiguration, OpenAiConfigurationInput, PackingMaterial, Permission, PresignedUpload, PublicQuotation, PublicSurvey, PublicUploadInfo, Quotation, QuotationDetail, QuotationInput, QuotationItemInput, QuotationLineInput, Role, SalesLead, SalesLeadInput, Survey, SurveyDetail, SurveyDetailsInput, SurveyInput, Tenant, TenantInput, User } from './types'
 import { apiUrl } from './apiBase'
 import { listQuery, type ListParams, type Paged } from './hooks/useServerList'
 import { serverMessage, t } from './i18n'
@@ -149,6 +149,8 @@ export const salesApi = {
   updateLead: (id: string, input: SalesLeadInput) => request<SalesLead>(`/api/sales/leads/${id}`, { method: 'PUT', body: JSON.stringify(input) }),
   setLeadActive: (id: string, isActive: boolean) => request<SalesLead>(`/api/sales/leads/${id}/status`, { method: 'PATCH', body: JSON.stringify({ isActive }) }),
   followUps: (leadId: string) => request<LeadFollowUp[]>(`/api/sales/leads/${leadId}/follow-ups`),
+  /** Surveys, quotations, packing jobs, pickups and deliveries that followed from a lead. */
+  journey: (leadId: string) => request<LeadJourneyStep[]>(`/api/sales/leads/${leadId}/journey`),
   createFollowUp: (leadId: string, input: FollowUpInput) => request<LeadFollowUp>(`/api/sales/leads/${leadId}/follow-ups`, { method: 'POST', body: JSON.stringify(input) }),
   updateFollowUp: (id: string, input: FollowUpInput) => request<LeadFollowUp>(`/api/sales/leads/follow-ups/${id}`, { method: 'PUT', body: JSON.stringify(input) }),
   uploadLinks: (leadId: string) => request<LeadUploadLink[]>(`/api/sales/leads/${leadId}/upload-links`),
@@ -171,6 +173,26 @@ export const publicLeadInventoryApi = {
   get: (token: string) => request<PublicLeadInventory>(`/api/public/lead-inventory/${encodeURIComponent(token)}`),
   review: (token: string, lines: { lineId: string; needed: boolean; note?: string | null }[]) =>
     request<PublicLeadInventory>(`/api/public/lead-inventory/${encodeURIComponent(token)}`, { method: 'PUT', body: JSON.stringify({ lines }) }),
+}
+
+/** A company's "request a quote" form for its website. key: the public id in the form's address. */
+export type WebLeadFormSettings = { enabled: boolean; key: string | null; statusId: string | null; defaultMoveTypeId: string | null; assignedEmployeeId: string | null; source: string | null;
+  heading: string | null; intro: string | null; thankYou: string | null; accentColor: string | null; allowUploads: boolean; showCompanyName: boolean }
+export type WebLeadFormView = { version: string | null; settings: WebLeadFormSettings }
+export type PublicLeadForm = { companyName: string; showCompanyName: boolean; heading: string | null; intro: string | null; thankYou: string | null; accentColor: string | null;
+  allowUploads: boolean; defaultMoveTypeId: string | null; moveTypes: { id: string; name: string; description: string | null }[] }
+export type WebLeadSubmission = { customerName: string; phone: string; email?: string | null; moveTypeId?: string | null; origin: string; destination: string; expectedMoveDate?: string | null; notes?: string | null; website?: string | null }
+export type WebLeadSubmitted = { leadNumber: string | null; uploadToken: string | null; uploadExpiresAtUtc: string | null }
+
+export const webLeadFormApi = {
+  get: () => request<WebLeadFormView>('/api/sales/web-form'),
+  save: (version: string | null, settings: WebLeadFormSettings) => request<WebLeadFormView>('/api/sales/web-form', { method: 'PUT', body: JSON.stringify({ version, settings }) }),
+  newAddress: (version: string | null) => request<WebLeadFormView>('/api/sales/web-form/new-address', { method: 'POST', body: JSON.stringify({ version }) }),
+}
+
+export const publicLeadFormApi = {
+  get: (key: string) => request<PublicLeadForm>(`/api/public/lead-form/${encodeURIComponent(key)}`),
+  submit: (key: string, lead: WebLeadSubmission) => request<WebLeadSubmitted>(`/api/public/lead-form/${encodeURIComponent(key)}`, { method: 'POST', body: JSON.stringify(lead) }),
 }
 
 export const publicUploadApi = {

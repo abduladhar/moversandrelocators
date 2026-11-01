@@ -107,10 +107,10 @@ export function AccountingReportsPage(){
  const q=query.trim().toLowerCase()
  const matches=(i:number)=>!q||(name(i)+' '+description(i)).toLowerCase().includes(q)
  const groups=reportGroups.map(g=>({...g,reports:g.reports.filter(matches)})).filter(g=>g.reports.length)
- const tile=(i:number)=><Tooltip key={i} title={description(i)} mouseEnterDelay={0.4}><button type="button" className="master-data-tile" onClick={()=>open(i)}>
-  <span className="master-data-icon" aria-hidden="true">{reportIcons[i]}</span><span>{name(i)}</span>
- </button></Tooltip>
- // Same look as Master data: heading with search, sections with a title bar and icon tiles.
+ const tile=(i:number)=><button key={i} type="button" className="master-data-tile" onClick={()=>open(i)}>
+  <span className="master-data-icon" aria-hidden="true">{reportIcons[i]}</span><span className="master-data-tile-text"><strong>{name(i)}</strong><small>{description(i)}</small></span>
+ </button>
+ // Hub page (design step 5): heading with search, then small group headings over cards with a name and description.
  return <div className="master-data-page accounting-menu">
   <div className="master-data-heading">
    <div><h1>{t('reports.page.title')}</h1><p>{t('reports.page.intro')}</p></div>

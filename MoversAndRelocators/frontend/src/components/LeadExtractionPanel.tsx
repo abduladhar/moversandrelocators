@@ -166,7 +166,7 @@ export function LeadExtractionPanel({ leadId, attachment }: { leadId: string; at
           ...(items.some(x => x.picture) ? [{ title: t('sales.picture'), width: 76, render: (_: unknown, x: InventoryItem) => !x.picture ? '—'
             : shots[x.picture - 1] ? <ItemPicture src={shots[x.picture - 1]} mark={x.mark} alt={x.name} size={48} />
             : <Tag>#{x.picture}</Tag> }] : []),
-          { title: t('common.room'), dataIndex: 'room', width: 140, render: (v: string | null) => v || <span style={{ color: '#8a9892' }}>—</span> },
+          { title: t('common.room'), dataIndex: 'room', width: 140, render: (v: string | null) => v || <span style={{ color:'var(--cw-muted)' }}>—</span> },
           { title: t('common.item'), dataIndex: 'name' },
           { title: t('sales.qty'), dataIndex: 'quantity', width: 70, align: 'right' as const },
           { title: t('sales.extraction.handling'), width: 220, render: (_: unknown, x: InventoryItem) => <>{x.fragile && <Tag color="red">{t('sales.fragile')}</Tag>}{x.handling && <span>{x.handling}</span>}{!x.fragile && !x.handling && '—'}</> },

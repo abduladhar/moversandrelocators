@@ -1,6 +1,7 @@
 import { RefreshButton } from './components/RefreshButton'
 import { useState } from 'react'
 import { ConfigProvider } from 'antd'
+import { appTheme } from './theme'
 import { I18nProvider, useT } from './i18n'
 import { antdLocales } from './i18n/antd'
 import { LanguageSwitcher } from './i18n/LanguageSwitcher'
@@ -17,6 +18,7 @@ import { CustomerPickupPage } from './pages/CustomerPickupPage'
 import { CustomerPackingDatePage, CustomerPackingItemsPage, CustomerPackingLocationPage } from './pages/CustomerPackingLinkPages'
 import { PoweredBy } from './components/BrandMark'
 import { CustomerDeliveryDatePage, CustomerDeliveryLocationPage } from './pages/CustomerDeliveryLinkPages'
+import { WebLeadFormPage, embedded } from './pages/WebLeadFormPage'
 
 export default function App() {
   return <I18nProvider><Routes /></I18nProvider>
@@ -36,9 +38,13 @@ function Routes() {
   const packingJobToken = packingLinkToken && decodeURIComponent(packingLinkToken)
   const [, deliveryLink, deliveryLinkToken] = path.match(/^\/delivery-(date|location)\/([^/]+)$/) ?? []
   const deliveryToken = deliveryLinkToken && decodeURIComponent(deliveryLinkToken)
+  const leadFormKey = path.match(/^\/lead-form\/([^/]+)$/)?.[1]
   const [session, setSession] = useState<AuthSession | null>(readSession)
   const updateSession = (next: AuthSession | null) => { saveSession(next); setSession(next) }
-  return <ConfigProvider locale={antdLocales[language]} direction={dir} theme={{ token: { colorPrimary: '#176b52', colorInfo: '#176b52', borderRadius: 8, fontFamily: "Inter, 'Segoe UI', sans-serif" }, components: { Layout: { siderBg: '#10271f' }, Menu: { darkItemBg: '#10271f', darkItemSelectedBg: '#245441' }, Table: { headerBg: '#f7f9f8' } } }}>
+  if (leadFormKey) return <ConfigProvider locale={antdLocales[language]} direction={dir} theme={appTheme}>
+    <WebLeadFormPage formKey={decodeURIComponent(leadFormKey)} />{!embedded && <PoweredBy />}
+  </ConfigProvider>
+  return <ConfigProvider locale={antdLocales[language]} direction={dir} theme={appTheme}>
     {(packingToken || uploadToken || inventoryToken || surveyToken || quotationToken || pickupToken || packingJobToken || deliveryToken) && <div className="public-refresh-bar"><RefreshButton onRefresh={() => window.location.reload()} confirmText={t('common.publicReloadConfirm')} /><LanguageSwitcher compact /></div>}
     {packingToken ? <CustomerPackingPage token={decodeURIComponent(packingToken)} /> : uploadToken ? <CustomerUploadPage token={decodeURIComponent(uploadToken)} /> : inventoryToken ? <CustomerLeadInventoryPage token={decodeURIComponent(inventoryToken)} /> : surveyToken ? <CustomerSurveyPage token={decodeURIComponent(surveyToken)} /> : quotationToken ? <CustomerQuotationPage token={decodeURIComponent(quotationToken)} /> : pickupToken ? <CustomerPickupPage token={decodeURIComponent(pickupToken)} /> : packingJobToken ? (packingLink === 'date' ? <CustomerPackingDatePage token={packingJobToken} /> : packingLink === 'location' ? <CustomerPackingLocationPage token={packingJobToken} /> : <CustomerPackingItemsPage token={packingJobToken} />) : deliveryToken ? (deliveryLink === 'date' ? <CustomerDeliveryDatePage token={deliveryToken} /> : <CustomerDeliveryLocationPage token={deliveryToken} />) : session ? <WorkspaceLayout session={session} onSession={updateSession} /> : <LoginPage onLogin={updateSession} />}
     {(packingToken || uploadToken || inventoryToken || surveyToken || quotationToken || pickupToken || packingJobToken || deliveryToken) && <PoweredBy />}

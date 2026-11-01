@@ -1,4 +1,5 @@
 import {useEffect,useState} from 'react'
+import {ReportAbout} from './ReportAbout'
 import {Alert,Button,Card,Input,Select,Space,Tag} from 'antd'
 import {request} from '../api'
 import {billingApi,type Account} from '../billingApi'
@@ -27,7 +28,7 @@ export function RevenueAnalysisReport(){
  <div className="accounting-report-field">{t('reports.filters.currency')}<Select className="accounting-report-select" style={{minWidth:230}} value={currency} onChange={setCurrency} options={[{value:'BASE',label:t('reports.currencyOptions.base',{currency:currencies?.baseCurrency||'…'})},{value:'DEFAULT',label:t('reports.currencyOptions.default',{currency:currencies?.settings.defaultCurrency||'…'})},...(currencies?.currencies||[]).map(c=>({value:c.code,label:t('reports.currencyOptions.transactionsOnly',{currency:c.code})}))]}/></div>
  <Button type="primary" loading={loading} onClick={()=>void load()}>{t('reports.actions.run')}</Button><Button disabled={!data||loading} onClick={exportCsv}>{t('reports.actions.exportCsv')}</Button>
  </Space>
- <Alert type="info" style={{marginBottom:16}} title={k('alertTitle')} description={k('alertDescription')}/>
+ <ReportAbout title={k('alertTitle')} description={k('alertDescription')}/>
  {error&&<Alert type="error" title={error}/>}
  {data&&<><p>{t('reports.period',{from:data.from,to:data.to})} · {data.currency} · {data.accountCode||k('allRevenueAccounts')}</p>
  <DataGrid<Row> rowKey="code" dataSource={data.rows} pagination={{pageSize:25}} scroll={{x:850}} expandable={{expandedRowRender:r=><DataGrid<Entry> rowKey="journalId" dataSource={r.entries} pagination={{pageSize:10}} scroll={{x:1300}} columns={[{title:t('reports.columns.date'),dataIndex:'date'},{title:t('reports.columns.reference'),dataIndex:'reference'},{title:t('reports.columns.description'),dataIndex:'description'},{title:t('reports.columns.type'),render:(_,e)=>e.isReversal?t('reports.columns.reversal'):k('posting')},{title:t('reports.columns.transactionDebit'),align:'right',render:(_,e)=>formatMoney(e.transactionDebit,e.transactionCurrency)},{title:t('reports.columns.transactionCredit'),align:'right',render:(_,e)=>formatMoney(e.transactionCredit,e.transactionCurrency)},...(['debit','credit','amount'] as const).map((x,i)=>({title:amountTitles[i],align:'right' as const,render:(_:unknown,e:Entry)=>formatMoney(e[x],data.currency)}))]}/>}} columns={[{title:t('reports.columns.code'),dataIndex:'code'},{title:t('reports.columns.account'),dataIndex:'name'},{title:t('reports.columns.postings'),dataIndex:'count'},...(['debit','credit','amount'] as const).map((x,i)=>({title:amountTitles[i],align:'right' as const,render:(_:unknown,r:Row)=>formatMoney(r[x],data.currency)}))]}/>

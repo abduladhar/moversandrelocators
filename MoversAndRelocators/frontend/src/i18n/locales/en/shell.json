@@ -56,7 +56,8 @@
     "systemCurrency": "System currency",
     "aws": "AWS configuration",
     "openai": "OpenAI configuration",
-    "claude": "Claude configuration"
+    "claude": "Claude configuration",
+    "webForm": "Website form"
   },
   "layout": {
     "activeWorkspace": "ACTIVE WORKSPACE",
@@ -165,5 +166,15 @@
     "keepTitle": "Keep this record to {company} only?",
     "keepContent": "Other companies will no longer see or pick it. Documents they already made with it are not changed.",
     "keepOk": "Keep to this company"
+  },
+  "palette": {
+    "button": "Search",
+    "placeholder": "Search pages and records",
+    "findIn": "Find “{query}” in {page}",
+    "empty": "No page matches “{query}”.",
+    "hint": "↑ ↓ to move · Enter to open · Esc to close"
+  },
+  "userMenu": {
+    "label": "Account menu"
   }
 }

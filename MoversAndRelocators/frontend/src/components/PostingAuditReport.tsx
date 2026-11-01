@@ -1,4 +1,5 @@
 import {useState} from 'react'
+import {ReportAbout} from './ReportAbout'
 import {Alert,Button,Card,Input,Select,Space,Tag} from 'antd'
 import {request} from '../api'
 import {localDate,useCurrencies,formatMoney} from '../currency'
@@ -25,7 +26,7 @@ export function PostingAuditReport(){
 <div className="accounting-report-field">{t('reports.columns.postedBy')}<Select className="accounting-report-select" allowClear showSearch placeholder={k('allUsers')} value={userId} onChange={setUserId} style={{minWidth:280}} optionFilterProp="label" options={(data?.users||[]).map(u=>({value:u.id,label:u.name}))}/></div><div className="accounting-report-field">{k('documentReference')}<Input value={documentFilter} onChange={e=>setDocument(e.target.value)} placeholder={k('documentPlaceholder')}/></div>
  <Button type="primary" loading={loading} onClick={()=>void load()}>{t('reports.actions.run')}</Button><Button disabled={!data||loading} onClick={exportCsv}>{t('reports.actions.exportCsv')}</Button>
  </Space>
- <Alert style={{marginBottom:16}} type="info" title={k('alertTitle')} description={k('alertDescription')} />
+ <ReportAbout title={k('alertTitle')} description={k('alertDescription')}/>
  {error&&<Alert type="error" title={error}/>}
  {!data&&!error&&<Alert type="info" title={k('selectPrompt')}/>}
  {data&&<><p>{k('summary',{period:t('reports.period',{from:data.from,to:data.to}),currency:data.currency,status:typeLabel(data.status)})}</p>

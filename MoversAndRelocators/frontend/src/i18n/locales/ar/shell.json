@@ -56,7 +56,8 @@
     "systemCurrency": "عملة النظام",
     "aws": "إعدادات AWS",
     "openai": "إعدادات OpenAI",
-    "claude": "إعدادات Claude"
+    "claude": "إعدادات Claude",
+    "webForm": "نموذج الموقع"
   },
   "layout": {
     "activeWorkspace": "مساحة العمل الحالية",
@@ -128,12 +129,12 @@
   },
   "grid": {
     "filterColumn": "تصفية {column}",
-    "matching_zero": "لا توجد سجلات مطابقة في البيانات المحمّلة",
     "matching_one": "سجل واحد مطابق في البيانات المحمّلة",
+    "matching_other": "{count} سجل مطابق في البيانات المحمّلة",
+    "matching_zero": "لا توجد سجلات مطابقة في البيانات المحمّلة",
     "matching_two": "سجلان مطابقان في البيانات المحمّلة",
     "matching_few": "{count} سجلات مطابقة في البيانات المحمّلة",
-    "matching_many": "{count} سجلًا مطابقًا في البيانات المحمّلة",
-    "matching_other": "{count} سجل مطابق في البيانات المحمّلة"
+    "matching_many": "{count} سجلًا مطابقًا في البيانات المحمّلة"
   },
   "dataView": {
     "scrollMore": "مرّر لتحميل المزيد من {label}",
@@ -169,5 +170,15 @@
     "keepTitle": "حصر هذا السجل في {company} فقط؟",
     "keepContent": "لن تتمكن الشركات الأخرى من رؤيته أو اختياره. المستندات التي أنشأتها به سابقًا لن تتغير.",
     "keepOk": "حصره في هذه الشركة"
+  },
+  "palette": {
+    "button": "بحث",
+    "placeholder": "ابحث في الصفحات والسجلات",
+    "findIn": "ابحث عن «{query}» في {page}",
+    "empty": "لا توجد صفحة تطابق «{query}».",
+    "hint": "↑ ↓ للتنقل · Enter للفتح · Esc للإغلاق"
+  },
+  "userMenu": {
+    "label": "قائمة الحساب"
   }
 }

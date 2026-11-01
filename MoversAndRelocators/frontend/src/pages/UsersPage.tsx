@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { takeSearch } from '../searchHandoff'
 import { Avatar, Button, Card, Form, Input, Modal, Popconfirm, Select, Space, Tag, message } from 'antd'
 import { ClusterOutlined, LinkOutlined } from '@ant-design/icons'
 import type { ColumnsType } from 'antd/es/table'
@@ -25,7 +26,7 @@ export function UsersPage({ tenantWide = false }: { tenantWide?: boolean }) {
   const [moveForm] = Form.useForm<{ companyId: string }>()
   const companyOptions = [{ value: ALL_COMPANIES, label: t('admin.users.allCompaniesOption') }, ...companies.filter(x => x.isActive).map(x => ({ value: x.id, label: x.name }))]
   const [roles, setRoles] = useState<Role[]>([]), [employees, setEmployees] = useState<Employee[]>([])
-  const [query, setQuery] = useState(''), [status, setStatus] = useState<boolean | undefined>(), [roleId, setRoleId] = useState<string>()
+  const [query, setQuery] = useState(() => takeSearch('users')), [status, setStatus] = useState<boolean | undefined>(), [roleId, setRoleId] = useState<string>()
   const [sortField, setSortField] = useState<keyof User>('serialNo'), [sortDirection, setSortDirection] = useState<SortDirection>('desc')
   const [open, setOpen] = useState(false), [saving, setSaving] = useState(false)
   const [linking, setLinking] = useState<User | null>(null), [linkSaving, setLinkSaving] = useState(false)

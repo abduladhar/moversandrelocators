@@ -1,4 +1,5 @@
 import {useEffect,useState} from 'react'
+import {ReportAbout} from './ReportAbout'
 import {Alert,Button,Card,Input,Select,Space,Tag} from 'antd'
 import {request} from '../api'
 import {billingApi,type Account} from '../billingApi'
@@ -28,7 +29,7 @@ export function TaxSummaryReport(){
  <div className="accounting-report-field">{t('reports.filters.currency')}<Select className="accounting-report-select" aria-label={k('ledgerCurrency')} style={{minWidth:220}} value={currency} onChange={setCurrency} options={[{value:'BASE',label:t('reports.currencyOptions.base',{currency:currencies?.baseCurrency||'…'})},{value:'DEFAULT',label:t('reports.currencyOptions.default',{currency:currencies?.settings.defaultCurrency||'…'})},...(currencies?.currencies||[]).map(c=>({value:c.code,label:t('reports.currencyOptions.transactionsOnly',{currency:c.code})}))]}/></div>
  <Button type="primary" loading={loading} onClick={()=>void load()}>{t('reports.actions.run')}</Button><Button disabled={!data||loading} onClick={exportCsv}>{t('reports.actions.exportCsv')}</Button>
  </Space>
- <Alert style={{marginBottom:16}} type="info" title={k('alertTitle',{account:'2200'})} description={k('alertDescription')} />
+ <ReportAbout title={k('alertTitle',{account:'2200'})} description={k('alertDescription')}/>
  {error&&<Alert type="error" title={error}/>}
  {!data&&!error&&<Alert type="info" title={k('selectPrompt')}/>}
  {data&&<><p>{data.account.code} · {data.account.name} · {t('reports.period',{from:data.from,to:data.to})} · {data.currency}. {k('postedEntriesNote')} {cashBook&&k('cashBookNote')}</p><h3>{k('openingBalanceValue',{amount:balance(data.opening)})}</h3>

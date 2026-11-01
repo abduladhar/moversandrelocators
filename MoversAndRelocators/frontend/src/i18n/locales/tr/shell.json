@@ -56,7 +56,8 @@
     "systemCurrency": "Sistem para birimi",
     "aws": "AWS yapılandırması",
     "openai": "OpenAI yapılandırması",
-    "claude": "Claude yapılandırması"
+    "claude": "Claude yapılandırması",
+    "webForm": "Web sitesi formu"
   },
   "layout": {
     "activeWorkspace": "ETKİN ÇALIŞMA ALANI",
@@ -165,5 +166,15 @@
     "keepTitle": "Bu kayıt yalnızca {company} şirketine ayrılsın mı?",
     "keepContent": "Diğer şirketler bu kaydı artık göremez ve seçemez. Daha önce bununla oluşturdukları belgeler değişmez.",
     "keepOk": "Bu şirkete ayır"
+  },
+  "palette": {
+    "button": "Ara",
+    "placeholder": "Sayfa ve kayıtlarda ara",
+    "findIn": "{page} içinde “{query}” ara",
+    "empty": "“{query}” ile eşleşen sayfa yok.",
+    "hint": "↑ ↓ ile gezin · Enter ile aç · Esc ile kapat"
+  },
+  "userMenu": {
+    "label": "Hesap menüsü"
   }
 }

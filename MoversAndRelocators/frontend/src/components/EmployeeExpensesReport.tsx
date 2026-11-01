@@ -1,4 +1,5 @@
 import {useState} from 'react'
+import {ReportAbout} from './ReportAbout'
 import {Alert,Button,Card,Input,Select,Space,Tag} from 'antd'
 import {request} from '../api'
 import {localDate,useCurrencies,formatMoney} from '../currency'
@@ -39,7 +40,7 @@ export function EmployeeExpensesReport(){
    <div className="accounting-report-field">{t('reports.filters.currency')}<Select className="accounting-report-select" style={{minWidth:230}} value={currency} onChange={setCurrency} options={[{value:'BASE',label:t('reports.currencyOptions.base',{currency:currencies?.baseCurrency||'…'})},{value:'DEFAULT',label:t('reports.currencyOptions.default',{currency:currencies?.settings.defaultCurrency||'…'})},...(currencies?.currencies||[]).map(c=>({value:c.code,label:t('reports.currencyOptions.transactionsOnly',{currency:c.code})}))]}/></div>
    <Button type="primary" loading={loading} onClick={()=>void load()}>{t('reports.actions.run')}</Button><Button disabled={!data||loading} onClick={exportCsv}>{t('reports.actions.exportCsv')}</Button>
   </Space>
-  <Alert type="info" style={{marginBottom:16}} title={k('alertTitle')} description={k('alertDescription')}/>
+  <ReportAbout title={k('alertTitle')} description={k('alertDescription')}/>
   {error&&<Alert type="error" title={error}/>}
   {data&&<>
    <p>{t('reports.period',{from:data.from,to:data.to})} · {data.currency} · {data.employeeName??k('allEmployees')} · {data.sourceKind==='ALL'?k('allModules'):moduleLabel(data.sourceKind)} · {data.status==='ALL'?t('reports.status.ALL'):data.status==='POSTED'?t('reports.status.POSTED'):t('reports.status.PENDING')}</p>

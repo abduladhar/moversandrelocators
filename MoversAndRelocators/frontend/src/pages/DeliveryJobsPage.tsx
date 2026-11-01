@@ -1,4 +1,6 @@
 import { nowLocal } from '../dates'
+import { takeSearch } from '../searchHandoff'
+import { StatusTag } from '../components/StatusTag'
 import {useState} from 'react'
 import {Button,Card,Form,Modal,Select,Tag,message} from 'antd'
 import type {ColumnsType} from 'antd/es/table'
@@ -18,7 +20,7 @@ const when=(v:string)=>formatDateTime(v)
 /** Delivery register: each run opens in its own workspace. */
 export function DeliveryJobsPage(){
  const {t}=useT()
- const [query,setQuery]=useState(''),[statusFilter,setStatusFilter]=useState<DeliveryStatus>()
+ const [query,setQuery]=useState(() => takeSearch('delivery')),[statusFilter,setStatusFilter]=useState<DeliveryStatus>()
  const [sortField,setSortField]=useState('serialNo'),[direction,setDirection]=useState<SortDirection>('desc')
  const [createOpen,setCreateOpen]=useState(false),[saving,setSaving]=useState(false),[openId,setOpenId]=useState<string|null>(null)
  const [form]=Form.useForm()
@@ -38,7 +40,7 @@ export function DeliveryJobsPage(){
 
  if(openId)return <DeliveryJobDetailPage jobId={openId} onBack={()=>{setOpenId(null);void load()}} onChanged={()=>void load()}/>
 
- const tag=(x:DeliveryJob)=><span className="status-stack"><Tag color={DELIVERY_STATUS[x.status].color}>{t('delivery.status.'+x.status)}</Tag><CustomerReplyTag reply={customer.get(x.id)} onChanged={customerChanged}/></span>
+ const tag=(x:DeliveryJob)=><span className="status-stack"><StatusTag color={DELIVERY_STATUS[x.status].color}>{t('delivery.status.'+x.status)}</StatusTag><CustomerReplyTag reply={customer.get(x.id)} onChanged={customerChanged}/></span>
  const progress=(x:DeliveryJob)=>!x.itemCount?'—':<span>{t('delivery.list.deliveredProgress',{delivered:x.deliveredCount,total:x.itemCount})}{x.returnedCount?<Tag color="volcano" style={{marginInlineStart:6}}>{t('delivery.list.notDeliveredCount',{count:x.returnedCount})}</Tag>:null}</span>
  const columns:ColumnsType<DeliveryJob>=[
   {title:t('delivery.list.col.delivery'),dataIndex:'deliveryNumber',width:240,render:(_,x)=><div className="primary-cell"><strong>{x.deliveryNumber}</strong><small>#{x.serialNo} · {customers(x)}</small></div>},
@@ -57,7 +59,7 @@ export function DeliveryJobsPage(){
     sortOptions={[{value:'serialNo',label:t('common.createdAt')},{value:'scheduledAtUtc',label:t('delivery.list.col.schedule')},{value:'deliveryNumber',label:t('delivery.list.col.delivery')},{value:'status',label:t('common.status')}]}
     onReset={()=>{setQuery('');setStatusFilter(undefined);setCustomerState(undefined);setSortField('serialNo');setDirection('desc')}}><CustomerStateFilter value={customerState} onChange={setCustomerState}/><Select allowClear placeholder={t('common.status')} value={statusFilter} onChange={setStatusFilter} options={(Object.keys(DELIVERY_STATUS) as DeliveryStatus[]).map(s=>({value:s,label:t('delivery.status.'+s)}))}/></AdvancedSearch>}/>
   <Card className="grid-card" title={t('delivery.list.register')} extra={t('delivery.list.count',{count:list.total})}>
-   <ResponsiveDataView rowKey="id" columns={columns} data={list.rows} onScroll={list.onScroll} hasMore={list.hasMore} total={list.total} loading={list.loading} label={t('delivery.list.unit')} scrollX={1290}
+   <ResponsiveDataView onOpen={x => setOpenId(x.id)} rowKey="id" columns={columns} data={list.rows} onScroll={list.onScroll} hasMore={list.hasMore} total={list.total} loading={list.loading} label={t('delivery.list.unit')} scrollX={1290}
     renderTile={x=><><div className="tile-heading"><div className="primary-cell"><strong>{x.deliveryNumber}</strong><small>{customers(x)}</small></div>{tag(x)}</div>
      <div className="tile-details"><span>{when(x.scheduledAtUtc)}</span><span>{x.itemCount?t('delivery.list.deliveredProgress',{delivered:x.deliveredCount,total:x.itemCount}):t('delivery.list.noPackages')}</span><span>{x.vehicleName??t('delivery.list.noVehicle')} · {x.driverName??t('delivery.list.noDriver')}</span></div>
      <div className="tile-actions"><RowActions><Button size="small" onClick={()=>setOpenId(x.id)}>{t('delivery.list.open')}</Button></RowActions></div></>}/>

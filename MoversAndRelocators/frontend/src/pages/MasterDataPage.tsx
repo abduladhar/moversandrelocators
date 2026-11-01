@@ -4,7 +4,6 @@ import { RefreshButton } from '../components/RefreshButton'
 import { useRef, useState, type ReactNode } from 'react'
 import { Button, Empty, Input } from 'antd'
 import { AppstoreOutlined, ArrowLeftOutlined, CarOutlined, CheckSquareOutlined, DollarOutlined, HomeOutlined, IdcardOutlined, InboxOutlined, MessageOutlined, SafetyCertificateOutlined, SearchOutlined, TagsOutlined, ToolOutlined } from '@ant-design/icons'
-import { NavigationMenuDialog } from '../components/NavigationMenuDialog'
 import { DesignationsPage } from './DesignationsPage'
 import { SalesStatusMastersPage } from './SalesStatusMastersPage'
 import { SurveyMastersPage } from './SurveyMastersPage'
@@ -60,11 +59,9 @@ export function MasterDataPage({ permissions }: { permissions: string[] }) {
   const tileLabel = (tile: MasterTile) => t('masters.data.tiles.' + tile.id)
   const [catalogVersion, setCatalogVersion] = useState(0)
   const [query, setQuery] = useState('')
-  const [popupGroup, setPopupGroup] = useState<string | null>(null)
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const tileRefs = useRef<Record<string, HTMLButtonElement | null>>({})
   const allowed = groups.filter(group => permissions.includes(group.permission))
-  const activePopup = allowed.find(group => group.id === popupGroup)
   const selected = allowed.flatMap(group => group.tiles).find(tile => tile.id === selectedId)
   const search = query.trim().toLowerCase()
   const visible = allowed.map(group => ({ ...group, tiles: group.tiles.filter(tile => (groupTitle(group) + ' ' + tileLabel(tile)).toLowerCase().includes(search)) })).filter(group => group.tiles.length)
@@ -80,22 +77,19 @@ export function MasterDataPage({ permissions }: { permissions: string[] }) {
   </div>
 
   return <div className="master-data-page">
-    <NavigationMenuDialog title={activePopup ? groupTitle(activePopup) : ''} open={Boolean(activePopup)}
-      items={activePopup?.tiles.map(tile => ({ key: tile.id, label: tileLabel(tile), icon: tile.icon })) ?? []}
-      onClose={() => setPopupGroup(null)} onSelect={id => { setPopupGroup(null); setSelectedId(id) }} />
     <div className="master-data-heading">
       <div><h1>{t('masters.data.title')}</h1><p>{t('masters.data.description')}</p></div>
-      <RefreshButton onRefresh={() => setCatalogVersion(value => value + 1)} /><Input className="master-data-search" aria-label={t('masters.data.search')} placeholder={t('masters.data.search')} prefix={<SearchOutlined />} allowClear value={query} onChange={event => setQuery(event.target.value)} />
+      <div className="master-data-tools"><Input className="master-data-search" aria-label={t('masters.data.search')} placeholder={t('masters.data.search')} prefix={<SearchOutlined />} allowClear value={query} onChange={event => setQuery(event.target.value)} /><RefreshButton onRefresh={() => setCatalogVersion(value => value + 1)} /></div>
     </div>
     <div className="master-data-groups" key={catalogVersion}>
       {visible.map(group => <section className="master-data-group" key={group.id} aria-labelledby={'master-group-' + group.tiles[0].id}>
-        <h2 id={'master-group-' + group.tiles[0].id}><button className="master-group-open" type="button" aria-haspopup="dialog" onClick={() => setPopupGroup(group.id)}>{groupTitle(group)}</button></h2>
+        <h2 id={'master-group-' + group.tiles[0].id}>{groupTitle(group)}</h2>
         <div className="master-data-tiles">{group.tiles.map(tile => <button
           type="button" className="master-data-tile" key={tile.id}
           ref={element => { tileRefs.current[tile.id] = element }}
           onClick={() => setSelectedId(tile.id)}>
           <span className="master-data-icon" aria-hidden="true">{tile.icon}</span>
-          <span>{tileLabel(tile)}</span>
+          <span className="master-data-tile-text"><strong>{tileLabel(tile)}</strong></span>
         </button>)}</div>
       </section>)}
       {!visible.length && <Empty description={allowed.length ? t('masters.data.noMatch') : t('masters.data.noPermission')} />}

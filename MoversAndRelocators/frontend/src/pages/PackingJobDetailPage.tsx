@@ -1,4 +1,5 @@
 import {useEffect,useMemo,useState} from 'react'
+import { MoveJourneyBar } from '../components/MoveJourneyBar'
 import { ReceiptPicker, ReceiptsButton, uploadReceipts, useReceipts } from '../expenseReceipts'
 import { crewApi, type Team as CrewTeam } from '../crewApi'
 import {Alert,AutoComplete,Button,Card,Col,Empty,Form,Input,InputNumber,Modal,Popconfirm,Row,Select,Space,Spin,Statistic,Switch,Table,Tabs,Tag,Tooltip,Typography,message} from 'antd'
@@ -59,6 +60,7 @@ export function PackingJobDetailPage({jobId,onBack,onChanged}:{jobId:string;onBa
    </Space>
   </div>
   {locked&&<Alert type={j.status==='COMPLETED'?'success':'warning'} showIcon title={j.status==='COMPLETED'?t('packing.detail.completedBanner',{date:when(j.completedAtUtc)}):t('packing.detail.cancelledBanner')}/>}
+  <MoveJourneyBar stage="PACKING" id={jobId} />
   <CustomerReplyBanner type="PACKING_JOB" id={jobId} refreshKey={detail} onChanged={onChanged}/>
   <div className="survey-kpi-row packing-kpi-row">{kpis.map(k=><div key={k.key} className={'survey-kpi packing-kpi-'+k.key+(k.key==='labels'&&j.labelsPending?' is-pending':'')}><span className="survey-kpi-icon">{k.icon}</span><div><small>{k.label}</small><strong>{k.value}</strong></div></div>)}</div>
   <Card className="survey-customer-strip"><div className="survey-facts pickup-facts">{facts.map(f=><div key={f.key} className="survey-fact"><span className="survey-fact-icon">{f.icon}</span><div><small>{f.label}</small><div className="survey-fact-value">{f.value}</div></div></div>)}</div>
@@ -221,7 +223,7 @@ function MaterialsTab({detail,masters,locked,act}:{detail:PackingDetail;masters:
     <Button danger type="text" icon={<DeleteOutlined/>} disabled={locked} aria-label={t('packing.removeMaterial')} onClick={()=>setExtras(extras.filter((_,n)=>n!==i))}/>
    </Space>)}
    <Button type="dashed" icon={<PlusOutlined/>} disabled={locked||!masters.materials.length} onClick={()=>setExtras([...extras,{materialId:'',quantity:1,unitCost:null}])}>{t('packing.addMaterial')}</Button>
-   <p style={{color:'#6b7686',marginTop:8,fontSize:12}}>{t('packing.materialsTab.costHint')}</p>
+   <p style={{color:'var(--cw-muted)',marginTop:8,fontSize:12}}>{t('packing.materialsTab.costHint')}</p>
   </Card></Col>
   <Col span={24}><Alert type="info" showIcon title={detail.accounting.materialPosted?t('packing.materialsTab.totalPosted',{amount:formatMoney(detail.accounting.materialCost,cur),reference:detail.accounting.materialJournalReference??''}):t('packing.materialsTab.totalPending',{amount:formatMoney(detail.accounting.materialCost,cur)})}/></Col>
  </Row>
@@ -249,7 +251,7 @@ function MoneyTab({detail,masters,act}:{detail:PackingDetail;masters:PackingMast
   {title:t('packing.money.colCategory'),dataIndex:'category',render:(v:string)=>masters.expenseCategories.find(c=>c.code===v)?.name??v},
   {title:t('packing.money.paidBy'),dataIndex:'paidByName',render:(v:string|null|undefined,x:{type:string})=>x.type==='EXPENSE'?(v??'—'):''},
   {title:t('packing.money.colMethod'),dataIndex:'paymentMethod',render:(v:string)=>methods.find(m=>m.value===v)?.label??v},
-  {title:t('common.amount'),align:'right' as const,render:(_:unknown,x:PackingDetail['transactions'][number])=><>{formatMoney(x.amount,x.currency||cur)}<br/><small style={{color:'#6b7686'}}>{formatMoney(x.baseAmount,cur)}</small></>},
+  {title:t('common.amount'),align:'right' as const,render:(_:unknown,x:PackingDetail['transactions'][number])=><>{formatMoney(x.amount,x.currency||cur)}<br/><small style={{color:'var(--cw-muted)'}}>{formatMoney(x.baseAmount,cur)}</small></>},
   {title:t('common.date'),dataIndex:'createdAtUtc',render:when},
   {title:'',render:(_:unknown,x:PackingDetail['transactions'][number])=>x.type==='INCOME'?<ReportPrintButton type="PACKING_RECEIPT" title={t('packing.money.receiptTitle',{number:x.transactionNumber})} id={detail.job.id} query={{transactionId:x.id}} label={t('packing.money.receipt')} size="small"/>:<ReceiptsButton kind='PACKING' expenseId={x.id} receipts={receipts.byExpense.get(x.id)??[]} onChanged={()=>void receipts.reload()} title={t('packing.money.receiptsTitle',{number:x.transactionNumber})}/>}
  ],[masters,detail,receipts.byExpense,t])
@@ -263,7 +265,7 @@ function MoneyTab({detail,masters,act}:{detail:PackingDetail;masters:PackingMast
   </Row>
   <Card title={t('packing.money.title')} extra={<Space><Button type="primary" icon={<PlusOutlined/>} disabled={cancelled} onClick={()=>start('INCOME')}>{t('packing.money.receive')}</Button><Button icon={<PlusOutlined/>} disabled={cancelled} onClick={()=>start('EXPENSE')}>{t('packing.money.recordExpense')}</Button></Space>}>
    <Table rowKey="id" size="middle" pagination={false} scroll={{x:800}} dataSource={detail.transactions} columns={columns} locale={{emptyText:t('packing.money.empty')}}/>
-   {detail.accounting.totals.length>1&&<p style={{marginTop:8,color:'#6b7686'}}>{t('packing.money.byCurrency',{totals:detail.accounting.totals.map(x=>t('packing.money.currencyTotal',{currency:x.currency,received:formatMoney(x.income,x.currency),paid:formatMoney(x.expense,x.currency)})).join(' · ')})}</p>}
+   {detail.accounting.totals.length>1&&<p style={{marginTop:8,color:'var(--cw-muted)'}}>{t('packing.money.byCurrency',{totals:detail.accounting.totals.map(x=>t('packing.money.currencyTotal',{currency:x.currency,received:formatMoney(x.income,x.currency),paid:formatMoney(x.expense,x.currency)})).join(' · ')})}</p>}
    <Alert style={{marginTop:12}} type="info" showIcon title={t('packing.money.accounting')} description={t('packing.money.accountingHelp')}/>
   </Card>
   <Modal centered width={860} open={open!==null} title={open==='INCOME'?t('packing.money.receiveTitle'):t('packing.money.expenseTitle')} okText={t('common.save')} cancelText={t('common.cancel')} onOk={()=>void save()} onCancel={()=>setOpen(null)} destroyOnHidden>

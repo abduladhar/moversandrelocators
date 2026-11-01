@@ -1,4 +1,6 @@
 import { nowLocal } from '../dates'
+import { takeSearch } from '../searchHandoff'
+import { StatusTag } from '../components/StatusTag'
 import {useEffect,useState} from 'react'
 import {Button,Card,Form,Modal,Segmented,Select,Tag,message} from 'antd'
 import type {ColumnsType} from 'antd/es/table'
@@ -18,7 +20,7 @@ const when=(v:string)=>formatDateTime(v)
 
 /** Packing register: packing jobs separate from pickups, each opening in its own workspace. */
 export function PackingJobsPage(){
- const [sources,setSources]=useState<PackingSource[]>([]),[query,setQuery]=useState(''),[statusFilter,setStatusFilter]=useState<PackingStatus>()
+ const [sources,setSources]=useState<PackingSource[]>([]),[query,setQuery]=useState(() => takeSearch('packing')),[statusFilter,setStatusFilter]=useState<PackingStatus>()
  const [sortField,setSortField]=useState('serialNo'),[direction,setDirection]=useState<SortDirection>('desc')
  const [createOpen,setCreateOpen]=useState(false),[source,setSource]=useState<Source>('PICKUP'),[sourceId,setSourceId]=useState<string>(),[saving,setSaving]=useState(false),[openId,setOpenId]=useState<string|null>(null)
  const [form]=Form.useForm()
@@ -47,7 +49,7 @@ export function PackingJobsPage(){
 
  if(openId)return <PackingJobDetailPage jobId={openId} onBack={()=>{setOpenId(null);void load()}} onChanged={()=>void load()}/>
 
- const tag=(x:PackingJob)=><span className="status-stack"><Tag color={STATUS_LABEL[x.status].color}>{statusLabel(x.status)}</Tag><CustomerReplyTag reply={customer.get(x.id)} onChanged={customerChanged}/></span>
+ const tag=(x:PackingJob)=><span className="status-stack"><StatusTag color={STATUS_LABEL[x.status].color}>{statusLabel(x.status)}</StatusTag><CustomerReplyTag reply={customer.get(x.id)} onChanged={customerChanged}/></span>
  const origin=(x:PackingJob)=>x.pickupNumber?t('packing.pickupNumber',{number:x.pickupNumber}):x.quotationNumber?t('packing.quotationNumber',{number:x.quotationNumber}):x.leadNumber?t('packing.leadNumber',{number:x.leadNumber}):t('packing.direct')
  const columns:ColumnsType<PackingJob>=[
   {title:t('packing.list.colJob'),dataIndex:'jobNumber',width:240,render:(_,x)=><div className="primary-cell"><strong>{x.jobNumber}</strong><small>#{x.serialNo} · {x.customerName}</small></div>},
@@ -66,7 +68,7 @@ export function PackingJobsPage(){
     sortOptions={[{value:'serialNo',label:t('common.createdAt')},{value:'scheduledAtUtc',label:t('packing.list.colSchedule')},{value:'customerName',label:t('packing.job.customerName')},{value:'jobNumber',label:t('packing.list.colJob')},{value:'status',label:t('common.status')}]}
     onReset={()=>{setQuery('');setStatusFilter(undefined);setCustomerState(undefined);setSortField('serialNo');setDirection('desc')}}><CustomerStateFilter value={customerState} onChange={setCustomerState}/><Select allowClear placeholder={t('common.status')} value={statusFilter} onChange={setStatusFilter} options={(Object.keys(STATUS_LABEL) as PackingStatus[]).map(s=>({value:s,label:statusLabel(s)}))}/></AdvancedSearch>}/>
   <Card className="grid-card" title={t('packing.list.register')} extra={t('packing.list.count',{count:list.total})}>
-   <ResponsiveDataView rowKey="id" columns={columns} data={list.rows} onScroll={list.onScroll} hasMore={list.hasMore} total={list.total} loading={list.loading} label={t('packing.list.rowsLabel')} scrollX={1080}
+   <ResponsiveDataView onOpen={x => setOpenId(x.id)} rowKey="id" columns={columns} data={list.rows} onScroll={list.onScroll} hasMore={list.hasMore} total={list.total} loading={list.loading} label={t('packing.list.rowsLabel')} scrollX={1080}
     renderTile={x=><><div className="tile-heading"><div className="primary-cell"><strong>{x.jobNumber}</strong><small>{x.customerName}</small></div>{tag(x)}</div>
      <div className="tile-details"><span>{when(x.scheduledAtUtc)}</span><span>{t('packing.boxCount',{count:x.boxCount})}{x.labelsPending?' · '+t('packing.list.labelsToPrint',{count:x.labelsPending}):''}</span><span>{origin(x)}</span></div>
      <div className="tile-actions"><RowActions><Button size="small" onClick={()=>setOpenId(x.id)}>{t('packing.list.open')}</Button></RowActions></div></>}/>

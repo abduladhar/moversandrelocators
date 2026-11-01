@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { StatusTag } from '../StatusTag'
 import { Alert, Button, Card, Checkbox, Drawer, Empty, Form, Input, InputNumber, Modal, Popconfirm, Radio, Select, Space, Table, Tag, Timeline, Tooltip, Typography, Upload, message } from 'antd'
 import { AppstoreAddOutlined, CameraOutlined, CheckCircleOutlined, DeleteOutlined, DownloadOutlined, HistoryOutlined, PlusOutlined, QuestionCircleOutlined, ScanOutlined, StopOutlined, UnlockOutlined, WarningOutlined } from '@ant-design/icons'
 import type { BoxType, Warehouse } from '../../types'
@@ -116,7 +117,7 @@ export function PickupCollectionTab({ pickupId, warehouses, boxTypes, packingKey
       <Typography.Text type="secondary">{b.boxTypeName}{b.roomName ? ` · ${b.roomName}` : ''}{b.isFragile ? ` · ${t('pickups.fragileLower')}` : ''}</Typography.Text></Space> },
     ...(showJob ? [{ title: t('pickups.collection.colJob'), width: 170, render: (_: unknown, b: CollectionBox) => b.packingJobNumber ? <Tag>{b.packingJobNumber}</Tag> : null }] : []),
     { title: t('common.status'), width: 150, render: (_: unknown, b: CollectionBox) => <Space direction="vertical" size={0}>
-      <Tag color={STATUS[b.status].color}>{statusLabel(b.status)}</Tag>
+      <StatusTag color={STATUS[b.status].color}>{statusLabel(b.status)}</StatusTag>
       {b.statusReason && <Typography.Text type="secondary">{b.statusReason}</Typography.Text>}</Space> },
     { title: t('pickups.collection.colCondition'), width: 180, render: (_: unknown, b: CollectionBox) => <Space direction="vertical" size={0}>
       <Space size={4}>

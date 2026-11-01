@@ -45,6 +45,9 @@ async function load(language: Language) {
 
 const STORAGE_KEY = 'crateway_language'
 function initialLanguage(): Language {
+  // ?lang=ar in the address wins (a company's Arabic website embeds the form in Arabic).
+  const asked = new URLSearchParams(window.location.search).get('lang')
+  if (languages.some(l => l.code === asked)) return asked as Language
   try { const saved = localStorage.getItem(STORAGE_KEY); if (languages.some(l => l.code === saved)) return saved as Language } catch { /* storage unavailable */ }
   const browser = (navigator.language || 'en').slice(0, 2).toLowerCase()
   return languages.some(l => l.code === browser) ? browser as Language : 'en'

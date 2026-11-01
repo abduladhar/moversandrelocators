@@ -46,7 +46,7 @@ export function DataGrid<T extends object>({ serverPaged, ...props }: TableProps
     const base: ColumnType<T> = { ...column, key: column.key ?? String(column.dataIndex ?? title ?? index),
       align: money ? 'right' : 'left', className: [column.className, money ? 'amount-column' : 'text-column'].filter(Boolean).join(' ') }
     if (action || serverPaged || column.filters || column.filterDropdown) return base
-    return { ...base, filteredValue: filters[String(base.key)] ?? null, filterIcon: (filtered: boolean) => <SearchOutlined style={{ color: filtered ? '#247452' : undefined }} />,
+    return { ...base, filteredValue: filters[String(base.key)] ?? null, filterIcon: (filtered: boolean) => <SearchOutlined style={{ color: filtered ? 'var(--cw-brand)' : undefined }} />,
       filterDropdown: ({ selectedKeys, setSelectedKeys, confirm, clearFilters }) => <div className="grid-column-filter" onKeyDown={e => e.stopPropagation()}>
         <Input aria-label={t('shell.grid.filterColumn', { column: title })} placeholder={t('shell.grid.filterColumn', { column: title })} value={String(selectedKeys[0] ?? '')}
           onChange={e => setSelectedKeys(e.target.value ? [e.target.value] : [])} onPressEnter={() => confirm()} />

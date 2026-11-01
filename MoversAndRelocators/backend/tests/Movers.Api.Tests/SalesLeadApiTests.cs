@@ -298,6 +298,68 @@ public sealed class SalesLeadApiTests : IAsyncLifetime
         Assert.Equal(System.Text.Json.JsonValueKind.Null, removed.GetProperty("lines")[0].GetProperty("imageUrl").ValueKind);
     }
 
+    [Fact]
+    public async Task Website_form_creates_a_lead_without_sign_in_and_takes_the_customers_files()
+    {
+        await LoginAndSelectTenantAsync();
+        var moveTypes = (await _client.GetFromJsonAsync<List<MoveTypeResponse>>("/api/sales/statuses/move-types"))!;
+        var office = moveTypes.Single(x => x.Code == "OFFICE");
+        (await _client.PutAsJsonAsync("/api/settings/aws", new { region = "ap-south-1", bucketName = "movers-test-uploads", accessKey = "AKIAEXAMPLE123456789", secretKey = "example-secret-key-for-tests" })).EnsureSuccessStatusCode();
+        var empty = await _client.GetFromJsonAsync<System.Text.Json.JsonElement>("/api/sales/web-form");
+        Assert.Equal(JsonValueKindNull, empty.GetProperty("version").ValueKind);
+
+        var settings = new { enabled = true, key = "ignored-by-server", statusId = (Guid?)null, defaultMoveTypeId = office.Id, assignedEmployeeId = (Guid?)null, source = "Website",
+            heading = "Get a moving quote", intro = "Tell us about your move.", thankYou = "Thanks! We will call you.", accentColor = "#C0392B", allowUploads = true, showCompanyName = true };
+        var saved = await _client.PutAsJsonAsync("/api/sales/web-form", new { version = (Guid?)null, settings });
+        saved.EnsureSuccessStatusCode();
+        var form = await saved.Content.ReadFromJsonAsync<System.Text.Json.JsonElement>();
+        var key = form.GetProperty("settings").GetProperty("key").GetString()!;
+        Assert.NotEqual("ignored-by-server", key);
+        Assert.Equal("#c0392b", form.GetProperty("settings").GetProperty("accentColor").GetString());
+        var bad = await _client.PutAsJsonAsync("/api/sales/web-form", new { version = form.GetProperty("version").GetGuid(), settings = settings with { accentColor = "red" } });
+        Assert.Equal(HttpStatusCode.BadRequest, bad.StatusCode);
+
+        var visitor = _factory.CreateClient();
+        var page = await visitor.GetFromJsonAsync<System.Text.Json.JsonElement>($"/api/public/lead-form/{key}");
+        Assert.Equal("Get a moving quote", page.GetProperty("heading").GetString());
+        Assert.Equal(office.Id, page.GetProperty("defaultMoveTypeId").GetGuid());
+        Assert.Equal(5, page.GetProperty("moveTypes").GetArrayLength());
+        Assert.Equal(HttpStatusCode.NotFound, (await visitor.GetAsync("/api/public/lead-form/no-such-form-key-000")).StatusCode);
+
+        var request = new { customerName = "Website Visitor", phone = "+971 50 000 0000", email = "visitor@example.test", moveTypeId = (Guid?)null, origin = "Dubai Marina",
+            destination = "Abu Dhabi", expectedMoveDate = "2026-12-01", notes = "Two bedroom flat", website = (string?)null };
+        var bot = await visitor.PostAsJsonAsync($"/api/public/lead-form/{key}", request with { customerName = "Spam Bot", website = "http://spam.test" });
+        bot.EnsureSuccessStatusCode();
+        Assert.Equal(JsonValueKindNull, (await bot.Content.ReadFromJsonAsync<System.Text.Json.JsonElement>()).GetProperty("leadNumber").ValueKind);
+        var sent = await visitor.PostAsJsonAsync($"/api/public/lead-form/{key}", request);
+        sent.EnsureSuccessStatusCode();
+        var result = await sent.Content.ReadFromJsonAsync<System.Text.Json.JsonElement>();
+        var uploadToken = result.GetProperty("uploadToken").GetString()!;
+
+        var lead = Assert.Single((await _client.GetFromJsonAsync<List<System.Text.Json.JsonElement>>("/api/sales/leads"))!);
+        Assert.Equal("Website Visitor", lead.GetProperty("customerName").GetString());
+        Assert.Equal(result.GetProperty("leadNumber").GetString(), lead.GetProperty("leadNumber").GetString());
+        Assert.Equal("Website", lead.GetProperty("source").GetString());
+        Assert.Equal(office.Id, lead.GetProperty("moveTypeId").GetGuid());
+        Assert.Equal("NEW", (await _client.GetFromJsonAsync<List<StatusResponse>>("/api/sales/statuses/leads"))!.Single(x => x.Id == lead.GetProperty("statusId").GetGuid()).Code);
+        var leadId = lead.GetProperty("id").GetGuid();
+
+        foreach (var (name, type) in new[] { ("inventory.pdf", "application/pdf"), ("living-room.jpg", "image/jpeg"), ("walkthrough.mp4", "video/mp4"), ("voice-note.m4a", "audio/mp4") })
+        {
+            var upload = await visitor.PostAsJsonAsync($"/api/public/lead-uploads/{uploadToken}/upload-requests", new { fileName = name, contentType = type, sizeBytes = 1024 });
+            upload.EnsureSuccessStatusCode();
+            var id = (await upload.Content.ReadFromJsonAsync<UploadResponse>())!.AttachmentId;
+            (await visitor.PostAsync($"/api/public/lead-uploads/{uploadToken}/attachments/{id}/complete", null)).EnsureSuccessStatusCode();
+        }
+        Assert.Equal(4, (await _client.GetFromJsonAsync<List<AttachmentResponse>>($"/api/sales/leads/{leadId}/attachments"))!.Count);
+
+        var off = await _client.PutAsJsonAsync("/api/sales/web-form", new { version = form.GetProperty("version").GetGuid(), settings = settings with { enabled = false } });
+        off.EnsureSuccessStatusCode();
+        Assert.Equal(key, (await off.Content.ReadFromJsonAsync<System.Text.Json.JsonElement>()).GetProperty("settings").GetProperty("key").GetString());
+        Assert.Equal(HttpStatusCode.NotFound, (await visitor.GetAsync($"/api/public/lead-form/{key}")).StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, (await visitor.PostAsJsonAsync($"/api/public/lead-form/{key}", request)).StatusCode);
+    }
+
     private const System.Text.Json.JsonValueKind JsonValueKindNull = System.Text.Json.JsonValueKind.Null;
 
     private sealed class FakeClaudeGateway : IClaudeVisionGateway

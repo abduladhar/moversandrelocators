@@ -1,4 +1,5 @@
 import {useEffect,useState} from 'react'
+import {ReportAbout} from './ReportAbout'
 import {Alert,Button,Card,Input,Select,Space,Tag} from 'antd'
 import {lastBillingReportQuery,request} from '../api'
 import {ReportPrintButton} from '../reportingV2/ReportPrintButton'
@@ -32,7 +33,7 @@ export function PayableAgingReport({partyCode}:{partyCode?:string}={}){
  <div className="accounting-report-field">{t('reports.filters.currency')}<Select className="accounting-report-select" aria-label={t('reports.payableAging.ariaCurrency')} style={{minWidth:240}} value={currency} onChange={setCurrency} options={[{value:'BASE',label:t('reports.currencyOptions.base',{currency:currencies?.baseCurrency||'…'})},{value:'DEFAULT',label:t('reports.currencyOptions.default',{currency:currencies?.settings.defaultCurrency||'…'})},{value:'VENDOR',label:t('reports.currencyOptions.eachVendor')},...(currencies?.currencies||[]).map(c=>({value:c.code,label:t('reports.currencyOptions.transactionsOnly',{currency:c.code})}))]}/></div>
  <Button type="primary" loading={loading} onClick={()=>void load()}>{t('reports.actions.run')}</Button><Button disabled={!data||loading} onClick={exportCsv}>{t('reports.actions.exportCsv')}</Button>{partyCode&&<ReportPrintButton type="ACCOUNTING_10" title={[t('reports.names.payableAging'),vendors.find(p=>p.code===vendor)?.name].filter(Boolean).join(' · ')} disabled={!data||loading} query={()=>lastBillingReportQuery('payable-aging')}/>}
  </Space>
- <Alert type="info" style={{marginBottom:16}} title={t('reports.payableAging.alertTitle')} description={t('reports.payableAging.alertDescription')}/>
+ <ReportAbout title={t('reports.payableAging.alertTitle')} description={t('reports.payableAging.alertDescription')}/>
  {error&&<Alert type="error" title={error}/>}
  {data&&<><p>{t('reports.asOf',{date:data.date})} · {data.vendorCode||t('reports.placeholders.allVendors')} · {label('modes',data.mode)}</p>
  <DataGrid<Row> rowKey="id" dataSource={data.rows} scroll={{x:1800}} pagination={{pageSize:25}} columns={[{title:t('reports.columns.vendor'),dataIndex:'vendorName'},{title:t('reports.columns.bill'),dataIndex:'number'},{title:t('reports.columns.billDate'),dataIndex:'billDate'},{title:t('reports.columns.dueDate'),dataIndex:'dueDate'},{title:t('reports.columns.daysOverdue'),dataIndex:'daysOverdue'},{title:t('reports.columns.transactionOutstanding'),align:'right',render:(_,r)=>formatMoney(r.transactionOutstanding,r.transactionCurrency)},...buckets.map((k,i)=>({title:labels[i],align:'right' as const,render:(_:unknown,r:Row)=>formatMoney(r[k],r.currency)}))]}/>
