@@ -26,8 +26,8 @@ public sealed class WebLeadFormController(WebLeadFormService service) : Controll
 
 public sealed record SubmitWebLeadRequest([Required, StringLength(160, MinimumLength = 2)] string CustomerName, [Required, StringLength(40, MinimumLength = 5)] string Phone,
     [EmailAddress, StringLength(254)] string? Email, Guid? MoveTypeId, [Required, StringLength(300)] string Origin, [Required, StringLength(300)] string Destination,
-    DateOnly? ExpectedMoveDate, [StringLength(2000)] string? Notes, [StringLength(200)] string? Website)
-{ public SubmitWebLeadCommand ToCommand() => new(CustomerName, Phone, Email, MoveTypeId, Origin, Destination, ExpectedMoveDate, Notes, Website); }
+    DateOnly? ExpectedMoveDate, [StringLength(2000)] string? Notes, [StringLength(200)] string? Website, [StringLength(2048)] string? CaptchaToken = null)
+{ public SubmitWebLeadCommand ToCommand() => new(CustomerName, Phone, Email, MoveTypeId, Origin, Destination, ExpectedMoveDate, Notes, Website, CaptchaToken); }
 
 /// <summary>The public form on the company's website: no sign-in. Submissions are limited per address (web-lead-form policy).</summary>
 [ApiController, AllowAnonymous, EnableRateLimiting("customer-links"), Route("api/public/lead-form/{key}")]
@@ -38,7 +38,7 @@ public sealed class PublicLeadFormController(WebLeadFormService service) : Contr
     [HttpPost, EnableRateLimiting("web-lead-form")]
     public async Task<ActionResult> Submit(string key, SubmitWebLeadRequest r, CancellationToken t)
     {
-        try { var x = await service.Submit(key, r.ToCommand(), t); return x is null ? NotFound(new { message = Unavailable }) : Ok(x); }
+        try { var x = await service.Submit(key, r.ToCommand(), HttpContext.Connection.RemoteIpAddress?.ToString(), t); return x is null ? NotFound(new { message = Unavailable }) : Ok(x); }
         catch (InvalidOperationException e) { return BadRequest(new { message = e.Message }); }
     }
 }

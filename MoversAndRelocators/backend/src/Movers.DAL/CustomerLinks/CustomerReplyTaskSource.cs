@@ -8,8 +8,11 @@ using Movers.Services.Tasks;
 
 namespace Movers.DAL.CustomerLinks;
 
-/// <summary>My Tasks: every customer reply the office has not marked as handled yet, in the modules the user can see.</summary>
-public sealed class CustomerReplyTaskSource(MoversDbContext db, ICustomerReplyQueries replies, TimeProvider clock) : ITodayTaskSource
+/// <summary>
+/// My Tasks: customer replies in the modules the user can see. Open until the office marks the reply as handled;
+/// a handled reply stays as a completed task until a new link is shared on that record.
+/// </summary>
+public sealed class CustomerReplyTaskSource(MoversDbContext db, ICustomerReplyQueries replies, TimeProvider clock) : ITaskSource
 {
     private static readonly Dictionary<string, (string Module, string Target)> Modules = new()
     {
@@ -21,9 +24,10 @@ public sealed class CustomerReplyTaskSource(MoversDbContext db, ICustomerReplyQu
         [CustomerReplyRecordTypes.DeliveryJob] = ("Delivery", "delivery"),
     };
 
-    public async Task<IReadOnlyList<MyTaskModel>> GetTasksDueThroughAsync(DateTimeOffset endUtc, CancellationToken token)
+    public async Task<IReadOnlyList<MyTaskModel>> GetTasksAsync(CancellationToken token)
     {
-        var replied = (await replies.ListAsync(null, token)).Where(x => x.State == CustomerReplyStates.Replied).ToList();
+        var replied = (await replies.ListAsync(null, token))
+            .Where(x => x.State == CustomerReplyStates.Replied || x.State == CustomerReplyStates.ActionTaken && x.RepliedAtUtc is not null).ToList();
         if (replied.Count == 0) return [];
         var names = await Names(replied, token);
         var now = clock.GetUtcNow();
@@ -31,8 +35,10 @@ public sealed class CustomerReplyTaskSource(MoversDbContext db, ICustomerReplyQu
         {
             var (number, customer) = names[x.RecordId]; var module = Modules[x.RecordType];
             var what = Describe(x.ReplyKind);
-            return new MyTaskModel($"customer-reply:{x.RecordId}", "customer-reply", module.Module, $"Customer replied: {customer}",
-                $"{number} · {what}{(x.ReplyNote is null ? "" : $" · {x.ReplyNote}")}", x.RepliedAtUtc ?? now, false, x.RecordId.ToString(), module.Target);
+            var open = x.State == CustomerReplyStates.Replied;
+            return new MyTaskModel($"customer-reply:{x.RecordType}:{x.RecordId}", "customer-reply", module.Module, $"Customer replied: {customer}",
+                $"{number} · {what}{(x.ReplyNote is null ? "" : $" · {x.ReplyNote}")}", x.RepliedAtUtc ?? now, false, x.RecordId.ToString(), module.Target,
+                open ? "REPLIED" : "HANDLED", IsOpen: open, CreatedAtUtc: x.RepliedAtUtc ?? now, CompletedAtUtc: open ? null : x.HandledAtUtc);
         }).ToList();
     }
 

@@ -380,6 +380,21 @@
     "thanksTitle": "Merci {name} !",
     "defaultThankYou": "Nous avons bien reçu votre demande et vous contacterons rapidement.",
     "reference": "Référence : {number}",
-    "another": "Envoyer une autre demande"
+    "another": "Envoyer une autre demande",
+    "captchaRequired": "Veuillez confirmer que vous n’êtes pas un robot",
+    "captchaFailed": "La vérification n’a pas pu se charger. Vérifiez votre connexion et rechargez la page.",
+    "fromComputer": "Depuis cet ordinateur",
+    "phoneTitle": "Utilisez votre téléphone",
+    "phoneText": "Scannez avec l’appareil photo de votre téléphone pour prendre des photos, filmer et enregistrer des notes vocales.",
+    "phoneOr": "ou envoyez le lien sur votre téléphone",
+    "sendEmail": "E-mail",
+    "copyLink": "Copier le lien",
+    "share": "Partager",
+    "linkCopied": "Lien copié",
+    "copyManual": "Copiez ce lien : {url}",
+    "phoneSubject": "Ajoutez des photos pour votre devis de déménagement",
+    "phoneMessage": "Ajoutez photos, vidéos, notes vocales ou documents pour votre devis de déménagement avec {company} : {url}",
+    "theMovers": "votre déménageur",
+    "waitingForFiles": "Les fichiers envoyés — depuis cet ordinateur ou votre téléphone — apparaîtront ici."
   }
 }

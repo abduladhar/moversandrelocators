@@ -1,0 +1,38 @@
+{
+  "chartView": "Chart", "tableView": "Table", "noData": "Nothing to show yet.", "loadFailed": "Unable to load the dashboard.",
+  "noAccess": "You don't have access to any module on this dashboard.", "weekOf": "Week of", "last90Days": "Last 90 days", "next7Days": "Next 7 days",
+  "status": "Status", "day": "Day", "month": "Month",
+  "special": { "NONE": "Not set", "OTHER": "Other" },
+  "sales": {
+    "title": "Sales & planning dashboard", "description": "Leads, follow-ups, surveys and quotations across the company. Click a tile or a row to open it.",
+    "newLeads": "New leads this month", "sameAsLastMonth": "Same as last month", "moreThanLastMonth": "{count} more than last month", "fewerThanLastMonth": "{count} fewer than last month",
+    "openLeads": "Open leads", "followUpsOverdue": "Follow-ups overdue", "dueToday": "Due today: {count}",
+    "surveysNext7": "Surveys in the next 7 days", "surveysOverdue": "Overdue: {count}", "surveysDone": "Completed this month: {count}",
+    "awaitingAnswer": "Quotations awaiting an answer", "sentThisMonth": "Sent this month: {count}", "acceptanceRate": "Acceptance rate",
+    "acceptedOf": "{accepted} accepted of {decided} decided in 90 days",
+    "leadsPerWeek": "New leads per week", "last12Weeks": "Last 12 weeks", "leads": "Leads", "pipeline": "Lead pipeline", "activeLeads": "Active leads by status",
+    "bySource": "Where leads come from", "source": "Source", "quotationOutcomes": "Quotation outcomes", "quotations": "Quotations", "acceptedValue": "Accepted this month:",
+    "upcomingSurveys": "Upcoming surveys", "noUpcomingSurveys": "No surveys in the next 7 days.", "recentLeads": "Latest leads", "noLeads": "No leads yet."
+  },
+  "operations": {
+    "title": "Operations dashboard", "description": "Today's pickups, packing jobs and deliveries, what is running late, and the next two weeks.",
+    "kind": { "PICKUP": "Pickup", "PACKING": "Packing", "DELIVERY": "Delivery" },
+    "byStatus": "{module} by status", "openAndRecent": "Open, and the last 30 days", "jobs": "Jobs",
+    "pickupsToday": "Pickups today", "packingToday": "Packing jobs today", "deliveriesToday": "Deliveries today",
+    "inProgress": "In progress now", "inProgressNote": "Started and not finished", "overdue": "Overdue", "overdueNote": "Planned for an earlier day, not started",
+    "boxesInWarehouse": "Boxes ready for delivery", "boxesNote": "In the warehouse",
+    "next14Days": "Next 14 days", "scheduledJobs": "Scheduled jobs per day", "today": "Today", "nothingToday": "Nothing scheduled today.",
+    "overdueJobs": "Running late", "overdueJobsHint": "Oldest first", "nothingOverdue": "Nothing is running late."
+  },
+  "finance": {
+    "title": "Finance dashboard", "description": "What customers owe and how late, what you owe vendors, and invoicing against collections.",
+    "notReady": "Finance figures are not available yet", "openCurrency": "Open currency settings", "inBase": "Amounts in {currency}, the base currency.",
+    "receivables": "Receivables", "payables": "Payables", "overdueAmount": "Overdue: {amount}",
+    "invoicedThisMonth": "Invoiced this month", "collectedThisMonth": "Collected this month", "billsThisMonth": "Vendor bills this month",
+    "draftInvoices": "Draft invoices to post", "overdueInvoices": "Overdue invoices: {count}",
+    "invoiced": "Invoiced", "collected": "Collected", "invoicedVsCollected": "Invoiced and collected", "last6Months": "Last 6 months",
+    "receivableAging": "Receivables by age", "payableAging": "Payables by age", "byDaysOverdue": "By days past the due date", "age": "Age",
+    "bucket": { "CURRENT": "Not due yet", "1_30": "1–30 days", "31_60": "31–60 days", "61_90": "61–90 days", "91_120": "91–120 days", "OVER_120": "Over 120 days" },
+    "topDebtors": "Largest customer balances", "largestBalances": "Top 5", "noDebtors": "No customer owes anything.", "invoiceCount": "Invoices: {count}"
+  }
+}

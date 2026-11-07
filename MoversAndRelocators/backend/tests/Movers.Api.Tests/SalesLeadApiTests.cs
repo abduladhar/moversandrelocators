@@ -33,6 +33,7 @@ public sealed class SalesLeadApiTests : IAsyncLifetime
                 services.RemoveAll<IInventoryVisionGateway>(); services.AddSingleton<IInventoryVisionGateway>(_gateway);
                 services.RemoveAll<IClaudeVisionGateway>(); services.AddSingleton<IClaudeVisionGateway>(_claude);
                 services.RemoveAll<IObjectUploader>(); services.AddSingleton<IObjectUploader>(_uploader);
+                services.RemoveAll<ICaptchaVerifier>(); services.AddSingleton<ICaptchaVerifier, FakeCaptcha>();
             });
         });
         _client = _factory.CreateClient();
@@ -324,10 +325,15 @@ public sealed class SalesLeadApiTests : IAsyncLifetime
         Assert.Equal("Get a moving quote", page.GetProperty("heading").GetString());
         Assert.Equal(office.Id, page.GetProperty("defaultMoveTypeId").GetGuid());
         Assert.Equal(5, page.GetProperty("moveTypes").GetArrayLength());
+        Assert.Equal(FakeCaptcha.Key, page.GetProperty("captchaSiteKey").GetString());
         Assert.Equal(HttpStatusCode.NotFound, (await visitor.GetAsync("/api/public/lead-form/no-such-form-key-000")).StatusCode);
 
         var request = new { customerName = "Website Visitor", phone = "+971 50 000 0000", email = "visitor@example.test", moveTypeId = (Guid?)null, origin = "Dubai Marina",
-            destination = "Abu Dhabi", expectedMoveDate = "2026-12-01", notes = "Two bedroom flat", website = (string?)null };
+            destination = "Abu Dhabi", expectedMoveDate = "2026-12-01", notes = "Two bedroom flat", website = (string?)null, captchaToken = (string?)FakeCaptcha.Human };
+        Assert.Equal(HttpStatusCode.BadRequest, (await visitor.PostAsJsonAsync($"/api/public/lead-form/{key}", request with { captchaToken = null })).StatusCode);
+        var robot = await visitor.PostAsJsonAsync($"/api/public/lead-form/{key}", request with { captchaToken = "forged" });
+        Assert.Equal(HttpStatusCode.BadRequest, robot.StatusCode);
+        Assert.Equal("PLEASE_CONFIRM_YOU_NOT_ROBOT_SEND", (await robot.Content.ReadFromJsonAsync<System.Text.Json.JsonElement>()).GetProperty("code").GetString());
         var bot = await visitor.PostAsJsonAsync($"/api/public/lead-form/{key}", request with { customerName = "Spam Bot", website = "http://spam.test" });
         bot.EnsureSuccessStatusCode();
         Assert.Equal(JsonValueKindNull, (await bot.Content.ReadFromJsonAsync<System.Text.Json.JsonElement>()).GetProperty("leadNumber").ValueKind);
@@ -352,12 +358,104 @@ public sealed class SalesLeadApiTests : IAsyncLifetime
             (await visitor.PostAsync($"/api/public/lead-uploads/{uploadToken}/attachments/{id}/complete", null)).EnsureSuccessStatusCode();
         }
         Assert.Equal(4, (await _client.GetFromJsonAsync<List<AttachmentResponse>>($"/api/sales/leads/{leadId}/attachments"))!.Count);
+        var received = (await visitor.GetFromJsonAsync<List<System.Text.Json.JsonElement>>($"/api/public/lead-uploads/{uploadToken}/files"))!;
+        Assert.Equal(["voice-note.m4a", "walkthrough.mp4", "living-room.jpg", "inventory.pdf"], received.Select(x => x.GetProperty("fileName").GetString()!).ToArray());
+        Assert.False(received[0].TryGetProperty("url", out _));
+        Assert.Equal(HttpStatusCode.NotFound, (await visitor.GetAsync("/api/public/lead-uploads/not-a-real-token/files")).StatusCode);
 
         var off = await _client.PutAsJsonAsync("/api/sales/web-form", new { version = form.GetProperty("version").GetGuid(), settings = settings with { enabled = false } });
         off.EnsureSuccessStatusCode();
         Assert.Equal(key, (await off.Content.ReadFromJsonAsync<System.Text.Json.JsonElement>()).GetProperty("settings").GetProperty("key").GetString());
         Assert.Equal(HttpStatusCode.NotFound, (await visitor.GetAsync($"/api/public/lead-form/{key}")).StatusCode);
         Assert.Equal(HttpStatusCode.NotFound, (await visitor.PostAsJsonAsync($"/api/public/lead-form/{key}", request)).StatusCode);
+    }
+
+    [Fact]
+    public async Task My_tasks_can_be_updated_completed_and_reassigned()
+    {
+        await LoginAndSelectTenantAsync();
+        var statuses = (await _client.GetFromJsonAsync<List<StatusResponse>>("/api/sales/statuses/follow-ups"))!;
+        var planned = statuses.Single(x => x.Code == "PLANNED"); var completed = statuses.Single(x => x.Code == "COMPLETED");
+        var household = (await _client.GetFromJsonAsync<List<MoveTypeResponse>>("/api/sales/statuses/move-types"))!.Single(x => x.Code == "HOUSEHOLD");
+        var newStatus = (await _client.GetFromJsonAsync<List<StatusResponse>>("/api/sales/statuses/leads"))!.Single(x => x.Code == "NEW");
+        var me = await CreateAssignedEmployeeAsync();
+        var designation = (await _client.GetFromJsonAsync<List<IdResponse>>("/api/designations"))![0].Id;
+        var colleagueResponse = await _client.PostAsJsonAsync("/api/employees", new { employeeNumber = "SALES-002", firstName = "Priya", lastName = "Nair", workEmail = "priya@movers.local",
+            phone = "101", joiningDate = "2026-01-01", designationId = designation, reportsToEmployeeId = (Guid?)null });
+        colleagueResponse.EnsureSuccessStatusCode();
+        var colleague = (await colleagueResponse.Content.ReadFromJsonAsync<IdResponse>())!.Id;
+        var lead = await CreateLeadAsync("", "Fabrikam Homes", newStatus.Id, household.Id, me);
+        var today = new DateTimeOffset(DateTime.UtcNow.Date.AddHours(1), TimeSpan.Zero);
+        async Task<Guid> FollowUp(string notes) { var r = await _client.PostAsJsonAsync($"/api/sales/leads/{lead.Id}/follow-ups", new { scheduledAtUtc = today, statusId = planned.Id, notes, nextFollowUpAtUtc = (DateTimeOffset?)null }); r.EnsureSuccessStatusCode(); return (await r.Content.ReadFromJsonAsync<FollowUpResponse>())!.Id; }
+        async Task<List<System.Text.Json.JsonElement>> Mine() => (await _client.GetFromJsonAsync<List<System.Text.Json.JsonElement>>("/api/tasks/mine"))!;
+        async Task<System.Text.Json.JsonElement> FollowUpRow(Guid id) => (await _client.GetFromJsonAsync<List<System.Text.Json.JsonElement>>($"/api/sales/leads/{lead.Id}/follow-ups"))!.Single(x => x.GetProperty("id").GetGuid() == id);
+        var rescheduled = await FollowUp("Call about dates"); var done = await FollowUp("Send the brochure"); var handover = await FollowUp("Discuss the quotation");
+
+        var task = (await Mine()).Single(x => x.GetProperty("id").GetString() == $"sales-follow-up:{rescheduled}");
+        Assert.Equal("Planned", task.GetProperty("status").GetString());
+        Assert.Equal(me, task.GetProperty("assignedEmployeeId").GetGuid());
+        var options = await _client.GetFromJsonAsync<System.Text.Json.JsonElement>("/api/tasks/options");
+        Assert.Contains(options.GetProperty("followUpStatuses").EnumerateArray(), x => x.GetProperty("id").GetGuid() == completed.Id && x.GetProperty("isCompleted").GetBoolean());
+        Assert.Equal(2, options.GetProperty("employees").GetArrayLength());
+
+        // New date and a note: the task leaves today's list and the note is kept on the follow-up.
+        (await _client.PostAsJsonAsync($"/api/tasks/sales-follow-up:{rescheduled}/update", new { dueAtUtc = today.AddDays(2), note = "Customer travelling, call on Monday" })).EnsureSuccessStatusCode();
+        var moved = await FollowUpRow(rescheduled);
+        Assert.Contains("Customer travelling, call on Monday", moved.GetProperty("notes").GetString());
+        Assert.Equal(today.AddDays(2), moved.GetProperty("scheduledAtUtc").GetDateTimeOffset());
+        // Completed with no new date closes the task.
+        (await _client.PostAsJsonAsync($"/api/tasks/sales-follow-up:{done}/update", new { statusId = completed.Id })).EnsureSuccessStatusCode();
+        Assert.Equal("Completed", (await FollowUpRow(done)).GetProperty("statusName").GetString());
+        async Task<System.Text.Json.JsonElement> Page(string query) => await _client.GetFromJsonAsync<System.Text.Json.JsonElement>("/api/tasks" + query);
+        // The list: open by default, completed on request, newest first, searchable (status included), with the counts.
+        var completedPage = await Page("?state=completed");
+        Assert.Equal($"sales-follow-up:{done}", Assert.Single(completedPage.GetProperty("items").EnumerateArray()).GetProperty("id").GetString());
+        Assert.False(completedPage.GetProperty("items")[0].GetProperty("isOpen").GetBoolean());
+        Assert.Equal(System.Text.Json.JsonValueKind.String, completedPage.GetProperty("items")[0].GetProperty("completedAtUtc").ValueKind);
+        Assert.Equal(1, completedPage.GetProperty("summary").GetProperty("completed").GetInt32());
+        Assert.Equal(1, (await Page("?state=all&search=completed")).GetProperty("total").GetInt32());
+
+        Assert.Equal([$"sales-follow-up:{handover}", $"sales-follow-up:{rescheduled}"], (await Page("")).GetProperty("items").EnumerateArray().Select(x => x.GetProperty("id").GetString()).Where(x => x!.StartsWith("sales")).ToArray());
+        // Reassigning moves the lead (and so its follow-ups) to the colleague.
+        Assert.Equal(HttpStatusCode.BadRequest, (await _client.PostAsJsonAsync($"/api/tasks/sales-follow-up:{handover}/reassign", new { employeeId = Guid.NewGuid() })).StatusCode);
+        (await _client.PostAsJsonAsync($"/api/tasks/sales-follow-up:{handover}/reassign", new { employeeId = colleague, note = "Priya handles Fabrikam" })).EnsureSuccessStatusCode();
+        Assert.Contains("Reassigned to Priya Nair: Priya handles Fabrikam", (await FollowUpRow(handover)).GetProperty("notes").GetString());
+        Assert.Equal(colleague, (await _client.GetFromJsonAsync<List<System.Text.Json.JsonElement>>("/api/sales/leads"))!.Single(x => x.GetProperty("id").GetGuid() == lead.Id).GetProperty("assignedEmployeeId").GetGuid());
+        Assert.DoesNotContain(await Mine(), x => x.GetProperty("type").GetString() == "sales_follow_up");
+
+        var surveyResponse = await _client.PostAsJsonAsync("/api/surveys", new { surveyNumber = "SVY-TASK-002", salesLeadId = lead.Id, customerName = "Fabrikam Homes", phone = "+91 90000 00000",
+            email = "customer@example.test", assignedEmployeeId = me, scheduledAtUtc = DateTimeOffset.UtcNow, address = "Chennai", notes = "Two floors" });
+        surveyResponse.EnsureSuccessStatusCode();
+        var survey = (await surveyResponse.Content.ReadFromJsonAsync<IdResponse>())!.Id;
+        var surveyTask = (await Mine()).Single(x => x.GetProperty("id").GetString() == $"survey:{survey}");
+        Assert.Equal("SCHEDULED", surveyTask.GetProperty("status").GetString());
+        Assert.Equal(HttpStatusCode.BadRequest, (await _client.PostAsJsonAsync($"/api/tasks/survey:{survey}/update", new { statusId = completed.Id })).StatusCode);
+        (await _client.PostAsJsonAsync($"/api/tasks/survey:{survey}/reassign", new { employeeId = colleague })).EnsureSuccessStatusCode();
+        Assert.Empty(await Mine());
+        var surveyDetail = await _client.GetFromJsonAsync<System.Text.Json.JsonElement>($"/api/surveys/{survey}");
+        Assert.Contains("Reassigned to Priya Nair", surveyDetail.GetProperty("survey").GetProperty("notes").GetString());
+        Assert.Equal(colleague, surveyDetail.GetProperty("survey").GetProperty("assignedEmployeeId").GetGuid());
+
+        var colleagueView = await Page("");
+        Assert.Equal(0, colleagueView.GetProperty("total").GetInt32()); // everything open was handed to Priya
+        var history = (await _client.GetFromJsonAsync<List<System.Text.Json.JsonElement>>($"/api/tasks/sales-follow-up:{done}/history"))!;
+        Assert.Equal(["OPENED", "COMPLETED"], history.Select(x => x.GetProperty("event").GetString()).ToArray());
+        Assert.Equal("Planned", history[1].GetProperty("from").GetString());
+        Assert.Equal("Completed", history[1].GetProperty("to").GetString());
+        var movedHistory = (await _client.GetFromJsonAsync<List<System.Text.Json.JsonElement>>($"/api/tasks/sales-follow-up:{rescheduled}/history"))!;
+        // The note saved with the new date belongs to that step.
+        Assert.Contains(movedHistory, x => x.GetProperty("event").GetString() == "RESCHEDULED" && x.GetProperty("date").GetDateTimeOffset() == today.AddDays(2) && x.GetProperty("note").GetString() == "Customer travelling, call on Monday");
+        var handoverHistory = (await _client.GetFromJsonAsync<List<System.Text.Json.JsonElement>>($"/api/tasks/sales-follow-up:{handover}/history"))!;
+        var reassigned = Assert.Single(handoverHistory, x => x.GetProperty("event").GetString() == "REASSIGNED");
+        Assert.Equal("Priya Nair", reassigned.GetProperty("to").GetString());
+        Assert.Equal("Priya handles Fabrikam", reassigned.GetProperty("note").GetString());
+        Assert.DoesNotContain(handoverHistory, x => x.GetProperty("event").GetString() == "NOTE");
+        var surveyHistory = (await _client.GetFromJsonAsync<List<System.Text.Json.JsonElement>>($"/api/tasks/survey:{survey}/history"))!;
+        Assert.Equal(["OPENED", "REASSIGNED"], surveyHistory.Select(x => x.GetProperty("event").GetString()).ToArray());
+        Assert.Equal(HttpStatusCode.NotFound, (await _client.GetAsync($"/api/tasks/survey:{Guid.NewGuid()}/history")).StatusCode);
+
+        Assert.Equal(HttpStatusCode.NotFound, (await _client.PostAsJsonAsync($"/api/tasks/survey:{Guid.NewGuid()}/update", new { note = "x" })).StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, (await _client.PostAsJsonAsync("/api/tasks/nonsense/update", new { note = "x" })).StatusCode);
     }
 
     private const System.Text.Json.JsonValueKind JsonValueKindNull = System.Text.Json.JsonValueKind.Null;
@@ -384,6 +482,13 @@ public sealed class SalesLeadApiTests : IAsyncLifetime
             return Task.FromResult(new VisionResult("""{"items":[{"name":"Television","quantity":1,"room":"Living room","fragile":true,"volumeCbm":0.9,"handling":"Crate the screen","notes":"55 inch"},{"name":"Sofa","quantity":1,"room":"","fragile":false,"volumeCbm":2.0,"handling":"","notes":""}],"boxes":[{"boxType":"Book carton","quantity":3,"contents":"Books","room":"Study"}]}""", 12000, 2000, 800));
         }
         public Task<string> Transcribe(string apiKey, string model, byte[] audio, string fileName, string contentType, CancellationToken ct) { TranscriptionModel = model; return Task.FromResult(" Three boxes of books in the study "); }
+    }
+
+    private sealed class FakeCaptcha : ICaptchaVerifier
+    {
+        public const string Key = "test-site-key", Human = "human-token";
+        public string? SiteKey => Key;
+        public Task<bool> VerifyAsync(string? token, string? remoteIp, CancellationToken ct) => Task.FromResult(token == Human);
     }
 
     private sealed class FakeUploader : IObjectUploader

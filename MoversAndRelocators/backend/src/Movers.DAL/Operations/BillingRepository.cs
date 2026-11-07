@@ -14,12 +14,22 @@ public sealed class BillingRepository(MoversDbContext db):IBillingRepository {
   return original.HasValue&&await db.Set<BillingRecord>().AnyAsync(x=>x.JournalId==original,ct);
  }
  public async Task<IReadOnlyList<Source>> Sources(CancellationToken ct) {
-  var result=(await db.Pickups.AsNoTracking().ToListAsync(ct)).Select(x=>new Source("PICKUP",x.Id,x.PickupNumber+" · "+x.CustomerName)).ToList();
+  // Each operation says who its customer is, so a new invoice or charge from it can start with that customer selected.
+  var result=(await db.Pickups.AsNoTracking().ToListAsync(ct)).Select(x=>new Source("PICKUP",x.Id,x.PickupNumber+" · "+x.CustomerName,null,x.CustomerName)).ToList();
   result.AddRange((await db.Set<TransportJob>().AsNoTracking().ToListAsync(ct)).Select(x=>new Source("JOB",x.Id,x.JobNumber)));
-  result.AddRange((await db.Set<WarehouseReceipt>().AsNoTracking().ToListAsync(ct)).Select(x=>new Source("WAREHOUSE",x.Id,x.ReceiptNumber)));
-  result.AddRange((await db.Set<Movers.Domain.Packing.PackingJob>().AsNoTracking().ToListAsync(ct)).Select(x=>new Source("PACKING",x.Id,x.JobNumber+" · "+x.CustomerName)));
-  result.AddRange((await db.Set<Movers.Domain.Delivery.DeliveryJob>().AsNoTracking().ToListAsync(ct)).Select(x=>new Source("DELIVERY",x.Id,x.DeliveryNumber)));
+  result.AddRange((await db.Set<WarehouseReceipt>().AsNoTracking().ToListAsync(ct)).Select(x=>{var customer=ReceiptCustomer(x.SnapshotJson);return new Source("WAREHOUSE",x.Id,x.ReceiptNumber,customer.Code,customer.Name);}));
+  result.AddRange((await db.Set<Movers.Domain.Packing.PackingJob>().AsNoTracking().ToListAsync(ct)).Select(x=>new Source("PACKING",x.Id,x.JobNumber+" · "+x.CustomerName,null,x.CustomerName)));
+  // A delivery's customer is on its delivery notes; it is suggested only when they all name the same customer.
+  var noteCustomers=(await db.Set<Movers.Domain.Delivery.DeliveryNote>().AsNoTracking().Select(n=>new{n.DeliveryJobId,n.CustomerName}).ToListAsync(ct))
+   .GroupBy(n=>n.DeliveryJobId).ToDictionary(g=>g.Key,g=>g.Select(n=>n.CustomerName.Trim()).Where(n=>n.Length>0).Distinct(StringComparer.OrdinalIgnoreCase).ToList());
+  result.AddRange((await db.Set<Movers.Domain.Delivery.DeliveryJob>().AsNoTracking().ToListAsync(ct)).Select(x=>
+   new Source("DELIVERY",x.Id,x.DeliveryNumber,null,noteCustomers.GetValueOrDefault(x.Id) is [var only]?only:null)));
   return result;
+ }
+
+ private static (string? Code,string? Name) ReceiptCustomer(string json){
+  try{var snapshot=System.Text.Json.JsonSerializer.Deserialize<Movers.Services.Operations.ReceiptSnapshot>(json);return (snapshot?.CustomerCode,snapshot?.CustomerName);}
+  catch(System.Text.Json.JsonException){return (null,null);}
  }
 }
 

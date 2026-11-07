@@ -13,11 +13,11 @@ import { MasterDataPage } from '../pages/MasterDataPage'
 import { ShipmentsPage } from '../pages/ShipmentsPage'
 import { OperationsCostsPage } from '../pages/OperationsCostsPage'
 import { TransportTripsPage } from '../pages/TransportTripsPage'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import { CommandPalette } from '../components/CommandPalette'
 import { handOffSearch, OpenListContext } from '../searchHandoff'
 import { Avatar, Breadcrumb, Button, Dropdown, Grid, Layout, Menu, Modal, Select, Typography, message } from 'antd'
-import { CheckOutlined, GlobalOutlined, SearchOutlined, DownOutlined, RightOutlined, InboxOutlined, SendOutlined, AppstoreOutlined, ApartmentOutlined, AuditOutlined, BankOutlined, CarOutlined, CloudServerOutlined, DollarOutlined, FileDoneOutlined, FileSearchOutlined, HomeOutlined, IdcardOutlined, LogoutOutlined, MenuFoldOutlined, MenuUnfoldOutlined, RobotOutlined, ExperimentOutlined, SafetyCertificateOutlined, ShopOutlined, TagsOutlined, TeamOutlined, ToolOutlined, UserSwitchOutlined, ClusterOutlined } from '@ant-design/icons'
+import { DashboardOutlined, CheckOutlined, GlobalOutlined, SearchOutlined, DownOutlined, RightOutlined, InboxOutlined, SendOutlined, AppstoreOutlined, ApartmentOutlined, AuditOutlined, BankOutlined, CarOutlined, CloudServerOutlined, DollarOutlined, FileDoneOutlined, FileSearchOutlined, HomeOutlined, IdcardOutlined, LogoutOutlined, MenuFoldOutlined, MenuUnfoldOutlined, RobotOutlined, ExperimentOutlined, SafetyCertificateOutlined, ShopOutlined, TagsOutlined, TeamOutlined, ToolOutlined, UserSwitchOutlined, ClusterOutlined } from '@ant-design/icons'
 import { authApi } from '../api'
 import type { AuthSession, Tenant } from '../types'
 import { TenantsPage } from '../pages/TenantsPage'
@@ -30,7 +30,11 @@ import { AuditPage } from '../pages/AuditPage'
 import { SalesLeadsPage } from '../pages/SalesLeadsPage'
 import { SalesStatusMastersPage } from '../pages/SalesStatusMastersPage'
 import { WebLeadFormSettingsPage } from '../pages/WebLeadFormSettingsPage'
+import { SalesDashboardPage } from '../pages/SalesDashboardPage'
+import { OperationsDashboardPage } from '../pages/OperationsDashboardPage'
+import { FinanceDashboardPage } from '../pages/FinanceDashboardPage'
 import { MyTasksPage } from '../pages/MyTasksPage'
+import { AssistantPage } from '../pages/AssistantPage'
 import { AwsConfigurationPage } from '../pages/AwsConfigurationPage'
 import { OpenAiConfigurationPage } from '../pages/OpenAiConfigurationPage'
 import { ClaudeConfigurationPage } from '../pages/ClaudeConfigurationPage'
@@ -47,7 +51,7 @@ import { CompaniesPage } from '../pages/CompaniesPage'
 import { rememberCompany } from '../session'
 import { languages, useT, type Language } from '../i18n'
 
-type PageKey = 'delivery' | 'report-designs' | 'accounting-reports' | `billing-${string}` | 'currency-settings' | 'posting' | 'billing' | 'customers' | 'vendors' | 'jobs' | 'warehouse' | 'master-data' | 'shipments' | 'costs' | 'trips' | 'dashboard' | 'tenants' | 'users' | 'roles' | 'designations' | 'employees' | 'crew' | 'sales' | 'sales-statuses' | 'sales-web-form' | 'surveys' | 'survey-masters' | 'quotations' | 'charge-masters' | 'tax-masters' | 'pickups' | 'packing' | 'pickup-masters' | 'vehicle-master' | 'warehouse-master' | 'box-type-master' | 'packing-material-master' | 'aws-settings' | 'openai-settings' | 'claude-settings' | 'audit' | 'companies'
+type PageKey = 'assistant' | 'sales-dashboard' | 'operations-dashboard' | 'finance-dashboard' | 'delivery' | 'report-designs' | 'accounting-reports' | `billing-${string}` | 'currency-settings' | 'posting' | 'billing' | 'customers' | 'vendors' | 'jobs' | 'warehouse' | 'master-data' | 'shipments' | 'costs' | 'trips' | 'dashboard' | 'tenants' | 'users' | 'roles' | 'designations' | 'employees' | 'crew' | 'sales' | 'sales-statuses' | 'sales-web-form' | 'surveys' | 'survey-masters' | 'quotations' | 'charge-masters' | 'tax-masters' | 'pickups' | 'packing' | 'pickup-masters' | 'vehicle-master' | 'warehouse-master' | 'box-type-master' | 'packing-material-master' | 'aws-settings' | 'openai-settings' | 'claude-settings' | 'audit' | 'companies'
 
 export function WorkspaceLayout({ session, onSession }: { session: AuthSession; onSession: (session: AuthSession | null) => void }) {
   const { t, language, setLanguage } = useT()
@@ -61,6 +65,13 @@ export function WorkspaceLayout({ session, onSession }: { session: AuthSession; 
   const canManageSurveys = session.user.permissions.includes('surveys.manage')
   const canManageQuotes = session.user.permissions.includes('quotes.manage')
   const canManageOperations = session.user.permissions.includes('operations.manage')
+  // Each module dashboard is listed when the user can see at least one of its modules; it shows only those sections.
+  const can = (...permissions: string[]) => permissions.some(p => session.user.permissions.includes(p))
+  const dashboards: { key: string; icon: ReactNode; label: string; disabled: boolean; children?: { key: string; label: string; icon: ReactNode }[] }[] = [
+    ...(can('sales.view', 'surveys.manage', 'quotes.manage') ? [{ key: 'sales-dashboard', icon: <DashboardOutlined />, label: t('shell.nav.dashboard'), disabled: !tenantReady }] : []),
+    ...(can('operations.manage', 'packing.manage', 'delivery.manage') ? [{ key: 'operations-dashboard', icon: <DashboardOutlined />, label: t('shell.nav.dashboard'), disabled: !tenantReady }] : []),
+    ...(can('billing.view') ? [{ key: 'finance-dashboard', icon: <DashboardOutlined />, label: t('shell.nav.dashboard'), disabled: !tenantReady }] : []),
+  ]
   const canManagePacking = canManageOperations || session.user.permissions.includes('packing.manage')
   const canManageDelivery = canManageOperations || session.user.permissions.includes('delivery.manage')
   // Company users work in one company; tenant users and system administrators can switch and manage companies.
@@ -106,6 +117,8 @@ export function WorkspaceLayout({ session, onSession }: { session: AuthSession; 
     ...(session.user.permissions.includes('accounting.manage') ? [{ key: 'costs', icon: <BankOutlined />, label: t('shell.nav.costs'), disabled: !tenantReady }] : []),
     ...(session.user.permissions.includes('transportation.manage') ? [{ key: 'trips', icon: <CarOutlined />, label: t('shell.nav.transport'), disabled: !tenantReady }] : []),
     ...(isSystem ? [{ key: 'platform', icon: <ShopOutlined />, label: t('shell.nav.platform'), children: [{ key: 'tenants', icon: <ShopOutlined />, label: t('shell.nav.tenants') }] }] : []),
+    ...dashboards,
+    ...(can('ai.assistant') ? [{ key: 'assistant', icon: <RobotOutlined />, label: t('shell.nav.assistant'), disabled: !tenantReady }] : []),
     { key: 'workspace', icon: <HomeOutlined />, label: t('shell.nav.workspace'), children: [{ key: 'dashboard', icon: <HomeOutlined />, label: t('shell.nav.myTasks'), disabled: !tenantReady }] },
     { key: 'people', icon: <TeamOutlined />, label: t('shell.nav.people'), disabled: !tenantReady, children: [{ key: 'customers', icon: <IdcardOutlined />, label: t('shell.nav.customers') }, { key: 'vendors', icon: <ShopOutlined />, label: t('shell.nav.vendors') }, { key: 'employees', icon: <TeamOutlined />, label: t('shell.nav.employees') }, { key: 'designations', icon: <IdcardOutlined />, label: t('shell.nav.designations') }] },
     { key: 'sales-group', icon: <ApartmentOutlined />, label: t('shell.nav.sales'), disabled: !tenantReady, children: [{ key: 'sales', icon: <ApartmentOutlined />, label: t('shell.nav.salesLeads') }, { key: 'sales-statuses', icon: <TagsOutlined />, label: t('shell.nav.statusMasters') }, { key: 'sales-web-form', icon: <GlobalOutlined />, label: t('shell.nav.webForm') }] },
@@ -125,12 +138,12 @@ export function WorkspaceLayout({ session, onSession }: { session: AuthSession; 
     return !permission || session.user.permissions.includes(permission)
   }) })).filter(item => !item.children || item.children.length > 0)
   const sections = [
-    { key: 'workspace-section', label: t('shell.nav.sections.workspace'), keys: ['workspace', 'people'] },
-    { key: 'sales-section', label: t('shell.nav.sections.salesPlanning'), keys: ['sales-group', 'survey-group', 'quotation-group'] },
+    { key: 'workspace-section', label: t('shell.nav.sections.workspace'), keys: ['assistant', 'workspace', 'people'] },
+    { key: 'sales-section', label: t('shell.nav.sections.salesPlanning'), keys: ['sales-dashboard', 'sales-group', 'survey-group', 'quotation-group'] },
     // Order follows the real sequence: pack, collect, store, ship. 'trips' (Transport) is deliberately left out
     // so it stays off the menu; the page and its permission are untouched, so adding the key back restores it.
-    { key: 'operations-section', label: t('shell.nav.sections.operations'), keys: ['packing', 'pickups', 'delivery', 'warehouse', 'jobs', 'shipments', 'crew'] },
-    { key: 'finance-section', label: t('shell.nav.sections.finance'), keys: ['billing', 'posting', 'accounting-reports', 'costs'] },
+    { key: 'operations-section', label: t('shell.nav.sections.operations'), keys: ['operations-dashboard', 'packing', 'pickups', 'delivery', 'warehouse', 'jobs', 'shipments', 'crew'] },
+    { key: 'finance-section', label: t('shell.nav.sections.finance'), keys: ['finance-dashboard', 'billing', 'posting', 'accounting-reports', 'costs'] },
     { key: 'setup-section', label: t('shell.nav.sections.adminSetup'), keys: ['report-designs', 'master-data', 'operations-group', 'administration', 'settings', 'platform'] },
   ]
   const groupedItems = sections.filter(section => section.keys.some(key => visibleItems.some(item => item.key === key))).map(section => {
@@ -206,6 +219,10 @@ export function WorkspaceLayout({ session, onSession }: { session: AuthSession; 
       {page === 'costs' && tenantReady && session.user.permissions.includes('accounting.manage') && <OperationsCostsPage />}
       {page === 'trips' && tenantReady && session.user.permissions.includes('transportation.manage') && <TransportTripsPage />}
       {page === 'tenants' && <TenantsPage onSelect={selectTenant} />}
+      {page === 'sales-dashboard' && tenantReady && <SalesDashboardPage />}
+      {page === 'operations-dashboard' && tenantReady && <OperationsDashboardPage />}
+      {page === 'finance-dashboard' && tenantReady && <FinanceDashboardPage />}
+      {page === 'assistant' && tenantReady && can('ai.assistant') && <AssistantPage />}
       {page === 'dashboard' && tenantReady && <MyTasksPage onNavigate={target => setPage(target as PageKey)} />}
       {page === 'users' && tenantReady && <UsersPage tenantWide={tenantWide} />}
       {page === 'companies' && tenantReady && canManageCompanies && <CompaniesPage currentCompanyId={session.companyId} onChanged={rows => onSession({ ...session, companies: rows.filter(x => x.isActive).map(x => ({ id: x.id, code: x.code, name: x.name, isDefault: x.isDefault })), companyName: rows.find(x => x.id === session.companyId)?.name ?? session.companyName })} />}

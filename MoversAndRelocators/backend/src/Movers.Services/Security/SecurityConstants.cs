@@ -40,6 +40,7 @@ public static class SecurityPermissions
     public const string BillingPay = "billing.pay";
     public const string BillingAccounts = "billing.accounts";
     public const string IncentivesManage = "incentives.manage";
+    public const string AssistantUse = "ai.assistant";
 
     public static readonly IReadOnlyList<(string Code, string Name, string Module)> All =
     [
@@ -71,7 +72,8 @@ public static class SecurityPermissions
         (BillingPay, "Post billing to accounting; record and reverse receipts and payments", "Billing"),
         (BillingAccounts, "Manage chart of accounts", "Billing"),
         (AccountingManage, "Manage accounting", "Accounting"),
-        (IncentivesManage, "Manage incentives", "Incentives")
+        (IncentivesManage, "Manage incentives", "Incentives"),
+        (AssistantUse, "Ask the AI assistant about company data (answers only cover modules the user can open)", "AI assistant")
     ];
 }
 

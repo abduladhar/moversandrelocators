@@ -380,6 +380,21 @@
     "thanksTitle": "Obrigado, {name}!",
     "defaultThankYou": "Recebemos sua solicitação e entraremos em contato em breve.",
     "reference": "Referência: {number}",
-    "another": "Enviar outra solicitação"
+    "another": "Enviar outra solicitação",
+    "captchaRequired": "Confirme que você não é um robô",
+    "captchaFailed": "Não foi possível carregar a verificação. Confira sua conexão e recarregue a página.",
+    "fromComputer": "Deste computador",
+    "phoneTitle": "Use seu celular",
+    "phoneText": "Escaneie com a câmera do celular para tirar fotos e gravar vídeos e áudios por lá.",
+    "phoneOr": "ou envie o link para o seu celular",
+    "sendEmail": "E-mail",
+    "copyLink": "Copiar link",
+    "share": "Compartilhar",
+    "linkCopied": "Link copiado",
+    "copyManual": "Copie este link: {url}",
+    "phoneSubject": "Adicione fotos para o seu orçamento de mudança",
+    "phoneMessage": "Adicione fotos, vídeos, áudios ou documentos para o seu orçamento de mudança com {company}: {url}",
+    "theMovers": "sua empresa de mudanças",
+    "waitingForFiles": "Os arquivos que você enviar — deste computador ou do celular — aparecerão aqui."
   }
 }

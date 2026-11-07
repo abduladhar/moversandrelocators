@@ -9,6 +9,8 @@ namespace Movers.Domain.Configuration;
 public sealed class AiUsageRecord : TenantOwnedEntity
 {
     public const string LeadExtraction = "LEAD_EXTRACTION";
+    /// <summary>A question answered by the management assistant (Ask Crateway).</summary>
+    public const string Assistant = "MANAGEMENT_ASSISTANT";
     private AiUsageRecord() { }
     public AiUsageRecord(Guid tenantId, string feature, Guid? salesLeadId, Guid? attachmentId, string model, int inputTokens, int cachedInputTokens, int outputTokens,
         string? transcriptionModel, decimal audioSeconds, decimal? visionCost, decimal? transcriptionCost, string createdBy) : base(tenantId)

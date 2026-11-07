@@ -57,7 +57,9 @@
     "aws": "AWS yapılandırması",
     "openai": "OpenAI yapılandırması",
     "claude": "Claude yapılandırması",
-    "webForm": "Web sitesi formu"
+    "webForm": "Web sitesi formu",
+    "dashboard": "Pano",
+    "assistant": "Crateway'e sor"
   },
   "layout": {
     "activeWorkspace": "ETKİN ÇALIŞMA ALANI",

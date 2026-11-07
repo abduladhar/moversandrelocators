@@ -152,7 +152,7 @@
     "imageLoadFailed": "Cannot load image. Check storage CORS settings.",
     "videoReadFailed": "Cannot read this video. Check its format and storage CORS settings.",
     "videoTimeout": "Video preview timed out. Try a shorter clip.",
-    "videoDuration": "Cannot determine video duration. Upload an MP4 recording.",
+    "videoDuration": "This video's length could not be read, so no frames could be taken from it. Try again; if it keeps failing, ask the customer to send the video from their phone's camera app.",
     "loadSettingsFailed": "Cannot load the AI settings",
     "savedToInventory": "Saved to the lead inventory",
     "failed": "Extraction failed",
@@ -353,6 +353,10 @@
     "copyFailed": "Copy failed. Select the text and copy it.",
     "frameTitle": "Request a moving quote",
     "preview": "Preview",
-    "previewHint": "The saved form, as visitors see it. Sending it creates a real lead."
+    "previewHint": "The saved form, as visitors see it. Sending it creates a real lead.",
+    "captchaOn": "Captcha is on",
+    "captchaOnText": "Every request must pass Cloudflare's “not a robot” check before a lead is created.",
+    "captchaOff": "Captcha is off",
+    "captchaOffText": "Requests are only protected by the hidden trap field and rate limits. Your system administrator turns the captcha on by setting Captcha__SiteKey and Captcha__SecretKey on the server."
   }
 }

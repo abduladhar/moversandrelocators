@@ -152,7 +152,7 @@
     "imageLoadFailed": "Resim yüklenemiyor. Depolama CORS ayarlarını kontrol edin.",
     "videoReadFailed": "Bu video okunamıyor. Biçimini ve depolama CORS ayarlarını kontrol edin.",
     "videoTimeout": "Video önizlemesi zaman aşımına uğradı. Daha kısa bir klip deneyin.",
-    "videoDuration": "Video süresi belirlenemiyor. MP4 kaydı yükleyin.",
+    "videoDuration": "Bu videonun süresi okunamadı, bu yüzden kare alınamadı. Tekrar deneyin; hata devam ederse müşteriden videoyu telefonunun kamera uygulamasından göndermesini isteyin.",
     "loadSettingsFailed": "YZ ayarları yüklenemiyor",
     "savedToInventory": "Aday envanterine kaydedildi",
     "failed": "Çıkarım başarısız oldu",
@@ -353,6 +353,10 @@
     "copyFailed": "Kopyalanamadı. Metni seçip kopyalayın.",
     "frameTitle": "Taşınma teklifi isteyin",
     "preview": "Önizleme",
-    "previewHint": "Kaydedilmiş form, ziyaretçilerin gördüğü şekilde. Gönderirseniz gerçek bir fırsat oluşur."
+    "previewHint": "Kaydedilmiş form, ziyaretçilerin gördüğü şekilde. Gönderirseniz gerçek bir fırsat oluşur.",
+    "captchaOn": "Captcha açık",
+    "captchaOnText": "Fırsat oluşturulmadan önce her talep Cloudflare'in “robot değilim” doğrulamasından geçmelidir.",
+    "captchaOff": "Captcha kapalı",
+    "captchaOffText": "Talepler yalnızca gizli tuzak alanı ve hız sınırlarıyla korunuyor. Sistem yöneticiniz sunucuda Captcha__SiteKey ve Captcha__SecretKey ayarlayarak captcha'yı açar."
   }
 }

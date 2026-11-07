@@ -89,6 +89,7 @@ public sealed class AiUsageService(IAiUsageRepository repository, ISalesReposito
     private static string FeatureName(string feature) => feature switch
     {
         Movers.Domain.Configuration.AiUsageRecord.LeadExtraction => "Item extraction",
+        Movers.Domain.Configuration.AiUsageRecord.Assistant => "Management assistant",
         _ => feature.Replace('_', ' ').ToLowerInvariant(),
     };
 

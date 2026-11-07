@@ -178,10 +178,10 @@ export const publicLeadInventoryApi = {
 /** A company's "request a quote" form for its website. key: the public id in the form's address. */
 export type WebLeadFormSettings = { enabled: boolean; key: string | null; statusId: string | null; defaultMoveTypeId: string | null; assignedEmployeeId: string | null; source: string | null;
   heading: string | null; intro: string | null; thankYou: string | null; accentColor: string | null; allowUploads: boolean; showCompanyName: boolean }
-export type WebLeadFormView = { version: string | null; settings: WebLeadFormSettings }
+export type WebLeadFormView = { version: string | null; settings: WebLeadFormSettings; captchaOn: boolean }
 export type PublicLeadForm = { companyName: string; showCompanyName: boolean; heading: string | null; intro: string | null; thankYou: string | null; accentColor: string | null;
-  allowUploads: boolean; defaultMoveTypeId: string | null; moveTypes: { id: string; name: string; description: string | null }[] }
-export type WebLeadSubmission = { customerName: string; phone: string; email?: string | null; moveTypeId?: string | null; origin: string; destination: string; expectedMoveDate?: string | null; notes?: string | null; website?: string | null }
+  allowUploads: boolean; defaultMoveTypeId: string | null; moveTypes: { id: string; name: string; description: string | null }[]; captchaSiteKey: string | null }
+export type WebLeadSubmission = { customerName: string; phone: string; email?: string | null; moveTypeId?: string | null; origin: string; destination: string; expectedMoveDate?: string | null; notes?: string | null; website?: string | null; captchaToken?: string | null }
 export type WebLeadSubmitted = { leadNumber: string | null; uploadToken: string | null; uploadExpiresAtUtc: string | null }
 
 export const webLeadFormApi = {
@@ -195,16 +195,32 @@ export const publicLeadFormApi = {
   submit: (key: string, lead: WebLeadSubmission) => request<WebLeadSubmitted>(`/api/public/lead-form/${encodeURIComponent(key)}`, { method: 'POST', body: JSON.stringify(lead) }),
 }
 
+export type PublicReceivedFile = { fileName: string; contentType: string; sizeBytes: number; uploadedAtUtc: string }
+
 export const publicUploadApi = {
   saveDetails: (token: string, items: string, description: string) => request<void>(`/api/public/lead-uploads/${encodeURIComponent(token)}/details`, { method: 'PUT', body: JSON.stringify({ items, description }) }),
   info: (token: string) => request<PublicUploadInfo>(`/api/public/lead-uploads/${encodeURIComponent(token)}`),
+  /** Files received through this link (names only), newest first. */
+  files: (token: string) => request<PublicReceivedFile[]>(`/api/public/lead-uploads/${encodeURIComponent(token)}/files`),
   create: (token: string, file: File) => request<PresignedUpload>(`/api/public/lead-uploads/${encodeURIComponent(token)}/upload-requests`, { method: 'POST', body: JSON.stringify({ fileName: file.name, contentType: file.type || 'application/octet-stream', sizeBytes: file.size }) }),
   complete: (token: string, attachmentId: string) => request<LeadAttachment>(`/api/public/lead-uploads/${encodeURIComponent(token)}/attachments/${attachmentId}/complete`, { method: 'POST' }),
   upload: (token: string, file: File) => uploadFile(file, () => publicUploadApi.create(token, file), attachmentId => publicUploadApi.complete(token, attachmentId)),
 }
 
+/** Choices for the task dialogs: follow-up statuses and people, limited to what the user may change. */
+export type TaskSummary = { open: number; dueToday: number; overdue: number; completed: number }
+/** One step of a task's history: OPENED, STATUS, COMPLETED, REOPENED, RESCHEDULED (date), REASSIGNED (from → to), NOTE. */
+export type TaskHistoryStep = { atUtc: string; event: string; from: string | null; to: string | null; date: string | null; note: string | null; actor: string | null }
+export type TaskOptions = { followUpStatuses: { id: string; name: string; isCompleted: boolean }[]; employees: { id: string; name: string }[] }
+
 export const tasksApi = {
   mine: () => request<MyTask[]>(`/api/tasks/mine?timezoneOffsetMinutes=${new Date().getTimezoneOffset()}`),
+  options: () => request<TaskOptions>('/api/tasks/options'),
+  /** The user's tasks, newest first: state open (default), completed or all; search matches text, status and person. */
+  search: (params: ListParams) => request<Paged<MyTask, TaskSummary>>(`/api/tasks?${listQuery({ ...params, timezoneOffsetMinutes: new Date().getTimezoneOffset() })}`),
+  history: (id: string) => request<TaskHistoryStep[]>(`/api/tasks/${encodeURIComponent(id)}/history`),
+  update: (id: string, input: { statusId: string | null; dueAtUtc: string | null; note: string | null }) => request<void>(`/api/tasks/${encodeURIComponent(id)}/update`, { method: 'POST', body: JSON.stringify(input) }),
+  reassign: (id: string, input: { employeeId: string; note: string | null }) => request<void>(`/api/tasks/${encodeURIComponent(id)}/reassign`, { method: 'POST', body: JSON.stringify(input) }),
 }
 
 export const surveysApi = {

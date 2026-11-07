@@ -50,12 +50,16 @@ public static class DataAccessRegistration
         services.AddScoped<ILeadUploadRepository, LeadUploadRepository>();
         services.AddScoped<IWebLeadFormRepository, WebLeadFormRepository>();
         services.AddScoped<Movers.Services.Sales.ILeadJourneyQuery, Movers.DAL.Sales.LeadJourneyQuery>();
-        services.AddScoped<ITodayTaskSource, SalesFollowUpTaskSource>();
-        services.AddScoped<ITodayTaskSource, SurveyTaskSource>();
+        services.AddScoped<ITaskSource, SalesFollowUpTaskSource>();
+        services.AddScoped<ITaskSource, SurveyTaskSource>();
+        services.AddScoped<ITaskHistoryQuery, TaskHistoryQuery>();
+        services.AddScoped<Movers.Services.Dashboards.IDashboardQuery, Movers.DAL.Dashboards.DashboardQuery>();
+        services.AddScoped<Movers.Services.Assistant.IAssistantData, Movers.DAL.Assistant.AssistantDataQuery>();
+        services.AddScoped<Movers.Services.Assistant.IAssistantConversationRepository, Movers.DAL.Assistant.AssistantConversationRepository>();
         services.AddScoped<Movers.DAL.CustomerLinks.CustomerReplyStore>();
         services.AddScoped<Movers.Services.CustomerLinks.ICustomerReplies>(x => x.GetRequiredService<Movers.DAL.CustomerLinks.CustomerReplyStore>());
         services.AddScoped<Movers.Services.CustomerLinks.ICustomerReplyQueries>(x => x.GetRequiredService<Movers.DAL.CustomerLinks.CustomerReplyStore>());
-        services.AddScoped<ITodayTaskSource, Movers.DAL.CustomerLinks.CustomerReplyTaskSource>();
+        services.AddScoped<ITaskSource, Movers.DAL.CustomerLinks.CustomerReplyTaskSource>();
         services.AddScoped<ISurveyRepository, SurveyRepository>();
         services.AddScoped<IQuotationRepository, QuotationRepository>();
         services.AddScoped<IPickupRepository, PickupRepository>();
@@ -140,10 +144,12 @@ public static class DataAccessRegistration
         await Movers.DAL.Persistence.LeadInventorySchema.Apply(db);
         await Movers.DAL.Persistence.AiUsageSchema.Apply(db);
         await Movers.DAL.Persistence.ClaudeSchema.Apply(db);
+        await Movers.DAL.Persistence.AssistantSchema.Apply(db); // creates its table with CompanyId, so before CompanySchema indexes it
         await Movers.DAL.Persistence.CustomerReplySchema.Apply(db); // creates its table with CompanyId, so before CompanySchema indexes it
         await Movers.DAL.Persistence.CompanySchema.Apply(db);
         await Movers.DAL.Persistence.CustomerReplySchema.Backfill(db);
         await Movers.DAL.Persistence.EmployeeExpenseSchema.Apply(db);
+        await Movers.DAL.Persistence.AuditHistorySchema.Apply(db);
         await Movers.DAL.Numbering.NumberSequenceRepository.Initialize(db);
         var seeder = scope.ServiceProvider.GetRequiredService<SecuritySeeder>();
         await seeder.SeedAsync(systemAdminEmail, systemAdminPassword, resetSystemAdminPassword);

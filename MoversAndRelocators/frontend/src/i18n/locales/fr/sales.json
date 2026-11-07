@@ -152,7 +152,7 @@
     "imageLoadFailed": "Impossible de charger l'image. Vérifiez les paramètres CORS du stockage.",
     "videoReadFailed": "Impossible de lire cette vidéo. Vérifiez son format et les paramètres CORS du stockage.",
     "videoTimeout": "L'aperçu de la vidéo a expiré. Essayez un clip plus court.",
-    "videoDuration": "Impossible de déterminer la durée de la vidéo. Téléversez un enregistrement MP4.",
+    "videoDuration": "La durée de cette vidéo n’a pas pu être lue, aucune image n’a donc pu en être extraite. Réessayez ; si l’erreur persiste, demandez au client d’envoyer la vidéo depuis l’appareil photo de son téléphone.",
     "loadSettingsFailed": "Impossible de charger les paramètres IA",
     "savedToInventory": "Enregistré dans l'inventaire du prospect",
     "failed": "L'extraction a échoué",
@@ -353,6 +353,10 @@
     "copyFailed": "Échec de la copie. Sélectionnez le texte et copiez-le.",
     "frameTitle": "Demander un devis de déménagement",
     "preview": "Aperçu",
-    "previewHint": "Le formulaire enregistré, tel que les visiteurs le voient. L’envoyer crée un vrai prospect."
+    "previewHint": "Le formulaire enregistré, tel que les visiteurs le voient. L’envoyer crée un vrai prospect.",
+    "captchaOn": "Captcha activé",
+    "captchaOnText": "Chaque demande doit passer la vérification « je ne suis pas un robot » de Cloudflare avant la création du prospect.",
+    "captchaOff": "Captcha désactivé",
+    "captchaOffText": "Les demandes ne sont protégées que par le champ piège caché et les limites d’envoi. L’administrateur système active le captcha en définissant Captcha__SiteKey et Captcha__SecretKey sur le serveur."
   }
 }

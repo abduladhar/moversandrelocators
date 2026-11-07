@@ -5,9 +5,13 @@ using Movers.Services.Tasks;
 
 namespace Movers.DAL.Tasks;
 
-public sealed class SalesFollowUpTaskSource(MoversDbContext db, IUserContext userContext) : ITodayTaskSource
+/// <summary>
+/// Follow-ups on the leads the user owns. Open while a next follow-up is planned, or while its status is not a
+/// completed one; due at the next follow-up, else at its own time.
+/// </summary>
+public sealed class SalesFollowUpTaskSource(MoversDbContext db, IUserContext userContext) : ITaskSource
 {
-    public async Task<IReadOnlyList<MyTaskModel>> GetTasksDueThroughAsync(DateTimeOffset endUtc, CancellationToken token)
+    public async Task<IReadOnlyList<MyTaskModel>> GetTasksAsync(CancellationToken token)
     {
         if (!userContext.HasPermission(SecurityPermissions.SalesView)) return [];
         var employeeId = userContext.EmployeeId;
@@ -21,16 +25,19 @@ public sealed class SalesFollowUpTaskSource(MoversDbContext db, IUserContext use
             join status in db.FollowUpStatuses.AsNoTracking() on followUp.StatusId equals status.Id
             where lead.IsActive && employee.IsActive
                 && (employeeId.HasValue ? employee.Id == employeeId.Value : employee.WorkEmail != null && employee.WorkEmail.ToLower() == email)
-            let dueAt = followUp.NextFollowUpAtUtc ?? followUp.ScheduledAtUtc
-            select new { followUp.Id, LeadId = lead.Id, lead.CustomerName, lead.LeadNumber, followUp.Notes,
-                followUp.NextFollowUpAtUtc, followUp.ScheduledAtUtc, status.IsCompleted, DueAtUtc = dueAt }
+            select new { followUp.Id, LeadId = lead.Id, lead.CustomerName, lead.LeadNumber, followUp.Notes, followUp.StatusId, StatusName = status.Name, EmployeeId = employee.Id, employee.FirstName, employee.LastName,
+                followUp.NextFollowUpAtUtc, followUp.ScheduledAtUtc, status.IsCompleted, followUp.CreatedAtUtc, followUp.UpdatedAtUtc }
         ).ToListAsync(token);
 
-        return rows
-            .Where(x => (x.NextFollowUpAtUtc.HasValue && x.NextFollowUpAtUtc <= endUtc)
-                || (!x.NextFollowUpAtUtc.HasValue && !x.IsCompleted && x.ScheduledAtUtc <= endUtc))
-            .Select(x => new MyTaskModel($"sales-follow-up:{x.Id}", "sales_follow_up", "Sales",
-            $"Follow up with {x.CustomerName}", $"{x.LeadNumber} · {x.Notes}", x.DueAtUtc,
-            false, x.LeadId.ToString(), "sales")).ToList();
+        return rows.Select(x =>
+        {
+            var open = x.NextFollowUpAtUtc.HasValue || !x.IsCompleted;
+            return new MyTaskModel($"sales-follow-up:{x.Id}", "sales_follow_up", "Sales", $"Follow up with {x.CustomerName}", $"{x.LeadNumber} · {Purpose(x.Notes)}",
+                x.NextFollowUpAtUtc ?? x.ScheduledAtUtc, false, x.LeadId.ToString(), "sales", x.StatusName, x.StatusId, x.EmployeeId, $"{x.FirstName} {x.LastName}".Trim(),
+                open, x.CreatedAtUtc, open ? null : x.UpdatedAtUtc);
+        }).ToList();
     }
+
+    /// <summary>What the follow-up is about: the first line of its notes (later lines are dated updates added by My Tasks).</summary>
+    private static string Purpose(string notes) => notes.Split('\n', 2)[0].Trim();
 }

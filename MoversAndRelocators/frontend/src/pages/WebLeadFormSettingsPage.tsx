@@ -81,6 +81,8 @@ addEventListener('message', function (e) {
         <Card loading={loading} title={t('sales.webForm.websiteCard')}>
           {!key ? <Alert type="info" showIcon title={t('sales.webForm.saveFirst')} /> : <Space orientation="vertical" size={14} style={{ width: '100%' }}>
             {!view?.settings.enabled && <Alert type="warning" showIcon title={t('sales.webForm.offWarning')} />}
+            {view?.captchaOn ? <Alert type="success" showIcon title={t('sales.webForm.captchaOn')} description={t('sales.webForm.captchaOnText')} />
+              : <Alert type="warning" showIcon title={t('sales.webForm.captchaOff')} description={t('sales.webForm.captchaOffText')} />}
             <div><Typography.Text strong>{t('sales.webForm.language')}</Typography.Text>
               <Select style={{ width: '100%', marginTop: 6 }} value={lang} onChange={setLang} options={[{ value: '', label: t('sales.webForm.visitorLanguage') }, ...languages.map(l => ({ value: l.code, label: l.name }))]} /></div>
             <div><Typography.Text strong>{t('sales.webForm.link')}</Typography.Text>

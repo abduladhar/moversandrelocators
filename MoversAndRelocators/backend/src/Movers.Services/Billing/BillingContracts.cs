@@ -1,7 +1,9 @@
 using Movers.Domain.Operations;
 namespace Movers.Services.Billing;
 public record Account(string Code, string Name, string Type, bool IsActive = true, bool IsCashBank = false);
-public record Source(string Kind, Guid Id, string Label);
+/// <param name="CustomerCode">The customer master of the operation when it records one (warehouse receipts).</param>
+/// <param name="CustomerName">The customer named on the operation; the invoice form pre-selects the customer master with this name.</param>
+public record Source(string Kind, Guid Id, string Label, string? CustomerCode = null, string? CustomerName = null);
 public record ChargeInput(Guid RequestId, string SourceKind, Guid SourceId, string Direction, string PartyCode, string Description, string AccountCode, string Currency, decimal Amount,decimal? ExchangeRate = null);
 public record Charge(string SourceKind, Guid SourceId, string SourceLabel, string Direction, string PartyCode, string PartyName, string Description, string AccountCode, string Currency, decimal Amount, Guid? DocumentId = null, bool Cancelled = false,Movers.Services.Currencies.FxSnapshot? Fx = null,decimal? BaseAmount = null,decimal Quantity = 1,decimal? UnitPrice = null);
 public record Selection(Guid Id, Guid Version);

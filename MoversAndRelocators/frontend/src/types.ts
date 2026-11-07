@@ -165,7 +165,9 @@ export type SalesLeadInput = { leadNumber: string; customerName: string; phone: 
 export type LeadJourneyStep = { stage: string; id: string; number: string; status: string; date: string | null }
 export type LeadFollowUp = { serialNo: number; id: string; salesLeadId: string; scheduledAtUtc: string; statusId: string; statusName: string; statusColor: string | null; statusIsCompleted: boolean; notes: string; nextFollowUpAtUtc: string | null; createdAtUtc: string; updatedAtUtc: string }
 export type FollowUpInput = { scheduledAtUtc: string; statusId: string; notes: string; nextFollowUpAtUtc: string | null }
-export type MyTask = { id: string; type: string; module: string; title: string; description: string; dueAtUtc: string; isOverdue: boolean; entityId: string; navigationTarget: string }
+export type MyTask = { id: string; type: string; module: string; title: string; description: string; dueAtUtc: string; isOverdue: boolean; entityId: string; navigationTarget: string;
+  status?: string | null; statusId?: string | null; assignedEmployeeId?: string | null; assignedTo?: string | null;
+  isOpen: boolean; createdAtUtc?: string | null; completedAtUtc?: string | null }
 export type AwsConfiguration = { serialNo: number; id: string; region: string; bucketName: string; maskedAccessKey: string; hasAccessKey: boolean; hasSecretKey: boolean; createdAtUtc: string; updatedAtUtc: string }
 export type AwsConfigurationInput = { region: string; bucketName: string; accessKey: string | null; secretKey: string | null }
 export type OpenAiConfiguration = { serialNo: number; id: string; maskedApiKey: string; hasApiKey: boolean; extractionModel: string; transcriptionModel: string; createdAtUtc: string; updatedAtUtc: string; inputPricePerMillion?: number | null; cachedInputPricePerMillion?: number | null; outputPricePerMillion?: number | null; transcriptionPricePerMinute?: number | null }

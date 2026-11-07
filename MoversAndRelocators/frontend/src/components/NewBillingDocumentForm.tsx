@@ -1,12 +1,14 @@
 import { Alert, Button, Form, Input, InputNumber, Select } from 'antd'
 import type { FormInstance } from 'antd'
+import type { ReactNode } from 'react'
 import { DeleteOutlined, PlusOutlined } from '@ant-design/icons'
 import { CurrencyFields, formatMoney, type CurrencyChoices } from '../currency'
 import type { Choices } from '../billingApi'
 import { useT } from '../i18n'
 
-export function NewBillingDocumentForm({form,choices,currencies,sourceId,direction,currency}:{
- form:FormInstance;choices:Choices;currencies?:CurrencyChoices;sourceId?:string;direction:string;currency:string
+/** partyHint: shown under the customer (filled in from the operation, or the operation's customer is not a master yet). onSourceChange: the related operation was picked. */
+export function NewBillingDocumentForm({form,choices,currencies,sourceId,direction,currency,partyHint,onSourceChange}:{
+ form:FormInstance;choices:Choices;currencies?:CurrencyChoices;sourceId?:string;direction:string;currency:string;partyHint?:ReactNode;onSourceChange?:(id?:string)=>void
 }){
  const {t}=useT()
  const invoice=direction==='INCOME'
@@ -22,13 +24,13 @@ export function NewBillingDocumentForm({form,choices,currencies,sourceId,directi
  <section className="document-section">
  <h3>{t('billing.newDocument.details')}</h3>
  <div className="document-details-grid">
- <Form.Item className="document-party" name="partyCode" label={invoice?t('common.customer'):t('billing.columns.vendor')} rules={[{required:true,message:invoice?t('billing.newDocument.selectCustomer'):t('billing.newDocument.selectVendor')}]}>
+ <Form.Item className="document-party" name="partyCode" label={invoice?t('common.customer'):t('billing.columns.vendor')} extra={partyHint} rules={[{required:true,message:invoice?t('billing.newDocument.selectCustomer'):t('billing.newDocument.selectVendor')}]}>
  <Select showSearch placeholder={invoice?t('billing.newDocument.customerPlaceholder'):t('billing.newDocument.vendorPlaceholder')} optionFilterProp="label" options={parties.map(p=>({value:p.code,label:p.name+' · '+p.code}))} onChange={code=>form.setFieldValue('currency',parties.find(p=>p.code===code)?.currency||currencies?.settings.defaultCurrency)}/>
  </Form.Item>
  <Form.Item name="date" label={invoice?t('billing.newDocument.invoiceDate'):t('billing.newDocument.billDate')} rules={[{required:true,message:t('common.required')}]}><Input type="date"/></Form.Item>
  <Form.Item name="dueDate" label={t('billing.columns.dueDate')} dependencies={['date']} rules={[{required:true,message:t('common.required')},({getFieldValue})=>({validator:async(_,value)=>{if(value&&value<getFieldValue('date'))throw new Error(t('billing.newDocument.dueDateError'))}})]}><Input type="date"/></Form.Item>
  <Form.Item className="document-wide" name="reference" label={invoice?t('billing.newDocument.customerReference'):t('billing.newDocument.supplierReference')}><Input placeholder={t('billing.newDocument.referencePlaceholder')} maxLength={120}/></Form.Item>
- {!sourceId&&<Form.Item className="document-wide" name="sourceId" label={t('billing.newDocument.relatedOperation')} extra={t('billing.newDocument.relatedOperationHelp')}><Select allowClear showSearch placeholder={t('billing.newDocument.noLinkedOperation')} optionFilterProp="label" options={choices.sources.map(s=>({value:s.id,label:s.kind+' · '+s.label}))}/></Form.Item>}
+ {!sourceId&&<Form.Item className="document-wide" name="sourceId" label={t('billing.newDocument.relatedOperation')} extra={t('billing.newDocument.relatedOperationHelp')}><Select allowClear showSearch placeholder={t('billing.newDocument.noLinkedOperation')} optionFilterProp="label" options={choices.sources.map(s=>({value:s.id,label:s.kind+' · '+s.label}))} onChange={id=>onSourceChange?.(id)}/></Form.Item>}
  </div>
  </section>
  <section className="document-section"><h3>{t('billing.newDocument.currencySection')}</h3><CurrencyFields form={form}/></section>

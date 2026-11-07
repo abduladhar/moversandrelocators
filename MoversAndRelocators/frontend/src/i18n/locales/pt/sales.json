@@ -152,7 +152,7 @@
     "imageLoadFailed": "Não foi possível carregar a imagem. Verifique as configurações de CORS do armazenamento.",
     "videoReadFailed": "Não foi possível ler este vídeo. Verifique o formato e as configurações de CORS do armazenamento.",
     "videoTimeout": "A pré-visualização do vídeo excedeu o tempo limite. Tente um vídeo mais curto.",
-    "videoDuration": "Não foi possível determinar a duração do vídeo. Envie uma gravação em MP4.",
+    "videoDuration": "Não foi possível ler a duração deste vídeo, então nenhum quadro pôde ser extraído. Tente novamente; se continuar falhando, peça ao cliente para enviar o vídeo pelo app de câmera do celular.",
     "loadSettingsFailed": "Não foi possível carregar as configurações de IA",
     "savedToInventory": "Salvo no inventário do lead",
     "failed": "A extração falhou",
@@ -353,6 +353,10 @@
     "copyFailed": "Não foi possível copiar. Selecione o texto e copie.",
     "frameTitle": "Peça um orçamento de mudança",
     "preview": "Pré-visualização",
-    "previewHint": "O formulário salvo, como os visitantes o veem. Enviá-lo cria um lead real."
+    "previewHint": "O formulário salvo, como os visitantes o veem. Enviá-lo cria um lead real.",
+    "captchaOn": "Captcha ativado",
+    "captchaOnText": "Cada solicitação precisa passar na verificação “não sou um robô” da Cloudflare antes de o lead ser criado.",
+    "captchaOff": "Captcha desativado",
+    "captchaOffText": "As solicitações só estão protegidas pelo campo armadilha oculto e pelos limites de envio. O administrador do sistema ativa o captcha definindo Captcha__SiteKey e Captcha__SecretKey no servidor."
   }
 }

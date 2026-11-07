@@ -57,7 +57,9 @@
     "aws": "AWS configuration",
     "openai": "OpenAI configuration",
     "claude": "Claude configuration",
-    "webForm": "Website form"
+    "webForm": "Website form",
+    "dashboard": "Dashboard",
+    "assistant": "Ask Crateway"
   },
   "layout": {
     "activeWorkspace": "ACTIVE WORKSPACE",

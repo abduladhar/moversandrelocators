@@ -380,6 +380,21 @@
     "thanksTitle": "¡Gracias, {name}!",
     "defaultThankYou": "Hemos recibido su solicitud y nos pondremos en contacto con usted en breve.",
     "reference": "Referencia: {number}",
-    "another": "Enviar otra solicitud"
+    "another": "Enviar otra solicitud",
+    "captchaRequired": "Confirme que no es un robot",
+    "captchaFailed": "No se pudo cargar la verificación. Revise su conexión y recargue la página.",
+    "fromComputer": "Desde este ordenador",
+    "phoneTitle": "Use su móvil",
+    "phoneText": "Escanee con la cámara del móvil para hacer fotos y grabar vídeos y notas de voz desde allí.",
+    "phoneOr": "o envíe el enlace a su móvil",
+    "sendEmail": "Correo",
+    "copyLink": "Copiar enlace",
+    "share": "Compartir",
+    "linkCopied": "Enlace copiado",
+    "copyManual": "Copie este enlace: {url}",
+    "phoneSubject": "Añada fotos para su presupuesto de mudanza",
+    "phoneMessage": "Añada fotos, vídeos, notas de voz o documentos para su presupuesto de mudanza con {company}: {url}",
+    "theMovers": "su empresa de mudanzas",
+    "waitingForFiles": "Los archivos que envíe —desde este ordenador o su móvil— aparecerán aquí."
   }
 }

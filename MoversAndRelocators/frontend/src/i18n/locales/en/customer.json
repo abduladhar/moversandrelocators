@@ -380,6 +380,21 @@
     "thanksTitle": "Thank you, {name}!",
     "defaultThankYou": "We have received your request and will contact you shortly.",
     "reference": "Reference: {number}",
-    "another": "Send another request"
+    "another": "Send another request",
+    "captchaRequired": "Please confirm you are not a robot",
+    "captchaFailed": "The robot check could not load. Check your connection and reload the page.",
+    "fromComputer": "From this computer",
+    "phoneTitle": "Use your phone",
+    "phoneText": "Scan with your phone camera to take photos, record videos and voice notes there.",
+    "phoneOr": "or send the link to your phone",
+    "sendEmail": "Email",
+    "copyLink": "Copy link",
+    "share": "Share",
+    "linkCopied": "Link copied",
+    "copyManual": "Copy this link: {url}",
+    "phoneSubject": "Add photos for your moving quote",
+    "phoneMessage": "Add photos, videos, voice notes or documents for your moving quote with {company}: {url}",
+    "theMovers": "your movers",
+    "waitingForFiles": "Files you send — from this computer or your phone — will appear here."
   }
 }

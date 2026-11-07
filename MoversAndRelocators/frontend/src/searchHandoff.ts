@@ -10,7 +10,8 @@ export const handOffSearch = (page: string, query: string) => { pending.set(page
 /** The search handed to this page, or '' — taken once so a later visit starts empty. */
 export const takeSearch = (page: string) => {
   const query = pending.get(page) ?? ''
-  pending.delete(page)
+  // Cleared after this render, not at once: React (StrictMode) may call a state initializer twice, and both calls must see it.
+  if (query) setTimeout(() => { if (pending.get(page) === query) pending.delete(page) }, 0)
   return query
 }
 

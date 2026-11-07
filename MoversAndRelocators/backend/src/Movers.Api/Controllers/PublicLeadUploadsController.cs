@@ -17,6 +17,11 @@ public sealed class PublicLeadUploadsController(ILeadUploadService service) : Co
     public async Task<ActionResult> Info(string token, CancellationToken cancellationToken)
     { var result = await service.GetPublicInfoAsync(token, cancellationToken); return result is null ? NotFound(new { message = "This upload link is invalid or expired." }) : Ok(result); }
 
+    /// <summary>The files received through this link, so the customer can see what arrived (e.g. on the laptop while uploading from a phone).</summary>
+    [HttpGet("files")]
+    public async Task<ActionResult> Files(string token, CancellationToken cancellationToken)
+    { var result = await service.ListPublicFilesAsync(token, cancellationToken); return result is null ? NotFound(new { message = "This upload link is invalid or expired." }) : Ok(result); }
+
     [HttpPost("upload-requests")]
     public async Task<ActionResult> CreateUpload(string token, CreateUploadRequest request, CancellationToken cancellationToken)
     { try { return Ok(await service.CreateUploadAsync(token, request.ToModel(), cancellationToken)); } catch (InvalidOperationException e) { return BadRequest(new { message = e.Message }); } }

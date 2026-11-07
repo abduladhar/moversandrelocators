@@ -110,6 +110,7 @@ public sealed class MoversDbContext(
         Movers.DAL.Sales.LeadInventoryMapping.Configure(modelBuilder);
         Movers.DAL.Configuration.AiUsageMapping.Configure(modelBuilder);
         Movers.DAL.Configuration.ClaudeConfigurationMapping.Configure(modelBuilder);
+        Movers.DAL.Assistant.AssistantMapping.Configure(modelBuilder);
         var tenant = modelBuilder.Entity<Tenant>();
         tenant.ToTable("Tenants");
         tenant.Property(x => x.Name).HasMaxLength(160).IsRequired();
@@ -180,6 +181,7 @@ public sealed class MoversDbContext(
         audit.Property(x => x.IpAddress).HasMaxLength(64);
         audit.Property(x => x.Changes).IsRequired();
         audit.HasIndex(x => new { x.TenantId, x.SerialNo });
+        audit.HasIndex(x => new { x.TenantId, x.EntityType, x.EntityId }); // a record's history (My Tasks history); AuditHistorySchema adds it to existing databases
         audit.HasOne<Tenant>().WithMany().HasForeignKey(x => x.TenantId).HasPrincipalKey(x => x.Id).OnDelete(DeleteBehavior.Restrict);
         audit.HasOne<User>().WithMany().HasForeignKey(x => x.ActorUserId).HasPrincipalKey(x => x.Id).OnDelete(DeleteBehavior.Restrict);
 

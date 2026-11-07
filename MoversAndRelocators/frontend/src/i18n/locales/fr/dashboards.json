@@ -1,0 +1,38 @@
+{
+  "chartView": "Graphique", "tableView": "Tableau", "noData": "Rien à afficher pour l’instant.", "loadFailed": "Impossible de charger le tableau de bord.",
+  "noAccess": "Vous n’avez accès à aucun module de ce tableau de bord.", "weekOf": "Semaine du", "last90Days": "90 derniers jours", "next7Days": "7 prochains jours",
+  "status": "Statut", "day": "Jour", "month": "Mois",
+  "special": { "NONE": "Non renseigné", "OTHER": "Autres" },
+  "sales": {
+    "title": "Tableau de bord ventes et planification", "description": "Prospects, suivis, visites techniques et devis de toute l’entreprise. Cliquez sur une tuile ou une ligne pour l’ouvrir.",
+    "newLeads": "Nouveaux prospects ce mois-ci", "sameAsLastMonth": "Comme le mois dernier", "moreThanLastMonth": "{count} de plus que le mois dernier", "fewerThanLastMonth": "{count} de moins que le mois dernier",
+    "openLeads": "Prospects ouverts", "followUpsOverdue": "Suivis en retard", "dueToday": "Aujourd’hui : {count}",
+    "surveysNext7": "Visites dans les 7 jours", "surveysOverdue": "En retard : {count}", "surveysDone": "Terminées ce mois-ci : {count}",
+    "awaitingAnswer": "Devis en attente de réponse", "sentThisMonth": "Envoyés ce mois-ci : {count}", "acceptanceRate": "Taux d’acceptation",
+    "acceptedOf": "{accepted} acceptés sur {decided} tranchés en 90 jours",
+    "leadsPerWeek": "Nouveaux prospects par semaine", "last12Weeks": "12 dernières semaines", "leads": "Prospects", "pipeline": "Pipeline des prospects", "activeLeads": "Prospects actifs par statut",
+    "bySource": "Origine des prospects", "source": "Origine", "quotationOutcomes": "Issue des devis", "quotations": "Devis", "acceptedValue": "Accepté ce mois-ci :",
+    "upcomingSurveys": "Prochaines visites", "noUpcomingSurveys": "Aucune visite dans les 7 prochains jours.", "recentLeads": "Derniers prospects", "noLeads": "Aucun prospect pour l’instant."
+  },
+  "operations": {
+    "title": "Tableau de bord des opérations", "description": "Enlèvements, emballages et livraisons du jour, ce qui est en retard et les deux prochaines semaines.",
+    "kind": { "PICKUP": "Enlèvement", "PACKING": "Emballage", "DELIVERY": "Livraison" },
+    "byStatus": "{module} par statut", "openAndRecent": "En cours et 30 derniers jours", "jobs": "Travaux",
+    "pickupsToday": "Enlèvements du jour", "packingToday": "Emballages du jour", "deliveriesToday": "Livraisons du jour",
+    "inProgress": "En cours", "inProgressNote": "Commencés, non terminés", "overdue": "En retard", "overdueNote": "Prévus un jour précédent, non commencés",
+    "boxesInWarehouse": "Cartons prêts à livrer", "boxesNote": "À l’entrepôt",
+    "next14Days": "14 prochains jours", "scheduledJobs": "Travaux planifiés par jour", "today": "Aujourd’hui", "nothingToday": "Rien de prévu aujourd’hui.",
+    "overdueJobs": "En retard", "overdueJobsHint": "Les plus anciens d’abord", "nothingOverdue": "Rien n’est en retard."
+  },
+  "finance": {
+    "title": "Tableau de bord financier", "description": "Ce que doivent les clients et depuis quand, ce que vous devez aux fournisseurs, et la facturation face aux encaissements.",
+    "notReady": "Les chiffres financiers ne sont pas encore disponibles", "openCurrency": "Ouvrir les paramètres de devise", "inBase": "Montants en {currency}, la devise de base.",
+    "receivables": "Créances clients", "payables": "Dettes fournisseurs", "overdueAmount": "Échu : {amount}",
+    "invoicedThisMonth": "Facturé ce mois-ci", "collectedThisMonth": "Encaissé ce mois-ci", "billsThisMonth": "Factures fournisseurs ce mois-ci",
+    "draftInvoices": "Factures brouillon à comptabiliser", "overdueInvoices": "Factures échues : {count}",
+    "invoiced": "Facturé", "collected": "Encaissé", "invoicedVsCollected": "Facturé et encaissé", "last6Months": "6 derniers mois",
+    "receivableAging": "Créances par ancienneté", "payableAging": "Dettes par ancienneté", "byDaysOverdue": "Par jours après l’échéance", "age": "Ancienneté",
+    "bucket": { "CURRENT": "Non échu", "1_30": "1–30 jours", "31_60": "31–60 jours", "61_90": "61–90 jours", "91_120": "91–120 jours", "OVER_120": "Plus de 120 jours" },
+    "topDebtors": "Plus gros soldes clients", "largestBalances": "Top 5", "noDebtors": "Aucun client ne doit rien.", "invoiceCount": "Factures : {count}"
+  }
+}

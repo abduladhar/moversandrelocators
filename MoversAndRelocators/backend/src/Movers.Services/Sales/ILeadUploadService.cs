@@ -8,6 +8,8 @@ public interface ILeadUploadService
     Task<UploadLinkModel?> RevokeLinkAsync(Guid leadId, Guid id, CancellationToken token);
     Task<IReadOnlyList<AttachmentModel>> ListAttachmentsAsync(Guid leadId, CancellationToken token);
     Task<PublicUploadInfoModel?> GetPublicInfoAsync(string token, CancellationToken cancellationToken);
+    /// <summary>Files received through this link (not the rest of the lead), newest first; null when the link is invalid or expired.</summary>
+    Task<IReadOnlyList<PublicReceivedFileModel>?> ListPublicFilesAsync(string token, CancellationToken cancellationToken);
     /// <summary>Resolves a customer link token to its lead, putting the request on that tenant and company; null when the link is invalid, expired or revoked.</summary>
     Task<PublicLinkLeadModel?> ResolveLeadAsync(string token, CancellationToken cancellationToken);
     Task<PresignedUploadModel> CreateUploadAsync(string token, UploadRequestModel request, CancellationToken cancellationToken);

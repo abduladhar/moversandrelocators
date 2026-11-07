@@ -1,0 +1,38 @@
+{
+  "chartView": "Gráfico", "tableView": "Tabela", "noData": "Ainda não há nada para mostrar.", "loadFailed": "Não foi possível carregar o painel.",
+  "noAccess": "Você não tem acesso a nenhum módulo deste painel.", "weekOf": "Semana de", "last90Days": "Últimos 90 dias", "next7Days": "Próximos 7 dias",
+  "status": "Status", "day": "Dia", "month": "Mês",
+  "special": { "NONE": "Não informado", "OTHER": "Outros" },
+  "sales": {
+    "title": "Painel de vendas e planejamento", "description": "Leads, acompanhamentos, vistorias e orçamentos de toda a empresa. Clique em um card ou linha para abrir.",
+    "newLeads": "Novos leads este mês", "sameAsLastMonth": "Igual ao mês passado", "moreThanLastMonth": "{count} a mais que no mês passado", "fewerThanLastMonth": "{count} a menos que no mês passado",
+    "openLeads": "Leads abertos", "followUpsOverdue": "Acompanhamentos atrasados", "dueToday": "Para hoje: {count}",
+    "surveysNext7": "Vistorias nos próximos 7 dias", "surveysOverdue": "Atrasadas: {count}", "surveysDone": "Concluídas este mês: {count}",
+    "awaitingAnswer": "Orçamentos aguardando resposta", "sentThisMonth": "Enviados este mês: {count}", "acceptanceRate": "Taxa de aceitação",
+    "acceptedOf": "{accepted} aceitos de {decided} decididos em 90 dias",
+    "leadsPerWeek": "Novos leads por semana", "last12Weeks": "Últimas 12 semanas", "leads": "Leads", "pipeline": "Funil de leads", "activeLeads": "Leads ativos por status",
+    "bySource": "Origem dos leads", "source": "Origem", "quotationOutcomes": "Resultado dos orçamentos", "quotations": "Orçamentos", "acceptedValue": "Aceito este mês:",
+    "upcomingSurveys": "Próximas vistorias", "noUpcomingSurveys": "Nenhuma vistoria nos próximos 7 dias.", "recentLeads": "Leads mais recentes", "noLeads": "Ainda não há leads."
+  },
+  "operations": {
+    "title": "Painel de operações", "description": "Coletas, embalagens e entregas de hoje, o que está atrasado e as próximas duas semanas.",
+    "kind": { "PICKUP": "Coleta", "PACKING": "Embalagem", "DELIVERY": "Entrega" },
+    "byStatus": "{module} por status", "openAndRecent": "Em aberto e últimos 30 dias", "jobs": "Trabalhos",
+    "pickupsToday": "Coletas de hoje", "packingToday": "Embalagens de hoje", "deliveriesToday": "Entregas de hoje",
+    "inProgress": "Em andamento agora", "inProgressNote": "Iniciados e não concluídos", "overdue": "Atrasados", "overdueNote": "Previstos para um dia anterior, não iniciados",
+    "boxesInWarehouse": "Caixas prontas para entrega", "boxesNote": "No armazém",
+    "next14Days": "Próximos 14 dias", "scheduledJobs": "Trabalhos agendados por dia", "today": "Hoje", "nothingToday": "Nada agendado para hoje.",
+    "overdueJobs": "Atrasados", "overdueJobsHint": "Mais antigos primeiro", "nothingOverdue": "Nada está atrasado."
+  },
+  "finance": {
+    "title": "Painel financeiro", "description": "O que os clientes devem e há quanto tempo, o que você deve aos fornecedores e o faturado em relação ao recebido.",
+    "notReady": "Os números financeiros ainda não estão disponíveis", "openCurrency": "Abrir configurações de moeda", "inBase": "Valores em {currency}, a moeda base.",
+    "receivables": "Contas a receber", "payables": "Contas a pagar", "overdueAmount": "Vencido: {amount}",
+    "invoicedThisMonth": "Faturado este mês", "collectedThisMonth": "Recebido este mês", "billsThisMonth": "Contas de fornecedores este mês",
+    "draftInvoices": "Faturas em rascunho a lançar", "overdueInvoices": "Faturas vencidas: {count}",
+    "invoiced": "Faturado", "collected": "Recebido", "invoicedVsCollected": "Faturado e recebido", "last6Months": "Últimos 6 meses",
+    "receivableAging": "Contas a receber por idade", "payableAging": "Contas a pagar por idade", "byDaysOverdue": "Por dias após o vencimento", "age": "Idade",
+    "bucket": { "CURRENT": "A vencer", "1_30": "1–30 dias", "31_60": "31–60 dias", "61_90": "61–90 dias", "91_120": "91–120 dias", "OVER_120": "Mais de 120 dias" },
+    "topDebtors": "Maiores saldos de clientes", "largestBalances": "Top 5", "noDebtors": "Nenhum cliente deve nada.", "invoiceCount": "Faturas: {count}"
+  }
+}

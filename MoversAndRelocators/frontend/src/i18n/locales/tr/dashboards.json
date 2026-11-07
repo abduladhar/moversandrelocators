@@ -1,0 +1,38 @@
+{
+  "chartView": "Grafik", "tableView": "Tablo", "noData": "Henüz gösterilecek bir şey yok.", "loadFailed": "Pano yüklenemedi.",
+  "noAccess": "Bu panodaki hiçbir modüle erişiminiz yok.", "weekOf": "Hafta", "last90Days": "Son 90 gün", "next7Days": "Önümüzdeki 7 gün",
+  "status": "Durum", "day": "Gün", "month": "Ay",
+  "special": { "NONE": "Belirtilmemiş", "OTHER": "Diğer" },
+  "sales": {
+    "title": "Satış ve planlama panosu", "description": "Şirket genelinde fırsatlar, takipler, keşifler ve teklifler. Açmak için bir kutucuğa veya satıra tıklayın.",
+    "newLeads": "Bu ayki yeni fırsatlar", "sameAsLastMonth": "Geçen ayla aynı", "moreThanLastMonth": "Geçen aydan {count} fazla", "fewerThanLastMonth": "Geçen aydan {count} az",
+    "openLeads": "Açık fırsatlar", "followUpsOverdue": "Geciken takipler", "dueToday": "Bugün: {count}",
+    "surveysNext7": "7 gün içindeki keşifler", "surveysOverdue": "Geciken: {count}", "surveysDone": "Bu ay tamamlanan: {count}",
+    "awaitingAnswer": "Yanıt bekleyen teklifler", "sentThisMonth": "Bu ay gönderilen: {count}", "acceptanceRate": "Kabul oranı",
+    "acceptedOf": "90 günde karara bağlanan {decided} tekliften {accepted} kabul",
+    "leadsPerWeek": "Haftalık yeni fırsatlar", "last12Weeks": "Son 12 hafta", "leads": "Fırsatlar", "pipeline": "Fırsat hattı", "activeLeads": "Duruma göre aktif fırsatlar",
+    "bySource": "Fırsatların kaynağı", "source": "Kaynak", "quotationOutcomes": "Teklif sonuçları", "quotations": "Teklifler", "acceptedValue": "Bu ay kabul edilen:",
+    "upcomingSurveys": "Yaklaşan keşifler", "noUpcomingSurveys": "Önümüzdeki 7 günde keşif yok.", "recentLeads": "Son fırsatlar", "noLeads": "Henüz fırsat yok."
+  },
+  "operations": {
+    "title": "Operasyon panosu", "description": "Bugünün toplamaları, paketleme işleri ve teslimatları, gecikenler ve önümüzdeki iki hafta.",
+    "kind": { "PICKUP": "Toplama", "PACKING": "Paketleme", "DELIVERY": "Teslimat" },
+    "byStatus": "Duruma göre {module}", "openAndRecent": "Açık olanlar ve son 30 gün", "jobs": "İşler",
+    "pickupsToday": "Bugünkü toplamalar", "packingToday": "Bugünkü paketleme işleri", "deliveriesToday": "Bugünkü teslimatlar",
+    "inProgress": "Şu anda devam eden", "inProgressNote": "Başlamış, bitmemiş", "overdue": "Geciken", "overdueNote": "Daha önceki bir güne planlanmış, başlamamış",
+    "boxesInWarehouse": "Teslimata hazır koliler", "boxesNote": "Depoda",
+    "next14Days": "Önümüzdeki 14 gün", "scheduledJobs": "Günlük planlı işler", "today": "Bugün", "nothingToday": "Bugün planlı bir şey yok.",
+    "overdueJobs": "Gecikenler", "overdueJobsHint": "En eski önce", "nothingOverdue": "Geciken bir şey yok."
+  },
+  "finance": {
+    "title": "Finans panosu", "description": "Müşterilerin borcu ve gecikmesi, tedarikçilere borcunuz ve faturalama ile tahsilat.",
+    "notReady": "Finans rakamları henüz hazır değil", "openCurrency": "Para birimi ayarlarını aç", "inBase": "Tutarlar ana para birimi {currency} cinsindendir.",
+    "receivables": "Alacaklar", "payables": "Borçlar", "overdueAmount": "Vadesi geçmiş: {amount}",
+    "invoicedThisMonth": "Bu ay faturalanan", "collectedThisMonth": "Bu ay tahsil edilen", "billsThisMonth": "Bu ayki tedarikçi faturaları",
+    "draftInvoices": "Kaydedilecek taslak faturalar", "overdueInvoices": "Vadesi geçmiş faturalar: {count}",
+    "invoiced": "Faturalanan", "collected": "Tahsil edilen", "invoicedVsCollected": "Faturalanan ve tahsil edilen", "last6Months": "Son 6 ay",
+    "receivableAging": "Yaşa göre alacaklar", "payableAging": "Yaşa göre borçlar", "byDaysOverdue": "Vade tarihinden sonraki günlere göre", "age": "Yaş",
+    "bucket": { "CURRENT": "Vadesi gelmemiş", "1_30": "1–30 gün", "31_60": "31–60 gün", "61_90": "61–90 gün", "91_120": "91–120 gün", "OVER_120": "120 günden fazla" },
+    "topDebtors": "En büyük müşteri bakiyeleri", "largestBalances": "İlk 5", "noDebtors": "Borcu olan müşteri yok.", "invoiceCount": "Faturalar: {count}"
+  }
+}

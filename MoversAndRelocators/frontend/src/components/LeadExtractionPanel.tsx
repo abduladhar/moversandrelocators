@@ -49,22 +49,27 @@ async function previews(url: string, isVideo: boolean): Promise<string[]> {
   }
   const video = document.createElement('video')
   video.crossOrigin = 'anonymous'; video.muted = true; video.preload = 'auto'
-  const wait = (event: string, action: () => void) => new Promise<void>((resolve, reject) => {
+  const wait = (event: string, action: () => void, timeoutMs = 30000) => new Promise<void>((resolve, reject) => {
     const finish = (error?: Error) => {
       clearTimeout(timer); video.removeEventListener(event, success); video.removeEventListener('error', failure)
       error ? reject(error) : resolve()
     }
     const success = () => finish()
     const failure = () => finish(new Error(translate('sales.extraction.videoReadFailed')))
-    const timer = window.setTimeout(() => finish(new Error(translate('sales.extraction.videoTimeout'))), 30000)
+    const timer = window.setTimeout(() => finish(new Error(translate('sales.extraction.videoTimeout'))), timeoutMs)
     video.addEventListener(event, success, { once: true }); video.addEventListener('error', failure, { once: true }); action()
   })
   try {
     await wait('loadeddata', () => { video.src = url })
-    if (!Number.isFinite(video.duration) || video.duration <= 0) throw new Error(translate('sales.extraction.videoDuration'))
+    /* Videos recorded in a phone browser (MediaRecorder: WebM on Android, streaming MP4 on iPhone) carry no length in
+       their header, so the browser reports Infinity until it has read to the end. Seeking far past the end makes it
+       find the real length; it reads the whole file, hence the longer wait. */
+    if (!Number.isFinite(video.duration)) await wait('seeked', () => { video.currentTime = 1e101 }, 180000)
+    const duration = Number.isFinite(video.duration) ? video.duration : video.seekable.length ? video.seekable.end(video.seekable.length - 1) : NaN
+    if (!Number.isFinite(duration) || duration <= 0) throw new Error(translate('sales.extraction.videoDuration'))
     const result: string[] = []
     for (let i = 0; i < FRAMES; i++) {
-      await wait('seeked', () => { video.currentTime = video.duration * (i + 0.5) / FRAMES })
+      await wait('seeked', () => { video.currentTime = duration * (i + 0.5) / FRAMES })
       result.push(encode(video, video.videoWidth, video.videoHeight))
     }
     return result

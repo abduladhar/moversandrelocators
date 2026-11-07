@@ -1,0 +1,38 @@
+{
+  "chartView": "مخطط", "tableView": "جدول", "noData": "لا يوجد ما يُعرض بعد.", "loadFailed": "تعذّر تحميل لوحة المعلومات.",
+  "noAccess": "ليست لديك صلاحية على أي وحدة في هذه اللوحة.", "weekOf": "أسبوع", "last90Days": "آخر 90 يوماً", "next7Days": "الأيام السبعة القادمة",
+  "status": "الحالة", "day": "اليوم", "month": "الشهر",
+  "special": { "NONE": "غير محدد", "OTHER": "أخرى" },
+  "sales": {
+    "title": "لوحة المبيعات والتخطيط", "description": "الفرص والمتابعات والمعاينات وعروض الأسعار على مستوى الشركة. انقر على بطاقة أو صف لفتحه.",
+    "newLeads": "فرص جديدة هذا الشهر", "sameAsLastMonth": "مثل الشهر الماضي", "moreThanLastMonth": "أكثر من الشهر الماضي بـ {count}", "fewerThanLastMonth": "أقل من الشهر الماضي بـ {count}",
+    "openLeads": "الفرص المفتوحة", "followUpsOverdue": "متابعات متأخرة", "dueToday": "مستحقة اليوم: {count}",
+    "surveysNext7": "معاينات خلال 7 أيام", "surveysOverdue": "متأخرة: {count}", "surveysDone": "مكتملة هذا الشهر: {count}",
+    "awaitingAnswer": "عروض أسعار بانتظار الرد", "sentThisMonth": "أُرسلت هذا الشهر: {count}", "acceptanceRate": "نسبة القبول",
+    "acceptedOf": "قُبل {accepted} من {decided} خلال 90 يوماً",
+    "leadsPerWeek": "الفرص الجديدة أسبوعياً", "last12Weeks": "آخر 12 أسبوعاً", "leads": "الفرص", "pipeline": "مسار الفرص", "activeLeads": "الفرص النشطة حسب الحالة",
+    "bySource": "مصادر الفرص", "source": "المصدر", "quotationOutcomes": "نتائج عروض الأسعار", "quotations": "عروض الأسعار", "acceptedValue": "المقبول هذا الشهر:",
+    "upcomingSurveys": "المعاينات القادمة", "noUpcomingSurveys": "لا معاينات خلال الأيام السبعة القادمة.", "recentLeads": "أحدث الفرص", "noLeads": "لا توجد فرص بعد."
+  },
+  "operations": {
+    "title": "لوحة العمليات", "description": "استلامات اليوم وأعمال التغليف والتوصيلات، وما هو متأخر، والأسبوعان القادمان.",
+    "kind": { "PICKUP": "استلام", "PACKING": "تغليف", "DELIVERY": "توصيل" },
+    "byStatus": "{module} حسب الحالة", "openAndRecent": "المفتوحة وآخر 30 يوماً", "jobs": "الأعمال",
+    "pickupsToday": "استلامات اليوم", "packingToday": "أعمال التغليف اليوم", "deliveriesToday": "توصيلات اليوم",
+    "inProgress": "قيد التنفيذ الآن", "inProgressNote": "بدأت ولم تنتهِ", "overdue": "متأخرة", "overdueNote": "مخططة ليوم سابق ولم تبدأ",
+    "boxesInWarehouse": "صناديق جاهزة للتوصيل", "boxesNote": "في المستودع",
+    "next14Days": "الأيام الأربعة عشر القادمة", "scheduledJobs": "الأعمال المجدولة يومياً", "today": "اليوم", "nothingToday": "لا شيء مجدول اليوم.",
+    "overdueJobs": "أعمال متأخرة", "overdueJobsHint": "الأقدم أولاً", "nothingOverdue": "لا يوجد شيء متأخر."
+  },
+  "finance": {
+    "title": "لوحة المالية", "description": "ما يدين به العملاء ومدى تأخره، وما تدين به للموردين، والفوترة مقابل التحصيل.",
+    "notReady": "الأرقام المالية غير متاحة بعد", "openCurrency": "فتح إعدادات العملة", "inBase": "المبالغ بعملة {currency}، العملة الأساسية.",
+    "receivables": "الذمم المدينة", "payables": "الذمم الدائنة", "overdueAmount": "متأخر: {amount}",
+    "invoicedThisMonth": "المفوتر هذا الشهر", "collectedThisMonth": "المحصّل هذا الشهر", "billsThisMonth": "فواتير الموردين هذا الشهر",
+    "draftInvoices": "فواتير مسودة للترحيل", "overdueInvoices": "فواتير متأخرة: {count}",
+    "invoiced": "المفوتر", "collected": "المحصّل", "invoicedVsCollected": "المفوتر والمحصّل", "last6Months": "آخر 6 أشهر",
+    "receivableAging": "الذمم المدينة حسب العمر", "payableAging": "الذمم الدائنة حسب العمر", "byDaysOverdue": "حسب الأيام بعد تاريخ الاستحقاق", "age": "العمر",
+    "bucket": { "CURRENT": "لم يستحق بعد", "1_30": "1–30 يوماً", "31_60": "31–60 يوماً", "61_90": "61–90 يوماً", "91_120": "91–120 يوماً", "OVER_120": "أكثر من 120 يوماً" },
+    "topDebtors": "أكبر أرصدة العملاء", "largestBalances": "أعلى 5", "noDebtors": "لا يوجد عميل مدين بشيء.", "invoiceCount": "الفواتير: {count}"
+  }
+}

@@ -12,15 +12,16 @@ namespace Movers.Services.Sales;
 /// <summary>A company's public "request a quote" form for its website. Key: the public id in the form's address.</summary>
 public sealed record WebLeadFormSettings(bool Enabled, string? Key, Guid? StatusId, Guid? DefaultMoveTypeId, Guid? AssignedEmployeeId, string? Source,
     string? Heading, string? Intro, string? ThankYou, string? AccentColor, bool AllowUploads, bool ShowCompanyName);
-public sealed record WebLeadFormView(Guid? Version, WebLeadFormSettings Settings);
+/// <summary>CaptchaOn: submissions must pass the captcha (Captcha keys configured on the server).</summary>
+public sealed record WebLeadFormView(Guid? Version, WebLeadFormSettings Settings, bool CaptchaOn = false);
 public sealed record SaveWebLeadForm(Guid? Version, WebLeadFormSettings Settings);
 
 public sealed record PublicMoveTypeOption(Guid Id, string Name, string? Description);
 public sealed record PublicLeadFormModel(string CompanyName, bool ShowCompanyName, string? Heading, string? Intro, string? ThankYou, string? AccentColor,
-    bool AllowUploads, Guid? DefaultMoveTypeId, IReadOnlyList<PublicMoveTypeOption> MoveTypes);
-/// <summary>Website: a honeypot field people never see; when a bot fills it in the submission is dropped quietly.</summary>
+    bool AllowUploads, Guid? DefaultMoveTypeId, IReadOnlyList<PublicMoveTypeOption> MoveTypes, string? CaptchaSiteKey);
+/// <summary>Website: a honeypot field people never see; when a bot fills it in the submission is dropped quietly. CaptchaToken: from the Turnstile widget.</summary>
 public sealed record SubmitWebLeadCommand(string CustomerName, string Phone, string? Email, Guid? MoveTypeId, string Origin, string Destination,
-    DateOnly? ExpectedMoveDate, string? Notes, string? Website);
+    DateOnly? ExpectedMoveDate, string? Notes, string? Website, string? CaptchaToken = null);
 /// <summary>UploadToken: a customer upload link for the new lead (null when uploads are off or storage is not set up).</summary>
 public sealed record WebLeadSubmittedModel(string? LeadNumber, string? UploadToken, DateTimeOffset? UploadExpiresAtUtc);
 
@@ -35,7 +36,7 @@ public interface IWebLeadFormRepository
 /// submissions into sales leads of that company. Uploads afterwards go through an ordinary customer upload link.
 /// </summary>
 public sealed partial class WebLeadFormService(IBillingRepository records, IOperationsRepository unit, IWebLeadFormRepository forms, ITenantContext tenant,
-    Tenants.ICompanyScope companies, ISalesRepository sales, ISalesService leads, ILeadUploadService uploads)
+    Tenants.ICompanyScope companies, ISalesRepository sales, ISalesService leads, ILeadUploadService uploads, ICaptchaVerifier captcha)
 {
     private const string Kind = "WEB_LEAD_FORM", Prefix = "WF-";
     public const int UploadDays = 7;
@@ -46,7 +47,7 @@ public sealed partial class WebLeadFormService(IBillingRepository records, IOper
     private static WebLeadFormSettings Read(BillingRecord r) => JsonSerializer.Deserialize<WebLeadFormSettings>(r.Payload)!;
     private static readonly WebLeadFormSettings Empty = new(false, null, null, null, null, "Website", null, null, null, null, true, true);
 
-    public async Task<WebLeadFormView> Get(CancellationToken ct) { var r = await Record(ct); return new(r?.Version, r is null ? Empty : Read(r)); }
+    public async Task<WebLeadFormView> Get(CancellationToken ct) { var r = await Record(ct); return new(r?.Version, r is null ? Empty : Read(r), captcha.SiteKey is not null); }
 
     public Task<WebLeadFormView> Save(SaveWebLeadForm c, CancellationToken ct) => unit.Transaction(async () => {
         var s = await Clean(c.Settings ?? throw new InvalidOperationException("Provide the website form settings."), ct);
@@ -55,7 +56,7 @@ public sealed partial class WebLeadFormService(IBillingRepository records, IOper
         else if (r.Version != c.Version) throw new OperationConflictException("The website form changed. Refresh before saving.");
         else s = s with { Key = Read(r).Key };
         r.Payload = JsonSerializer.Serialize(s); r.Version = Guid.NewGuid();
-        await unit.Save(ct); return new WebLeadFormView(r.Version, s);
+        await unit.Save(ct); return new WebLeadFormView(r.Version, s, captcha.SiteKey is not null);
     }, ct);
 
     /// <summary>A new public key: the old address and every website embedding it stop working.</summary>
@@ -64,7 +65,7 @@ public sealed partial class WebLeadFormService(IBillingRepository records, IOper
         if (r.Version != version) throw new OperationConflictException("The website form changed. Refresh before saving.");
         var s = Read(r) with { Key = NewKey() };
         r.Number = Prefix + s.Key; r.Payload = JsonSerializer.Serialize(s); r.Version = Guid.NewGuid();
-        await unit.Save(ct); return new WebLeadFormView(r.Version, s);
+        await unit.Save(ct); return new WebLeadFormView(r.Version, s, captcha.SiteKey is not null);
     }, ct);
 
     public async Task<PublicLeadFormModel?> GetPublic(string key, CancellationToken ct)
@@ -72,13 +73,14 @@ public sealed partial class WebLeadFormService(IBillingRepository records, IOper
         var s = await Resolve(key, ct); if (s is null) return null;
         var types = (await sales.ListMoveTypesAsync(ct)).Where(x => x.IsActive).OrderBy(x => x.DisplayOrder).ThenBy(x => x.Name).Select(x => new PublicMoveTypeOption(x.Id, x.Name, x.Description)).ToList();
         return new(tenant.Company?.Name ?? tenant.Tenant?.Name ?? "", s.ShowCompanyName, s.Heading, s.Intro, s.ThankYou, s.AccentColor, s.AllowUploads,
-            types.Any(x => x.Id == s.DefaultMoveTypeId) ? s.DefaultMoveTypeId : null, types);
+            types.Any(x => x.Id == s.DefaultMoveTypeId) ? s.DefaultMoveTypeId : null, types, captcha.SiteKey);
     }
 
-    public async Task<WebLeadSubmittedModel?> Submit(string key, SubmitWebLeadCommand c, CancellationToken ct)
+    public async Task<WebLeadSubmittedModel?> Submit(string key, SubmitWebLeadCommand c, string? remoteIp, CancellationToken ct)
     {
         var s = await Resolve(key, ct); if (s is null) return null;
         if (!string.IsNullOrWhiteSpace(c.Website)) return new(null, null, null);
+        if (!await captcha.VerifyAsync(c.CaptchaToken, remoteIp, ct)) throw new InvalidOperationException("Please confirm you are not a robot and send again.");
         var moveType = c.MoveTypeId ?? s.DefaultMoveTypeId ?? (await sales.ListMoveTypesAsync(ct)).Where(x => x.IsActive).OrderBy(x => x.DisplayOrder).Select(x => (Guid?)x.Id).FirstOrDefault()
             ?? throw new InvalidOperationException("Select an active move type.");
         var statuses = (await sales.ListLeadStatusesAsync(ct)).Where(x => x.IsActive).ToList();

@@ -91,11 +91,26 @@ builder.Services.AddScoped<IAuditService, AuditService>();
 builder.Services.AddScoped<IEmployeeService, EmployeeService>();
 builder.Services.AddScoped<ISalesService, SalesService>();
 builder.Services.AddScoped<ITaskService, TaskService>();
+builder.Services.AddScoped<TaskActionService>();
+builder.Services.AddScoped<Movers.Services.Dashboards.DashboardService>();
+builder.Services.AddScoped<Movers.Services.Assistant.AssistantService>();
+// Ask Crateway: one tool-use loop per AI provider; the service picks the one asked for.
+builder.Services.AddHttpClient<Movers.Api.Assistant.OpenAiAssistantGateway>(client => client.Timeout = TimeSpan.FromMinutes(4));
+builder.Services.AddHttpClient<Movers.Api.Assistant.ClaudeAssistantGateway>(client => client.Timeout = Timeout.InfiniteTimeSpan);
+builder.Services.AddScoped<Movers.Services.Assistant.IAssistantModelGateway>(x => x.GetRequiredService<Movers.Api.Assistant.OpenAiAssistantGateway>());
+builder.Services.AddScoped<Movers.Services.Assistant.IAssistantModelGateway>(x => x.GetRequiredService<Movers.Api.Assistant.ClaudeAssistantGateway>());
 builder.Services.AddScoped<IAwsConfigurationService, AwsConfigurationService>();
 builder.Services.AddScoped<IOpenAiConfigurationService, OpenAiConfigurationService>();
 builder.Services.AddScoped<Movers.Services.Claude.ClaudeConfigurationService>();
 builder.Services.AddScoped<ILeadUploadService, LeadUploadService>();
 builder.Services.AddScoped<WebLeadFormService>();
+// Captcha on the public website form: on when Captcha:SiteKey is set (the secret then becomes required, as an environment variable outside Development).
+if (builder.Configuration["Captcha:SiteKey"] is { Length: > 0 } captchaSiteKey)
+{
+    builder.Services.AddSingleton(new Movers.Api.Captcha.CaptchaOptions(captchaSiteKey.Trim(), builder.Secret("Captcha:SecretKey")));
+    builder.Services.AddHttpClient<ICaptchaVerifier, Movers.Api.Captcha.TurnstileCaptchaVerifier>(client => client.Timeout = TimeSpan.FromSeconds(10));
+}
+else builder.Services.AddSingleton<ICaptchaVerifier, NoCaptcha>();
 builder.Services.AddScoped<LeadExtractionService>();
 builder.Services.AddHttpClient<IInventoryVisionGateway, OpenAiVisionGateway>(client => client.Timeout = TimeSpan.FromSeconds(180));
 // Claude: the SDK sets its own per-request timeout (5 minutes), so the HttpClient must not cut it shorter.

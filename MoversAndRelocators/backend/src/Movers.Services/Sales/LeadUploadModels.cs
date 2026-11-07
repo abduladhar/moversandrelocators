@@ -22,3 +22,5 @@ public interface IAwsObjectStorage
     Task WriteAsync(string key, byte[] content, string contentType, CancellationToken token) =>
         throw new NotSupportedException("This storage is written through presigned upload URLs.");
 }
+/// <summary>A file the customer sent through their own link: shown back to them as a receipt (no download address).</summary>
+public sealed record PublicReceivedFileModel(string FileName, string ContentType, long SizeBytes, DateTimeOffset UploadedAtUtc);

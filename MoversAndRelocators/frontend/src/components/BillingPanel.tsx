@@ -11,7 +11,8 @@ import { BillingPrintDocument } from './BillingPrintDocument'
 import { useContext, useEffect, useRef, useState } from 'react'
 import { Alert, Button, Card, Form, Input, InputNumber, Modal, Select, Space, Switch, Tag, message } from 'antd'
 import { AppstoreOutlined, ArrowLeftOutlined, PlusOutlined, PrinterOutlined, ReloadOutlined } from '@ant-design/icons'
-import { BillingPermissions, billingApi, type Account, type Charge, type Choices, type Doc, type DocumentRow, type Row, type Voucher } from '../billingApi'
+import { BillingPermissions, billingApi, sourceCustomer, type Account, type Charge, type Choices, type Doc, type DocumentRow, type Row, type Source, type Voucher } from '../billingApi'
+import { CreateCustomerButton } from './CreateCustomerButton'
 import { DataGrid } from './DataGrid'
 import { RowActions } from './RowActions'
 import { formatNumber, has, t as translate, useT } from '../i18n'
@@ -39,6 +40,8 @@ function BillingWorkspace({sourceKind,sourceId,companyName,section}:Props) {
  const [settlements,setSettlements]=useState<Record<string,number>>({})
  const [allocations,setAllocations]=useState<Record<string,number>>({}),[references,setReferences]=useState<Record<string,string>>({})
  const [form]=Form.useForm(),busy=useRef(false),requestId=useRef('')
+ // The customer filled in from the operation (autoParty: its code, so a later operation change may replace it).
+ const autoParty=useRef<string>(),[fromSource,setFromSource]=useState<{source:Source;code?:string}>()
  const exchangeRate=Form.useWatch('exchangeRate',form)
  const direction=Form.useWatch('direction',form)||'INCOME',currency=Form.useWatch('currency',form)||currencyData?.settings.defaultCurrency||'AED',partyCode=Form.useWatch('partyCode',form)
  const load=async()=>{
@@ -58,8 +61,31 @@ function BillingWorkspace({sourceKind,sourceId,companyName,section}:Props) {
  const chosen=pending.filter(x=>selected.includes(x.id))
  const compatible=chosen.every(c=>c.details.direction===chosen[0]?.details.direction&&c.details.partyCode===chosen[0]?.details.partyCode&&c.details.currency===chosen[0]?.details.currency)
  const open=(next:typeof mode)=>{
-  form.resetFields();form.setFieldsValue({direction:'INCOME',currency:currencyData?.settings.defaultCurrency||'AED',date:today(),dueDate:today(),isActive:true,type:'Expense',accountCode:'1000',lines:[{amount:0}]});requestId.current=crypto.randomUUID();setMode(next)
+  form.resetFields();form.setFieldsValue({direction:'INCOME',currency:currencyData?.settings.defaultCurrency||'AED',date:today(),dueDate:today(),isActive:true,type:'Expense',accountCode:'1000',lines:[{amount:0}]});requestId.current=crypto.randomUUID();autoParty.current=undefined;setFromSource(undefined);setMode(next)
  }
+ /**
+  * A customer invoice or charge for an operation starts with that operation's customer selected. Only an empty
+  * customer, or one filled in here before, is replaced: a customer the user picked is never overwritten.
+  */
+ const suggestCustomer=(id:string|undefined,list:Choices=choices)=>{
+  if(form.getFieldValue('direction')!=='INCOME'){setFromSource(undefined);return}
+  const current=form.getFieldValue('partyCode')
+  if(current&&current!==autoParty.current)return
+  const source=id?list.sources.find(s=>s.id===id&&(!sourceKind||s.kind===sourceKind)):undefined
+  const customer=sourceCustomer(source,list.customers)
+  form.setFieldValue('partyCode',customer?.code)
+  if(customer)form.setFieldValue('currency',customer.currency||currencyData?.settings.defaultCurrency||'AED')
+  autoParty.current=customer?.code
+  setFromSource(source&&(customer||source.customerName?.trim())?{source,code:customer?.code}:undefined)
+ }
+ const partyHint=direction!=='INCOME'||!fromSource?undefined
+  :fromSource.code?(partyCode===fromSource.code?t('billing.newDocument.customerFromOperation',{operation:fromSource.source.label}):undefined)
+  :!partyCode&&<span className="billing-party-hint">{t('billing.newDocument.customerNotInMasters',{name:fromSource.source.customerName??''})}{' '}
+   <CreateCustomerButton label={t('billing.newDocument.createCustomer')} getDefaults={()=>({name:fromSource.source.customerName??''})} onCreated={async customer=>{
+    const fresh=await billingApi.choices().catch(()=>undefined);if(fresh)setChoices(fresh)
+    form.setFieldsValue({partyCode:customer.code,currency:customer.currency||currencyData?.settings.defaultCurrency||'AED'})
+    autoParty.current=customer.code;setFromSource({source:fromSource.source,code:customer.code})
+   }}/></span>
  const pay=(type:string)=>{setPaymentType(type);setAllocations({});setSettlements({});setReferences({});open('pay')}
  const paymentDocs=documents.filter(d=>!!d.journalId&&!d.details.voided&&d.balance>0&&d.details.type===(paymentType==='RECEIPT'?'INVOICE':'BILL')&&(paymentType!=='RECEIPT'||d.details.partyCode===partyCode))
  const paymentGroups=Array.from(new Set(paymentDocs.filter(d=>(allocations[d.id]||0)>0).map(d=>d.details.partyCode))).map(code=>({partyCode:code,name:paymentDocs.find(d=>d.details.partyCode===code)!.details.partyName,reference:references[code]||'',allocations:paymentDocs.filter(d=>d.details.partyCode===code&&(allocations[d.id]||0)>0).map(d=>({documentId:d.id,version:d.version,amount:allocations[d.id],paymentAmount:d.details.currency===currency?allocations[d.id]:settlements[d.id]}))}))
@@ -101,7 +127,7 @@ function BillingWorkspace({sourceKind,sourceId,companyName,section}:Props) {
  {key:'cash',label:page('cash'),children:<CashPostingPanel sourceKind={sourceKind} sourceId={sourceId}/>},
  {key:'charges',label:page('charges'),children:<>
  <Alert type="info" showIcon title={t('billing.charges.help')}/>
- <Space wrap style={{margin:'16px 0'}}>{can('capture')&&<Button type="primary" onClick={()=>{open('charge');form.setFieldValue('accountCode',undefined)}}>{t('billing.charges.add')}</Button>}{can('issue')&&<Button disabled={!chosen.length||!compatible} onClick={()=>open('issue')}>{t('billing.charges.convert',{count:chosen.length})}</Button>}</Space>
+ <Space wrap style={{margin:'16px 0'}}>{can('capture')&&<Button type="primary" onClick={()=>{open('charge');form.setFieldValue('accountCode',undefined);if(sourceId)suggestCustomer(sourceId)}}>{t('billing.charges.add')}</Button>}{can('issue')&&<Button disabled={!chosen.length||!compatible} onClick={()=>open('issue')}>{t('billing.charges.convert',{count:chosen.length})}</Button>}</Space>
  {!compatible&&<Alert type="warning" title={t('billing.charges.incompatible')}/>}
  <DataGrid<Row<Charge>> rowKey="id" loading={loading} dataSource={visibleCharges.filter(search)} rowSelection={can('issue')?{selectedRowKeys:selected,onChange:k=>setSelected(k.map(String)),getCheckboxProps:r=>({disabled:!!r.details.documentId||r.details.cancelled})}:undefined} scroll={{x:1100}} columns={[
  {title:t('billing.columns.number'),dataIndex:'number'},{title:t('billing.columns.source'),dataIndex:['details','sourceLabel']},{title:t('common.type'),dataIndex:['details','direction'],render:v=>v==='INCOME'?t('billing.charges.customerCharge'):t('billing.charges.vendorCharge')},{title:t('billing.columns.party'),dataIndex:['details','partyName']},{title:t('common.description'),dataIndex:['details','description']},{title:t('billing.columns.account'),dataIndex:['details','accountCode']},{title:t('common.currency'),dataIndex:['details','currency']},{title:t('common.amount'),align:'right',render:(_,r)=><DualAmount details={r.details} choices={choices} currencies={currencyData}/>},{title:t('billing.columns.baseAmount'),align:'right',render:(_,r)=>formatMoney(r.details.baseAmount,currencyData?.baseCurrency||'USD')},
@@ -136,7 +162,7 @@ function BillingWorkspace({sourceKind,sourceId,companyName,section}:Props) {
  </div>
  {(activeSection==='INVOICE'||activeSection==='BILL')&&<div className="billing-toolbar-actions">
  {can('pay')&&<Button onClick={()=>pay(activeSection==='INVOICE'?'RECEIPT':'PAYMENT')}>{activeSection==='INVOICE'?t('billing.panel.receivePayment'):t('billing.panel.makeVendorPayments')}</Button>}
- {can('issue')&&can('capture')&&<Button type="primary" icon={<PlusOutlined/>} onClick={()=>{open('new-document');form.setFieldValue('direction',activeSection==='INVOICE'?'INCOME':'EXPENSE')}}>{activeSection==='INVOICE'?t('billing.panel.newInvoice'):t('billing.panel.newBill')}</Button>}
+ {can('issue')&&can('capture')&&<Button type="primary" icon={<PlusOutlined/>} onClick={()=>{open('new-document');form.setFieldValue('direction',activeSection==='INVOICE'?'INCOME':'EXPENSE');if(sourceId)suggestCustomer(sourceId)}}>{activeSection==='INVOICE'?t('billing.panel.newInvoice'):t('billing.panel.newBill')}</Button>}
  </div>}
  </div>
  {error&&<Alert type="error" title={error}/>}
@@ -144,11 +170,11 @@ function BillingWorkspace({sourceKind,sourceId,companyName,section}:Props) {
  {activeSection?<>{pages.find(p=>p.key===activeSection)?.children}</>:<div className="navigation-menu-tiles">{billingPages.filter(p=>pages.some(x=>x.key===p.key)).map(p=><button key={p.key} className="navigation-menu-tile" onClick={()=>setLocalSection(p.key)}><span className="navigation-menu-icon"><AppstoreOutlined/></span><span>{p.label}</span></button>)}</div>}
  <Modal className={mode==='new-document'?'billing-document-modal':undefined} centered width={mode==='new-document'?1040:mode==='pay'?1050:720} open={!!mode} title={modalTitle} onCancel={()=>!saving&&setMode(null)} onOk={()=>void submit()} okText={okText} cancelText={t('common.cancel')} confirmLoading={saving} destroyOnHidden>
  <Form form={form} className="billing-entry-form" layout="vertical" disabled={saving}>
- {mode==='new-document'&&<NewBillingDocumentForm form={form} choices={choices} currencies={currencyData} sourceId={sourceId} direction={direction} currency={currency}/>}
+ {mode==='new-document'&&<NewBillingDocumentForm form={form} choices={choices} currencies={currencyData} sourceId={sourceId} direction={direction} currency={currency} partyHint={partyHint} onSourceChange={id=>suggestCustomer(id)}/>}
  {mode==='charge'&&<>
- {!sourceId&&<Form.Item name="sourceId" label={t('billing.chargeForm.source')} rules={[{required:true,message:t('common.required')}]}><Select allowClear placeholder={t('billing.chargeForm.sourcePlaceholder')} showSearch optionFilterProp="label" options={choices.sources.map(s=>({value:s.id,label:s.kind+' · '+s.label}))}/></Form.Item>}
- <Form.Item name="direction" label={t('common.type')} rules={[{required:true,message:t('common.required')}]}><Select options={[{value:'INCOME',label:t('billing.chargeForm.directionIncome')},{value:'EXPENSE',label:t('billing.chargeForm.directionExpense')}]} onChange={()=>form.setFieldsValue({partyCode:undefined,lines:[{amount:0}]})}/></Form.Item>
- <Form.Item name="partyCode" label={direction==='INCOME'?t('common.customer'):t('billing.columns.vendor')} rules={[{required:true,message:t('common.required')}]}><Select showSearch optionFilterProp="label" options={partyOptions} onChange={code=>form.setFieldValue('currency',(direction==='INCOME'?choices.customers:choices.vendors).find(p=>p.code===code)?.currency||currencyData?.settings.defaultCurrency)}/></Form.Item>
+ {!sourceId&&<Form.Item name="sourceId" label={t('billing.chargeForm.source')} rules={[{required:true,message:t('common.required')}]}><Select allowClear placeholder={t('billing.chargeForm.sourcePlaceholder')} showSearch optionFilterProp="label" options={choices.sources.map(s=>({value:s.id,label:s.kind+' · '+s.label}))} onChange={id=>suggestCustomer(id)}/></Form.Item>}
+ <Form.Item name="direction" label={t('common.type')} rules={[{required:true,message:t('common.required')}]}><Select options={[{value:'INCOME',label:t('billing.chargeForm.directionIncome')},{value:'EXPENSE',label:t('billing.chargeForm.directionExpense')}]} onChange={()=>{form.setFieldsValue({partyCode:undefined,lines:[{amount:0}]});autoParty.current=undefined;suggestCustomer(sourceId||form.getFieldValue('sourceId'))}}/></Form.Item>
+ <Form.Item name="partyCode" label={direction==='INCOME'?t('common.customer'):t('billing.columns.vendor')} extra={partyHint} rules={[{required:true,message:t('common.required')}]}><Select showSearch optionFilterProp="label" options={partyOptions} onChange={code=>form.setFieldValue('currency',(direction==='INCOME'?choices.customers:choices.vendors).find(p=>p.code===code)?.currency||currencyData?.settings.defaultCurrency)}/></Form.Item>
  {currencyField}
  <Form.List name="lines" rules={[{validator:async(_,v)=>{if(!v?.length)throw new Error(t('billing.chargeForm.addAtLeastOne'))}}]}>{(rows,{add,remove},errors)=><>
  {rows.map(row=><Card key={row.key} className="billing-charge-card" size="small" style={{marginBottom:20}} title={t('billing.chargeForm.chargeTitle',{number:row.name+1})} extra={<Button danger onClick={()=>remove(row.name)}>{t('common.remove')}</Button>}>

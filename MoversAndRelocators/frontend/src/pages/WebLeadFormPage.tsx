@@ -3,16 +3,21 @@ import { Alert, Button, ConfigProvider, DatePicker, Form, Input, Result, Select,
 import { ArrowRightOutlined, CheckCircleFilled, CheckOutlined, FileOutlined, LockOutlined } from '@ant-design/icons'
 import type { Dayjs } from 'dayjs'
 import dayjs from 'dayjs'
-import { publicLeadFormApi, publicUploadApi, type PublicLeadForm, type WebLeadSubmitted } from '../api'
+import { publicLeadFormApi, publicUploadApi, type PublicLeadForm, type PublicReceivedFile, type WebLeadSubmitted } from '../api'
 import { MediaCapture } from '../components/MediaCapture'
+import { PhoneHandoff } from '../components/PhoneHandoff'
+import { CaptchaWidget } from '../components/CaptchaWidget'
 import { LanguageSwitcher } from '../i18n/LanguageSwitcher'
 import { formatDateTime, useT } from '../i18n'
 
-type Values = { customerName: string; phone: string; email?: string; moveTypeId?: string; origin: string; destination: string; expectedMoveDate?: Dayjs; notes?: string; website?: string }
-type Sent = WebLeadSubmitted & { customerName: string }
+type Values = { customerName: string; phone: string; email?: string; moveTypeId?: string; origin: string; destination: string; expectedMoveDate?: Dayjs; notes?: string; website?: string; captchaToken?: string | null }
+type Sent = WebLeadSubmitted & { customerName: string; phone?: string; email?: string | null }
 
 /** The form works inside the company's website (?embed=1 in an iframe): it reports its height so the frame can fit it. */
 export const embedded = new URLSearchParams(window.location.search).get('embed') === '1'
+/** Phones and tablets record and pick files themselves; computers also get "continue on your phone". */
+const touchDevice = typeof window.matchMedia === 'function' && window.matchMedia('(hover: none) and (pointer: coarse)').matches
+const pollMs = 5000
 const storageKey = (key: string) => `crateway_lead_form_${key}`
 const remembered = (key: string): Sent | null => { try { return JSON.parse(sessionStorage.getItem(storageKey(key)) ?? 'null') } catch { return null } }
 const remember = (key: string, sent: Sent | null) => { try { if (sent) sessionStorage.setItem(storageKey(key), JSON.stringify(sent)); else sessionStorage.removeItem(storageKey(key)) } catch { /* storage unavailable */ } }
@@ -22,12 +27,12 @@ const remember = (key: string, sent: Sent | null) => { try { if (sent) sessionSt
  * customer add documents, photos, videos and voice notes to it (through the lead's customer upload link).
  */
 export function WebLeadFormPage({ formKey }: { formKey: string }) {
-  const { t } = useT()
+  const { t, language } = useT()
   const [form] = Form.useForm<Values>()
   const [page, setPage] = useState<PublicLeadForm>(), [missing, setMissing] = useState(false)
   const [sent, setSent] = useState<Sent | null>(() => remembered(formKey)), [finished, setFinished] = useState(false)
   const [sending, setSending] = useState(false), [error, setError] = useState<string>()
-  const [uploaded, setUploaded] = useState<string[]>([])
+  const [received, setReceived] = useState<PublicReceivedFile[]>([]), [captchaRound, setCaptchaRound] = useState(0)
   const root = useRef<HTMLDivElement>(null)
 
   useEffect(() => { publicLeadFormApi.get(formKey).then(setPage).catch(() => setMissing(true)) }, [formKey])
@@ -40,19 +45,32 @@ export function WebLeadFormPage({ formKey }: { formKey: string }) {
   }, [formKey, page, missing])
   const step = !sent ? 1 : sent.uploadToken && !finished ? 2 : 3
   useEffect(() => { if (step > 1) root.current?.scrollIntoView({ block: 'start', behavior: 'smooth' }) }, [step])
+  // While on the files step, show what has arrived — from this computer or from the phone — every few seconds.
+  const token = step === 2 ? sent?.uploadToken ?? null : null
+  const refreshFiles = () => { if (token) publicUploadApi.files(token).then(setReceived).catch(() => undefined) }
+  useEffect(() => {
+    if (!token) return
+    refreshFiles()
+    const timer = window.setInterval(() => { if (document.visibilityState === 'visible') refreshFiles() }, pollMs)
+    return () => window.clearInterval(timer)
+  }, [token])
 
   const submit = async (values: Values) => {
     setSending(true); setError(undefined)
     try {
       const result = await publicLeadFormApi.submit(formKey, { ...values, email: values.email || null, notes: values.notes || null, website: values.website || null,
         moveTypeId: values.moveTypeId ?? null, expectedMoveDate: values.expectedMoveDate?.format('YYYY-MM-DD') ?? null })
-      const next = { ...result, customerName: values.customerName.trim() }
+      const next = { ...result, customerName: values.customerName.trim(), phone: values.phone.trim(), email: values.email || null }
       setSent(next); if (next.uploadToken) remember(formKey, next)
-    } catch (reason) { setError(reason instanceof Error ? reason.message : t('customer.leadForm.sendFailed')) }
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : t('customer.leadForm.sendFailed'))
+      // A captcha answer works once: show a fresh check for the next try.
+      if (page?.captchaSiteKey) { form.setFieldValue('captchaToken', null); setCaptchaRound(round => round + 1) }
+    }
     finally { setSending(false) }
   }
   const finish = () => { remember(formKey, null); setFinished(true) }
-  const startOver = () => { remember(formKey, null); setSent(null); setFinished(false); setUploaded([]); form.resetFields(); if (page?.defaultMoveTypeId) form.setFieldValue('moveTypeId', page.defaultMoveTypeId) }
+  const startOver = () => { remember(formKey, null); setSent(null); setFinished(false); setReceived([]); setCaptchaRound(round => round + 1); form.resetFields(); if (page?.defaultMoveTypeId) form.setFieldValue('moveTypeId', page.defaultMoveTypeId) }
 
   const accent = page?.accentColor || undefined
   const shell = (body: ReactNode) => <ConfigProvider theme={accent ? { token: { colorPrimary: accent, colorLink: accent } } : undefined}>
@@ -93,6 +111,8 @@ export function WebLeadFormPage({ formKey }: { formKey: string }) {
       <Form.Item name="notes" label={t('customer.leadForm.notes')} className="web-lead-wide" rules={[{ max: 2000 }]}><Input.TextArea rows={3} maxLength={2000} placeholder={t('customer.leadForm.notesPlaceholder')} /></Form.Item>
       {/* Not shown to people; bots fill every field. */}
       <Form.Item name="website" className="web-lead-trap" aria-hidden><Input tabIndex={-1} autoComplete="off" /></Form.Item>
+      {page.captchaSiteKey && <Form.Item key={captchaRound} name="captchaToken" className="web-lead-wide" rules={[{ required: true, message: t('customer.leadForm.captchaRequired') }]}>
+        <CaptchaWidget siteKey={page.captchaSiteKey} /></Form.Item>}
       {error && <Alert className="web-lead-wide" type="error" showIcon title={error} />}
       <div className="web-lead-wide web-lead-submit">
         <Button type="primary" size="large" htmlType="submit" loading={sending} icon={<ArrowRightOutlined />} iconPlacement="end">{page.allowUploads ? t('customer.leadForm.sendAndContinue') : t('customer.leadForm.send')}</Button>
@@ -104,11 +124,18 @@ export function WebLeadFormPage({ formKey }: { formKey: string }) {
       <Alert type="success" showIcon title={t('customer.leadForm.receivedTitle', { name: sent.customerName })} description={t('customer.leadForm.receivedText', { number: sent.leadNumber ?? '' })} />
       <div><Typography.Title level={4}>{t('customer.leadForm.filesTitle')}</Typography.Title>
         <Typography.Paragraph type="secondary">{t('customer.leadForm.filesText')}</Typography.Paragraph></div>
-      <MediaCapture uploadFile={async file => { const done = await publicUploadApi.upload(sent.uploadToken!, file); setUploaded(names => [...names, file.name]); return done }}
-        note={sent.uploadExpiresAtUtc ? t('customer.leadForm.filesLater', { date: formatDateTime(sent.uploadExpiresAtUtc) }) : undefined} />
-      {uploaded.length > 0 && <div className="web-lead-sent-files"><strong>{t('customer.leadForm.filesSent', { count: uploaded.length })}</strong>
-        <ul>{uploaded.map((name, index) => <li key={index}><FileOutlined /> {name}</li>)}</ul></div>}
-      <div className="web-lead-submit"><Button size="large" type={uploaded.length ? 'primary' : 'default'} onClick={finish}>{uploaded.length ? t('customer.leadForm.finish') : t('customer.leadForm.skipFiles')}</Button></div>
+      <div className={touchDevice ? undefined : 'web-lead-upload-split'}>
+        <div>{!touchDevice && <Typography.Title level={5} className="web-lead-upload-label">{t('customer.leadForm.fromComputer')}</Typography.Title>}
+          <MediaCapture uploadFile={async file => { const done = await publicUploadApi.upload(sent.uploadToken!, file); refreshFiles(); return done }}
+            note={sent.uploadExpiresAtUtc ? t('customer.leadForm.filesLater', { date: formatDateTime(sent.uploadExpiresAtUtc) }) : undefined} /></div>
+        {!touchDevice && <PhoneHandoff url={`${window.location.origin}/upload/${encodeURIComponent(sent.uploadToken)}?lang=${language}`} phone={sent.phone} email={sent.email} companyName={page.companyName} />}
+      </div>
+      <div className="web-lead-sent-files" aria-live="polite">
+        {received.length ? <><strong><CheckCircleFilled /> {t('customer.leadForm.filesSent', { count: received.length })}</strong>
+          <ul>{received.map((file, index) => <li key={index}><FileOutlined /> {file.fileName} <span>{formatDateTime(file.uploadedAtUtc)}</span></li>)}</ul></>
+          : <Typography.Text type="secondary">{t('customer.leadForm.waitingForFiles')}</Typography.Text>}
+      </div>
+      <div className="web-lead-submit"><Button size="large" type={received.length ? 'primary' : 'default'} onClick={finish}>{received.length ? t('customer.leadForm.finish') : t('customer.leadForm.skipFiles')}</Button></div>
     </div>}
 
     {step === 3 && sent && <div className="web-lead-done">

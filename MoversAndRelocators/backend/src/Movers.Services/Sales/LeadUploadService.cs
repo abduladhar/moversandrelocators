@@ -44,6 +44,13 @@ public sealed class LeadUploadService(ILeadUploadRepository repository, ITenantC
     public async Task<PublicUploadInfoModel?> GetPublicInfoAsync(string token, CancellationToken cancellationToken)
     { var r = await Resolve(token, cancellationToken); return r is null ? null : new(tenantContext.Company?.Name ?? r.Tenant.Name, r.Lead.LeadNumber, r.Lead.CustomerName, r.Link.ExpiresAtUtc, r.Link.RequestedItems, r.Link.Description, r.Link.CustomerItems, r.Link.CustomerDescription); }
 
+    public async Task<IReadOnlyList<PublicReceivedFileModel>?> ListPublicFilesAsync(string token, CancellationToken cancellationToken)
+    {
+        var r = await Resolve(token, cancellationToken); if (r is null) return null;
+        return (await repository.ListAttachmentsAsync(r.Lead.Id, cancellationToken)).Where(x => x.UploadLinkId == r.Link.Id && x.IsUploaded)
+            .Select(x => new PublicReceivedFileModel(x.OriginalFileName, x.ContentType, x.StoredSizeBytes ?? x.DeclaredSizeBytes, x.UploadedAtUtc ?? x.CreatedAtUtc)).ToList();
+    }
+
     public async Task<PublicLinkLeadModel?> ResolveLeadAsync(string token, CancellationToken cancellationToken)
     { var r = await Resolve(token, cancellationToken); return r is null ? null : new(r.Lead.Id, tenantContext.Company?.Name ?? r.Tenant.Name, r.Lead.LeadNumber, r.Lead.CustomerName, r.Link.ExpiresAtUtc); }
 

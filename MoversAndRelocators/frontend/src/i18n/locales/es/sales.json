@@ -152,7 +152,7 @@
     "imageLoadFailed": "No se puede cargar la imagen. Compruebe la configuración CORS del almacenamiento.",
     "videoReadFailed": "No se puede leer este vídeo. Compruebe su formato y la configuración CORS del almacenamiento.",
     "videoTimeout": "Se agotó el tiempo de la vista previa del vídeo. Pruebe con un clip más corto.",
-    "videoDuration": "No se puede determinar la duración del vídeo. Suba una grabación MP4.",
+    "videoDuration": "No se pudo leer la duración de este vídeo, así que no se pudieron tomar fotogramas. Inténtelo de nuevo; si sigue fallando, pida al cliente que envíe el vídeo desde la app de cámara de su móvil.",
     "loadSettingsFailed": "No se puede cargar la configuración de IA",
     "savedToInventory": "Guardado en el inventario del cliente potencial",
     "failed": "La extracción ha fallado",
@@ -353,6 +353,10 @@
     "copyFailed": "No se pudo copiar. Seleccione el texto y cópielo.",
     "frameTitle": "Pida un presupuesto de mudanza",
     "preview": "Vista previa",
-    "previewHint": "El formulario guardado, tal como lo ven los visitantes. Enviarlo crea un cliente potencial real."
+    "previewHint": "El formulario guardado, tal como lo ven los visitantes. Enviarlo crea un cliente potencial real.",
+    "captchaOn": "Captcha activado",
+    "captchaOnText": "Cada solicitud debe superar la verificación «no soy un robot» de Cloudflare antes de crear el cliente potencial.",
+    "captchaOff": "Captcha desactivado",
+    "captchaOffText": "Las solicitudes solo están protegidas por el campo trampa oculto y los límites de envío. El administrador del sistema activa el captcha configurando Captcha__SiteKey y Captcha__SecretKey en el servidor."
   }
 }

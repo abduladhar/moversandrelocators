@@ -30,7 +30,7 @@ export const appTheme: ThemeConfig = {
     colorSuccess: tokens.success, colorWarning: '#b26b00', colorError: tokens.danger,
     // Soft status fills are set explicitly: derived from the darker status colours they come out muddy.
     colorSuccessBg: '#e6f4ec', colorSuccessBorder: '#b7dfc6', colorWarningBg: '#fff4e0', colorWarningBorder: '#f3d49a',
-    colorErrorBg: '#fdecea', colorErrorBorder: '#f5c2bc',
+    colorErrorBg: '#fdecea', colorErrorBorder: '#f5c2bc', colorInfoBg: '#e9f4ef', colorInfoBorder: '#bcdccd',
     colorText: tokens.ink, colorTextHeading: tokens.ink, colorTextSecondary: tokens.text2, colorTextTertiary: tokens.muted,
     colorTextDescription: tokens.muted, colorTextPlaceholder: '#7d8a84',
     colorBorder: '#d3ddd8', colorBorderSecondary: tokens.lineSoft, colorSplit: tokens.lineSoft,

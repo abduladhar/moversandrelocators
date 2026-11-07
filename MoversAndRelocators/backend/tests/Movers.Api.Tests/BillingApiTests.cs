@@ -49,6 +49,20 @@ public sealed partial class BillingApiTests : IAsyncLifetime
     private async Task<JsonElement> Current(Guid id)=>(await Get("/api/billing/documents")).Single(x=>Id(x)==id);
 
     [Fact]
+    public async Task Billing_sources_carry_the_operations_customer_for_the_invoice_form()
+    {
+        var (pickup,job,receipt,customer,_,_)=await Setup();
+        var sources=(await _client.GetFromJsonAsync<JsonElement>("/api/billing/choices")).GetProperty("sources").EnumerateArray().ToList();
+        JsonElement Source(Guid id)=>sources.Single(s=>s.GetProperty("id").GetGuid()==id);
+        // A pickup names its customer; the form matches the name to the customer master.
+        Assert.Equal("Billing customer",Source(pickup).GetProperty("customerName").GetString());
+        // A warehouse receipt records the customer master itself.
+        Assert.Equal(customer,Source(receipt).GetProperty("customerCode").GetString());
+        // A transport job has no customer: the user picks one.
+        Assert.Equal(JsonValueKind.Null,Source(job).GetProperty("customerName").ValueKind);
+    }
+
+    [Fact]
     public async Task Income_from_all_three_sections_posts_once_and_one_receipt_settles_multiple_invoices()
     {
         var f=await Setup();
@@ -1072,6 +1086,38 @@ public sealed partial class BillingApiTests : IAsyncLifetime
         Assert.Equal(0,(await Get1(url+"VOIDED")).GetProperty("rows")[0].GetProperty("balance").GetDecimal());
         Assert.Equal(0,(await Get1(url.Replace("currency=INR","currency=USD")+"ALL")).GetProperty("rows").GetArrayLength());
         Assert.Equal(HttpStatusCode.BadRequest,(await _client.GetAsync(url+"INVALID")).StatusCode);
+    }
+    [Fact]
+    public async Task Finance_dashboard_matches_the_accounting_reports()
+    {
+        var f=await Setup();var today=DateOnly.FromDateTime(DateTime.UtcNow);
+        var paid=await Issue(await Charge("JOB",f.Job,"INCOME",f.Customer,100));
+        var lateCharge=await Charge("JOB",f.Job,"INCOME",f.Customer,300);
+        var late=await Post("/api/billing/documents",new{requestId=Guid.NewGuid(),charges=new[]{new{id=Id(lateCharge),version=Version(lateCharge)}},date=today.AddDays(-40),dueDate=today.AddDays(-10)});
+        await Post("/api/billing/payments",new{requestId=Guid.NewGuid(),type="RECEIPT",currency="INR",date=today,accountCode="1000",groups=new[]{new{partyCode=f.Customer,reference="Dashboard receipt",allocations=new[]{new{documentId=Id(paid),version=Version(paid),amount=40m}}}}});
+        var draftCharge=await Charge("JOB",f.Job,"INCOME",f.Customer,50);
+        await DraftPost("/api/billing/documents",new{requestId=Guid.NewGuid(),charges=new[]{new{id=Id(draftCharge),version=Version(draftCharge)}},date=today,dueDate=today});
+        var dashboard=await Get1("/api/dashboards/finance");
+        Assert.Equal(JsonValueKind.Null,dashboard.GetProperty("problem").ValueKind);
+        var k=dashboard.GetProperty("kpis");
+        var aging=(await Get1($"/api/billing/reports/receivable-aging?date={today:yyyy-MM-dd}&currency=BASE")).GetProperty("totals")[0];
+        Assert.Equal(aging.GetProperty("outstanding").GetDecimal(),k.GetProperty("receivablesOutstanding").GetDecimal());
+        Assert.Equal(aging.GetProperty("outstanding").GetDecimal()-aging.GetProperty("current").GetDecimal(),k.GetProperty("receivablesOverdue").GetDecimal());
+        Assert.True(k.GetProperty("receivablesOverdue").GetDecimal()>0);
+        var month=new DateOnly(today.Year,today.Month,1);
+        var invoiced=(await Get1($"/api/billing/reports/invoice-register?from={month:yyyy-MM-dd}&to={today:yyyy-MM-dd}&currency=BASE&status=ALL")).GetProperty("rows").EnumerateArray()
+            .Where(r=>r.GetProperty("status").GetString() is not ("DRAFT" or "VOIDED")).Sum(r=>r.GetProperty("amount").GetDecimal());
+        Assert.Equal(invoiced,k.GetProperty("invoicedThisMonth").GetDecimal());
+        var collected=(await Get1($"/api/billing/reports/receipt-register?from={month:yyyy-MM-dd}&to={today:yyyy-MM-dd}&currency=BASE&status=POSTED")).GetProperty("rows").EnumerateArray().Sum(r=>r.GetProperty("amount").GetDecimal());
+        Assert.True(collected>0);
+        Assert.Equal(collected,k.GetProperty("collectedThisMonth").GetDecimal());
+        Assert.Equal(1,k.GetProperty("draftInvoices").GetInt32());
+        Assert.Equal(1,k.GetProperty("overdueInvoices").GetInt32());
+        Assert.Equal(f.Customer,dashboard.GetProperty("topDebtors")[0].GetProperty("code").GetString());
+        Assert.Equal(6,dashboard.GetProperty("monthly").GetProperty("points").GetArrayLength());
+        Assert.Equal(invoiced,dashboard.GetProperty("monthly").GetProperty("points")[5].GetProperty("values")[0].GetDecimal());
+        Assert.Equal(aging.GetProperty("outstanding").GetDecimal(),dashboard.GetProperty("receivableAging").EnumerateArray().Sum(b=>b.GetProperty("amount").GetDecimal()));
+        Assert.Equal(late.GetProperty("number").GetString(),(await Get1($"/api/billing/reports/receivable-aging?date={today:yyyy-MM-dd}&currency=BASE")).GetProperty("rows").EnumerateArray().Single(r=>r.GetProperty("daysOverdue").GetInt32()>0).GetProperty("number").GetString());
     }
     [Fact]
     public async Task Receipt_register_deduplicates_operation_receipts_and_separates_statuses()

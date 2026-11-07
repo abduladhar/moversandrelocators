@@ -380,6 +380,21 @@
     "thanksTitle": "Teşekkürler {name}!",
     "defaultThankYou": "Talebinizi aldık, kısa süre içinde sizinle iletişime geçeceğiz.",
     "reference": "Referans: {number}",
-    "another": "Başka bir talep gönder"
+    "another": "Başka bir talep gönder",
+    "captchaRequired": "Lütfen robot olmadığınızı doğrulayın",
+    "captchaFailed": "Robot doğrulaması yüklenemedi. Bağlantınızı kontrol edip sayfayı yenileyin.",
+    "fromComputer": "Bu bilgisayardan",
+    "phoneTitle": "Telefonunuzu kullanın",
+    "phoneText": "Fotoğraf çekmek, video ve sesli not kaydetmek için telefon kameranızla tarayın.",
+    "phoneOr": "veya bağlantıyı telefonunuza gönderin",
+    "sendEmail": "E-posta",
+    "copyLink": "Bağlantıyı kopyala",
+    "share": "Paylaş",
+    "linkCopied": "Bağlantı kopyalandı",
+    "copyManual": "Bu bağlantıyı kopyalayın: {url}",
+    "phoneSubject": "Taşınma teklifiniz için fotoğraf ekleyin",
+    "phoneMessage": "{company} taşınma teklifiniz için fotoğraf, video, sesli not veya belge ekleyin: {url}",
+    "theMovers": "nakliye firmanız",
+    "waitingForFiles": "Gönderdiğiniz dosyalar — bu bilgisayardan veya telefonunuzdan — burada görünecek."
   }
 }
